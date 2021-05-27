@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+group 'com.wordpress.brancodes'
+version '0.0.2'
+//mainClassName = 'com.wordpress.brancodes.main.Main'
+sourceCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        url 'https://m2.dv8tion.net/releases'
+    }
+}
+
+dependencies {
+    implementation 'net.dv8tion:JDA:4.2.0_244'
+//    implementation 'com.jagrosh:jda-utilities:3.0.5'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
+    implementation 'org.xerial:sqlite-jdbc:3.34.0'
+    implementation 'com.zaxxer:HikariCP:4.0.3'
+    implementation 'org.apache.commons:commons-dbcp2:2.8.0'
+    implementation 'com.github.mifmif:generex:1.0.2'
+    implementation 'com.sedmelluq:lavaplayer:1.3.75'
+}
