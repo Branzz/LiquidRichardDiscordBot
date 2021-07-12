@@ -34,4 +34,8 @@ public class ChatScheduler {
 		chats.setMainChannel(mainChannel);
 	}
 
+	public void shutdown() {
+		scheduler.shutdown();
+	}
+
 }

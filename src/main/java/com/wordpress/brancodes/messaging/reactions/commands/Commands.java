@@ -10,7 +10,9 @@ import com.wordpress.brancodes.util.Queues;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.managers.AudioManager;
 
+import javax.annotation.RegEx;
 import java.awt.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,46 +28,52 @@ import static java.util.stream.Collectors.*;
 
 public class Commands {
 
+	// private static final @RegEx String fillerChars = "[.,\\s;:]*";
+
 	public static final List<Command> commands = List.of(
 		new Command(getCommandRegex("(((Turn)?\\s*Off)|(Shut\\s*(Down|Off|Up)))"), "Shut Down", "Shut Me Off",
 					OWNER, GUILD_AND_PRIVATE, message -> {
-					PreparedMessages.reply(message.getChannel(), message.getGuild().getIdLong(), "positive");
-					message.getJDA().shutdown(); }),
+			PreparedMessages.reply(message.getChannel(), message.getGuild().getIdLong(), "positive");
+			message.getJDA().shutdown();
+			Main.getBot().shutdownChatSchedulers();
+			System.exit(0); }),
 		new Command(getCommandRegex("Help(\\s+(Me|Him|Her|Them|It|Every(\\s+One)?)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"), "Help", "Help On Commands (This Panel)", true,
-					DEFAULT, GUILD_AND_PRIVATE, message ->
-					PreparedMessages.replyEmbedMessage(message.getChannel(), "help")),
+					DEFAULT, GUILD_AND_PRIVATE, message -> PreparedMessages.replyEmbedMessage(message.getChannel(), "help")),
 		new Command("\\s*![Ss]\\s*\\d{1,20}\\D[\\S\\s]+", "Say", OWNER, PRIVATE, message -> {
-					String response = sendMessageCommand(message.getJDA(), message.getContentRaw());
-					reply(message.getChannel(), response); }),
+			String response = sendMessageCommand(message.getJDA(), message.getContentRaw());
+			reply(message.getChannel(), response); }),
 		new Command("\\s*![Dd]\\s*\\d{1,20}\\D[\\S\\s]+", "DM", OWNER, PRIVATE, message -> {
-					String response = sendDirectMessageCommand(message.getJDA(), message.getContentRaw());
-					reply(message.getChannel(), response); }),
+			String response = sendDirectMessageCommand(message.getJDA(), message.getContentRaw());
+			reply(message.getChannel(), response); }),
+		new Command("\\s*![Jj]\\s*\\d{1,20}[\\S\\s]*", "Join", OWNER, PRIVATE, message -> {
+			String response = joinVoiceChannel(message.getJDA(), message.getContentRaw());
+			reply(message.getChannel(), response); }),
 		new Command("\\s*![Ss][Ss]\\s*", "Servers", OWNER, PRIVATE, message ->
 					reply(message.getChannel(), "`" + message.getJDA().getGuilds().stream().map(Guild::getName).collect(joining("\n")) + "`")),
 		new Command("\\s*![Hh]\\s+\\d{1,20}\\s+\\d+\\s*", "DM History", OWNER, PRIVATE, message -> {
-					String[] messageParts = message.getContentRaw().split("\\s+");
-					message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
-						user.openPrivateChannel().queue(privateChannel -> {
-							int amount = Integer.parseInt(messageParts[2]);
-							privateChannel.getHistory().retrievePast(amount).queue(messageHistory -> {
-								EmbedBuilder embedBuilder = new EmbedBuilder().setDescription("Message History With " + LiquidRichardBot.getUserName(user))
-																			  .setThumbnail(user.getAvatarUrl())
-																			  .setColor((Color) Config.get("embedColor"));
-								messageHistory.forEach(otherMessage -> embedBuilder.addField(
-										otherMessage.getAuthor().getName() + " " + timeStampOf(otherMessage.getTimeCreated()),
-										otherMessage.getContentDisplay(),
-										false));
-								reply(message.getChannel(), embedBuilder.build());
-							});
-						});
+			String[] messageParts = message.getContentRaw().split("\\s+");
+			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
+				user.openPrivateChannel().queue(privateChannel -> {
+					int amount = Integer.parseInt(messageParts[2]);
+					privateChannel.getHistory().retrievePast(amount).queue(messageHistory -> {
+						EmbedBuilder embedBuilder = new EmbedBuilder().setDescription("Message History With " + LiquidRichardBot.getUserName(user))
+																	  .setThumbnail(user.getAvatarUrl())
+																	  .setColor((Color) Config.get("embedColor"));
+						messageHistory.forEach(otherMessage -> embedBuilder.addField(
+								otherMessage.getAuthor().getName() + " " + timeStampOf(otherMessage.getTimeCreated()),
+								otherMessage.getContentDisplay(),
+								false));
+						reply(message.getChannel(), embedBuilder.build());
 					});
-			// AtomicReference<User> other = getUser(message.getJDA(), messageParts[1]); // The order of queueing matters
-			// 				AtomicReference<String> history = getPrivateMessageHistory(other.get(), Integer.parseInt(messageParts[2]));
-			// 				reply(message.getChannel(), new EmbedBuilder().setDescription("Message History With \"" + LiquidRichardBot.getUserName(other.get()) + "\"")
-			// 															  .addField("Moderators", history.get(), true)
-			// 															  .setThumbnail(message.getGuild().getIconUrl())
-			// 															  .setColor((Color) Config.get("embedColor"))
-			// 															  .build());
+				});
+			});
+	// AtomicReference<User> other = getUser(message.getJDA(), messageParts[1]); // The order of queueing matters
+	// 				AtomicReference<String> history = getPrivateMessageHistory(other.get(), Integer.parseInt(messageParts[2]));
+	// 				reply(message.getChannel(), new EmbedBuilder().setDescription("Message History With \"" + LiquidRichardBot.getUserName(other.get()) + "\"")
+	// 															  .addField("Moderators", history.get(), true)
+	// 															  .setThumbnail(message.getGuild().getIconUrl())
+	// 															  .setColor((Color) Config.get("embedColor"))
+	// 															  .build());
 		}),
 		// new Command("000", "Birthday", "Celebrate The Princess's Birthday", true, MOD, GUILD, message -> {
 		// 	AudioManager audioManager = message.getGuild().getAudioManager();
@@ -117,8 +125,22 @@ public class Commands {
 				DataBase.setMainChannel(message.getGuild().getIdLong(), channel.get().getIdLong());
 				Main.getBot().setGuildMainChannel(message.getGuild().getIdLong(), channel.get());
 			}
+		}),
+		new Command(".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*", "Censor", "Automatic Delete/Censorship",
+					DEFAULT, GUILD, message -> {
+			if (message.getAuthor().getIdLong() == 862896178823561236L)
+				message.delete().queue();
+		}),
+		new Command("((.*(\\?|:(grey_)?question:|\u2753|\u2754))"
+					+ "|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(\\?|:(grey_)?question:|\u2753|\u2754)))[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*"
+					+ "|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(([Oo]+[Mm]+[Gg]+|[Ww]+[Aa]+[Ii]+[Tt]+|[Oo]+[Hh]*)\\s+)?" //([Cc][\s]*[Aa][\s]*[Nn])
+					+ "((([Ww][\\s]*[Hh][\\s]*([Ii][\\s]*[Cc][\\s]*[Hh]|[Oo]+|[Aa]+[\\s]*[Tt]|[Ee][\\s]*[Rr][\\s]*[Ee]|[Ee][\\s]*[Nn]+|[Yy]+))|[Hh][\\s]*[Oo]+[\\s]*[Ww])"
+					+ "(('[Ss])|[\\s+].*|[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s])?)"
+					+ "|([Rr]+[Ee]+[Aa]+[Ll]+[Yy]+[.?;:\\s]*))", "Questions", //Hey Pimp, Can You Help Me
+					DEFAULT, GUILD_AND_PRIVATE, message -> {
+			if (!message.getContentRaw().matches("[Ww][Hh][Aa][Tt]\\s+([Aa][Nn]?[^?]*|[Tt][Hh][Ee]\\s+([Ff][Uu]?[Cc]?[Kk]?|[Hh][Ee]+[Ll]+))"))
+				reply(message.getChannel(), "Not Here To Answer Questions.");
 		})
-
 	);
 
 	// private static String messageToString(Message message) {
@@ -227,6 +249,31 @@ public class Commands {
 				return "I Was Not Able To Find That User \"" + userID + "\".";
 			}
 			*/
+		return PreparedMessages.getMessage("positive") + " Will Send Unless User Was Not Found.";
+	}
+
+	@Queues
+	private static String joinVoiceChannel(final JDA jda, final String message) {
+		String[] messageParts = message.split("\\s+");
+		int messageStart = 1;
+		long voiceChannelID = 0L;
+		if (Character.isDigit(message.charAt(2))) {
+			voiceChannelID = Long.parseLong(messageParts[0].substring(2));
+		} else {
+			for (; messageStart < messageParts.length; messageStart++)
+				if (messageParts[messageStart].length() > 0 && Character.isDigit(messageParts[messageStart].charAt(0))) {
+					try {
+						voiceChannelID = Long.parseLong(messageParts[messageStart++]);
+					} catch (NumberFormatException e) {
+						return "Typo In Voice Channel ID.";
+					}
+					break;
+				}
+		}
+		if (voiceChannelID == 0L)
+			return "No Voice Channel ID Reference.";
+		final VoiceChannel voiceChannel = jda.getVoiceChannelById(voiceChannelID);
+		voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
 		return PreparedMessages.getMessage("positive") + " Will Send Unless User Was Not Found.";
 	}
 

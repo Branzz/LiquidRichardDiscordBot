@@ -1,7 +1,7 @@
 package com.wordpress.brancodes.main;
 
 import com.wordpress.brancodes.bot.LiquidRichardBot;
-import com.wordpress.brancodes.database.PoolConnection;
+import com.wordpress.brancodes.messaging.PreparedMessages;
 
 import javax.security.auth.login.LoginException;
 

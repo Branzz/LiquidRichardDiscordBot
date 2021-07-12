@@ -1,6 +1,5 @@
 package com.wordpress.brancodes.bot;
 
-import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chat.ChatScheduler;
 import com.wordpress.brancodes.messaging.chat.Chats;
@@ -15,11 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -33,7 +33,7 @@ public class LiquidRichardBot {
 	private final JDA jda;
 	private Map<Long, ChatScheduler> guildChatSchedulers;
 
-	public LiquidRichardBot() throws LoginException, InterruptedException {
+	public LiquidRichardBot() throws LoginException {
 		jda =
 		JDABuilder.createDefault(
 				(String) Config.get("token"),
@@ -43,6 +43,7 @@ public class LiquidRichardBot {
 				GatewayIntent.GUILD_MESSAGE_REACTIONS,
 				GatewayIntent.GUILD_EMOJIS,
 				GatewayIntent.GUILD_VOICE_STATES
+				// GatewayIntent.GUILD_PRESENCES
 		)
 				  .disableCache(EnumSet.of(
 				  		CacheFlag.ROLE_TAGS
@@ -74,7 +75,6 @@ public class LiquidRichardBot {
 		// }
 		denyCommands = true;
 		denyChance = .2;
-		jda.getGuilds();
 	}
 
 	// public void addChats(final long guildID) {
@@ -86,6 +86,7 @@ public class LiquidRichardBot {
 								 .applyStream(guilds -> guilds.collect(
 										 toMap(Guild::getIdLong,
 											   guild -> new ChatScheduler(new Chats(guild.getDefaultChannel())))));
+		LOGGER.info("Servers In: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 	}
 
 	public void setGuildMainChannel(final long guildID, final TextChannel channel) {
@@ -98,6 +99,10 @@ public class LiquidRichardBot {
 
 	public void removeChats(final long guildID) {
 		guildChatSchedulers.remove(guildID);
+	}
+
+	public void shutdownChatSchedulers() {
+		guildChatSchedulers.values().forEach(ChatScheduler::shutdown);
 	}
 
 	@Deprecated

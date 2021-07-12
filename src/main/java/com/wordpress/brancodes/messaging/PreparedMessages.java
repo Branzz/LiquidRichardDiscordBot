@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.*;
 public class PreparedMessages {
 
 	private static final Map<String, Message> preparedMessages = Map.of(
-			"positive",		new UniformMessages(new Object[] { "Got It.", "Got It, Pimp.", "Ok.", "Ok, Pimp.", "Okay.", "Yes.", "Yes, Pimp.", new ServerDependentSingleMessageEmoji("thumbsup") }),
+			"positive",		new UniformMessages(new Object[] { "Got It.", "Got It, Pimp.", "Ok.", "Ok, Pimp.", "Okay.", "Yes.", "Yes, Pimp.", ":Thumbs_Up:" }), //new ServerDependentSingleMessageEmoji("thumbsup")
 			"talk back",	new UniformMessages(new String[] { "No.", "Not Here To Take Commands.", "No I Won't.", "Shut Up.", "Don't Talk To Me That Way.", "Don't Think I Will." }),
 			"moderation",	new UniformMessages(new String[] { ".Warn @everyone" }),
 			"images",		new UniformMessages(new String[] { "https://i.imgur.com/V2IMs46.jpeg", "https://i1.sndcdn.com/artworks-000593732349-ifevuv-t500x500.jpg", "https://i1.sndcdn.com/artworks-000525995070-tbs2ac-t500x500.jpg", "https://lastfm.freetls.fastly.net/i/u/avatar170s/6ccb4e1d055ce06608f46084c5ae7c83.webp" }),
