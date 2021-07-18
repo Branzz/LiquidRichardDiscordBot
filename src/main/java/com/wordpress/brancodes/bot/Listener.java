@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.events.emote.EmoteAddedEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
@@ -27,7 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 public class Listener extends ListenerAdapter {
 
@@ -96,26 +98,26 @@ public class Listener extends ListenerAdapter {
 	 */
 	@Override
 	public void onPrivateMessageReceived(@NotNull final PrivateMessageReceivedEvent event) {
-		messageReceived(event.getChannel().getType(),
-						event.getAuthor().equals(event.getJDA().getSelfUser())  ? UserCategory.SELF
-							: event.getAuthor().isBot()							? UserCategory.BOT //DataBase.respondToBotPrivate()
-							: event.getAuthor().equals(Config.get("ownerUser"))	? UserCategory.OWNER : UserCategory.DEFAULT,
-						event.getMessage());
+		///DataBase.respondToBotPrivate()
+		messageReceived(event.getChannel().getType(), UserCategory.getUserCategory(event), event.getMessage());
 		// if (!event.getAuthor().equals(event.getJDA().getSelfUser()))
 		if (!event.getChannel().getUser().equals(Config.get("ownerUser")))
-			LOGGER.info("DM from {}: \"{}\" in {} DM's", LiquidRichardBot.getUserName(event.getAuthor()), event.getMessage().getContentRaw(), LiquidRichardBot.getUserName(event.getChannel().getUser()));
+			LOGGER.info("DM from {}: \"{}\n{}\" in {} DM's", LiquidRichardBot.getUserName(event.getAuthor()),
+						event.getMessage().getContentRaw(), event.getMessage().getAttachments().stream().map(Message.Attachment::getUrl).collect(joining("\n,")),
+						LiquidRichardBot.getUserName(event.getChannel().getUser()));
 	}
 
 	@Override
 	public void onGuildMessageReceived(@NotNull final GuildMessageReceivedEvent event) {
 		// if (!event.getAuthor().isBot())
 		// 	event.getChannel().sendMessage(Util.properCase(event.getMessage().getContentRaw())).queue();
-		messageReceived(event.getChannel().getType(),
-						event.getAuthor().equals(event.getJDA().getSelfUser())	? UserCategory.SELF
-							: event.getAuthor().isBot()							? UserCategory.BOT //DataBase.respondToBots(event.getGuild().getIdLong()).get()
-							: event.getAuthor().equals(Config.get("ownerUser"))	? UserCategory.OWNER
-							: DataBase.userIsMod(event.getGuild().getIdLong(), event.getAuthor().getIdLong()).get() ? UserCategory.MOD : UserCategory.DEFAULT,
-						event.getMessage());
+		// DataBase.respondToBots(event.getGuild().getIdLong()).get()
+		messageReceived(event.getChannel().getType(), checkMod(event, UserCategory.getUserCategory(event)), event.getMessage());
+	}
+
+	private static UserCategory checkMod(@NotNull final GuildMessageReceivedEvent event, final UserCategory userCategory) {
+		return userCategory == UserCategory.DEFAULT && DataBase.userIsMod(event.getGuild().getIdLong(), event.getAuthor().getIdLong()).get()
+					   ? UserCategory.MOD : userCategory;
 	}
 
 	private void messageReceived(final ChannelType channelType, final UserCategory userCategory, final Message message) {
@@ -128,16 +130,17 @@ public class Listener extends ListenerAdapter {
 		String messageContent = MorseUtil.isMorse(message.getContentRaw())
 							  ?	Util.properCaseExcludeNumbers(MorseUtil.fromMorse(message.getContentRaw()))
 							  : message.getContentRaw();
-		Commands.commandsByCategoryChannel.get(channelType)
-										  .get(userCategory)
-										  .stream()
-										  .filter(command -> command.execute(message, messageContent))
-										  .findFirst()
-										  .ifPresent(command -> LOGGER.info("Ran {} command by {} in {} in {}",
-																			command,
-																			LiquidRichardBot.getUserName(message.getAuthor()),
-																			message.getChannel().getName(),
-																			message.isFromGuild() ? message.getGuild().getName() : "DMs"));
+		Commands.commandsByCategoryChannel
+				.get(channelType)
+				.get(userCategory)
+				.stream()
+				.filter(command -> command.execute(message, messageContent))
+				.findFirst()
+				.ifPresent(command -> LOGGER.info("Ran {} command by {} in {} in {}", //Commands.qCount +
+									  command,
+									  LiquidRichardBot.getUserName(message.getAuthor()),
+									  message.getChannel().getName(),
+									  message.isFromGuild() ? message.getGuild().getName() : "DMs"));
 	}
 
 }

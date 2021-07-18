@@ -55,17 +55,6 @@ public class Reaction {
 		return Pattern.compile(regex).matcher("");
 	}
 
-	protected static String orChainRegex(String[] chain) {
-		StringBuilder sb = new StringBuilder();
-		sb.append('(');
-		for (String part: chain)
-			sb.append(part)
-			  .append('|');
-		sb.delete(sb.length() - 1, sb.length());
-		sb.append(')');
-		return sb.toString();
-	}
-
 	public ReactionChannelType getChannelType() {
 		return channelCategory;
 	}

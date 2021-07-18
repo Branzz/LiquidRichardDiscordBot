@@ -97,11 +97,11 @@ public class MessageReaction {
 		LOGGER.info("DM from {}: \"{}\"", event.getAuthor().getName(), event.getMessage().getContentRaw());
 		switch (DataBase.userDMsProperCase(event.getAuthor().getIdLong())) {
 			case DMProperCaseNumbers:
-				Commands.reply(event.getChannel(), Util.properCase(message)); break;
+				Commands.reply(event.getMessage(), Util.properCase(message)); break;
 			case DMProperCaseNoNumbers:
-				Commands.reply(event.getChannel(), Util.properCaseExcludeNumbers(message)); break;
+				Commands.reply(event.getMessage(), Util.properCaseExcludeNumbers(message)); break;
 			case NoDMProperCase:
-				Commands.reply(event.getChannel(), "Don't DM Me."); break; // Taper?
+				Commands.reply(event.getMessage(), "Don't DM Me."); break; // Taper?
 			default:
 		}
 	}

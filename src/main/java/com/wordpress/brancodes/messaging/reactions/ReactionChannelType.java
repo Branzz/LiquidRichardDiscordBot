@@ -1,9 +1,12 @@
 package com.wordpress.brancodes.messaging.reactions;
 
 import net.dv8tion.jda.api.entities.ChannelType;
+
 public enum ReactionChannelType {
 
-	GUILD("Guild"), PRIVATE("DM"), GUILD_AND_PRIVATE("Guild And DM");
+	GUILD("Guild"), PRIVATE("DM"), GUILD_AND_PRIVATE("Guild And DM")
+	// , CENSOR_GUILD("Specified Server")
+	;
 
 	private final String displayName;
 

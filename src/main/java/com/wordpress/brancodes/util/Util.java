@@ -1,12 +1,5 @@
 package com.wordpress.brancodes.util;
 
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
 public final class Util {
 
 	public static String properCase(String string) {

@@ -42,7 +42,7 @@ public class Command extends Reaction {
 
 	public boolean execute(Message message, String match) {
 		if (matcher.reset(match).matches()) {
-			if (deniable && LiquidRichardBot.deny(message.getChannel(), message.isFromGuild() ? message.getGuild().getIdLong() : null))
+			if (deniable && LiquidRichardBot.deny(message, message.isFromGuild() ? message.getGuild().getIdLong() : null))
 				return false;
 			else {
 				executeResponse.execute(message);

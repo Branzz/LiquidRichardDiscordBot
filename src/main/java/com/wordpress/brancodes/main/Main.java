@@ -1,9 +1,10 @@
 package com.wordpress.brancodes.main;
 
 import com.wordpress.brancodes.bot.LiquidRichardBot;
-import com.wordpress.brancodes.messaging.PreparedMessages;
+import net.dv8tion.jda.api.entities.GuildChannel;
 
 import javax.security.auth.login.LoginException;
+import java.util.stream.Collectors;
 
 public class Main {
 

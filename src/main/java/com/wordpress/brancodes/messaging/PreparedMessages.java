@@ -10,7 +10,7 @@ import com.wordpress.brancodes.messaging.reactions.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.Util;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 
@@ -27,8 +27,8 @@ import static java.util.stream.Collectors.*;
 
 public class PreparedMessages {
 
-	private static final Map<String, Message> preparedMessages = Map.of(
-			"positive",		new UniformMessages(new Object[] { "Got It.", "Got It, Pimp.", "Ok.", "Ok, Pimp.", "Okay.", "Yes.", "Yes, Pimp.", ":Thumbs_Up:" }), //new ServerDependentSingleMessageEmoji("thumbsup")
+	private static final Map<String, DynamicMessage> preparedMessages = Map.of(
+			"positive",		new UniformMessages(new Object[] { "Got It.", "Got It, Pimp.", "Ok.", "Ok, Pimp.", "Okay.", "Yes.", "Yes, Pimp.", "<:Thumbs_Up:856453032317681674>" }), //new ServerDependentSingleMessageEmoji("thumbsup")
 			"talk back",	new UniformMessages(new String[] { "No.", "Not Here To Take Commands.", "No I Won't.", "Shut Up.", "Don't Talk To Me That Way.", "Don't Think I Will." }),
 			"moderation",	new UniformMessages(new String[] { ".Warn @everyone" }),
 			"images",		new UniformMessages(new String[] { "https://i.imgur.com/V2IMs46.jpeg", "https://i1.sndcdn.com/artworks-000593732349-ifevuv-t500x500.jpg", "https://i1.sndcdn.com/artworks-000525995070-tbs2ac-t500x500.jpg", "https://lastfm.freetls.fastly.net/i/u/avatar170s/6ccb4e1d055ce06608f46084c5ae7c83.webp" }),
@@ -71,12 +71,12 @@ public class PreparedMessages {
 			embedBuilder.addField(name, value, inLine);
 	}
 
-	public static void reply(final MessageChannel event, final Long guildID, final String request) {
-		Commands.reply(event, getMessage(guildID, request));
+	public static void reply(final Message message, final Long guildID, final String request) {
+		Commands.reply(message, getMessage(guildID, request));
 	}
 
-	public static void replyEmbedMessage(final MessageChannel event, final String request) {
-		Commands.reply(event, getEmbedMessage(request));
+	public static void replyEmbedMessage(final Message message, final String request) {
+		Commands.reply(message, getEmbedMessage(request));
 	}
 
 	/**
@@ -95,11 +95,11 @@ public class PreparedMessages {
 		return embedMessages.get(request);
 	}
 
-	private static abstract class Message {
+	private static abstract class DynamicMessage {
 		abstract String get(final Long guildID);
 	}
 
-	private static class GenerexMessage extends Message {
+	private static class GenerexMessage extends DynamicMessage {
 
 		protected Generex generex;
 
@@ -114,7 +114,7 @@ public class PreparedMessages {
 
 	}
 
-	private static class SingleMessage extends Message {
+	private static class SingleMessage extends DynamicMessage {
 		protected String value;
 
 		public SingleMessage(String value) {
@@ -163,7 +163,7 @@ public class PreparedMessages {
 
 	}
 
-	private static class UniformMessages extends Message {
+	private static class UniformMessages extends DynamicMessage {
 
 		private static final Random random = new Random();
 		final SingleMessage[] messages;
@@ -194,7 +194,7 @@ public class PreparedMessages {
 
 	}
 
-	private static class CustomDistributionMessages extends Message {
+	private static class CustomDistributionMessages extends DynamicMessage {
 
 		private static final Random random = new Random();
 		final SingleMessage[] messages;
@@ -225,7 +225,7 @@ public class PreparedMessages {
 
 	}
 
-	private static class OnlineImageMessage extends Message {
+	private static class OnlineImageMessage extends DynamicMessage {
 
 		protected String lookUpValue;
 

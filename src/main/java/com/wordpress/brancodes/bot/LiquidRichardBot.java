@@ -3,6 +3,7 @@ package com.wordpress.brancodes.bot;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chat.ChatScheduler;
 import com.wordpress.brancodes.messaging.chat.Chats;
+import com.wordpress.brancodes.messaging.reactions.commands.Commands;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -52,7 +53,7 @@ public class LiquidRichardBot {
 				  		CacheFlag.VOICE_STATE,
 						CacheFlag.EMOTE
 				  ))
-				  .setStatus(OnlineStatus.DO_NOT_DISTURB)
+				  .setStatus(OnlineStatus.OFFLINE)
 				  .addEventListeners(
 				  		// new CommandClientBuilder()
 										// 	 .setOwnerId(String.valueOf(Config.get("ownerID")))
@@ -86,7 +87,7 @@ public class LiquidRichardBot {
 								 .applyStream(guilds -> guilds.collect(
 										 toMap(Guild::getIdLong,
 											   guild -> new ChatScheduler(new Chats(guild.getDefaultChannel())))));
-		LOGGER.info("Servers In: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
+		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 	}
 
 	public void setGuildMainChannel(final long guildID, final TextChannel channel) {
@@ -143,10 +144,10 @@ public class LiquidRichardBot {
 
 	// private static double denyOwner;
 
-	public static boolean deny(final MessageChannel channel, final Long guildID) {
+	public static boolean deny(final Message message, final Long guildID) {
 		boolean deny = !denyCommands || random.nextDouble() < denyChance;
 		if (deny)
-			PreparedMessages.reply(channel, guildID, "talk back");
+			PreparedMessages.reply(message, guildID, "talk back");
 		return deny;
 	}
 
