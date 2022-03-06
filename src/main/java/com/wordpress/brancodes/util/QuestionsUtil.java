@@ -1,6 +1,7 @@
 package com.wordpress.brancodes.util;
 
 import javax.annotation.RegEx;
+
 public class QuestionsUtil {
 
 	public static final @RegEx String questionRegex = "";

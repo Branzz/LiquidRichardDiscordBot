@@ -1,5 +1,9 @@
 package com.wordpress.brancodes.util;
 
+import net.dv8tion.jda.api.requests.RestAction;
+
+import javax.annotation.Nullable;
+import java.util.function.Consumer;
 public final class Util {
 
 	public static String properCase(String string) {
@@ -69,5 +73,32 @@ public final class Util {
 		return new StringBuilder(2 + name.length()).append(':').append(name).append(":").toString();
 	}
 
+	// @FunctionalInterface
+	// public interface BotAction <T> {
+	// 	RestAction<T> botAct(BotUnit bot);
+	// }
+	//
+	// /**
+	//  * @param botAction	- get the REST action from the bot
+	//  * @param success	- what to do with the REST action, if null, it will skip it and move to the next bot
+	//  */
+	// public static <T> void iterRecurse(BotAction<T> botAction, @Nullable Consumer<? super T> success) {
+	// 	final Iterator<BotUnit> botIterator = bots.iterator();
+	// 	iterateBots(botIterator, botAction, success);
+	// }
+	//
+	// private static <T> void iterateBots(final Iterator<BotUnit> botIterator, BotAction<T> botAction, @Nullable Consumer<? super T> success) {
+	// 	if (botIterator.hasNext()) {
+	// 		final RestAction<T> botRestAction = botAction.botAct(botIterator.next());
+	// 		if (botRestAction != null)
+	// 			botRestAction.queue(r -> {
+	// 				if (success != null)
+	// 					success.accept(r);
+	// 				iterateBots(botIterator, botAction, success);
+	// 			});
+	// 		else
+	// 			iterateBots(botIterator, botAction, success);
+	// 	}
+	// }
 
 }

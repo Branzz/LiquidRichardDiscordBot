@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Users  : DM back proper case                 | dmcase (userid,          / contains userid
@@ -59,11 +56,14 @@ public class DataBase {
 	// 	return null;
 	// }
 
+	private final static Set<Long> cryUniMods = Set.of(289894216354758657L, 850200778740072458L, 841201063637549076L);
 	/**
 	 * Owner set with command: In server, "p, Look. Listen To <@ID>."
 	 */
 	public static Data<Boolean> userIsMod(final Long guildID, final Long userID) {
-		return new Data<Boolean>(false);
+		if (guildID != null && userID != null)
+			return new Data<>(guildID == 929974932417437726L && (cryUniMods.contains(userID)));
+		return new Data<>(false);
 		// if (guildID != null && userID != null)
 		// 	try (PoolConnection.PreparedStatementQuery preparedStatementQuery =
 		// 			 new PoolConnection.PreparedStatementQuery("SELECT * FROM mods WHERE users.id = ? AND mods.guild_id = ?")) {
@@ -167,7 +167,7 @@ public class DataBase {
 	 */
 	public static String getEmoji(final Long guildID, String defaultEmojiName) {
 		// not guild == null AND: if guild OR emoji not exist, return defaultEmojiName
-		return "thumbsup"; // TODO TEMP
+		return "<:Thumbs_Up:856453032317681674>";
 	}
 
 	public static void setEmoji(final Long guildID, String defaultEmojiName, String overriddenName) {

@@ -3,11 +3,20 @@ package com.wordpress.brancodes.messaging.chat;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.util.Images;
+import com.wordpress.brancodes.util.NumberToText;
+import com.wordpress.brancodes.util.Util;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
+import java.time.YearMonth;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class Chats {
 
@@ -30,11 +39,38 @@ public class Chats {
 		this.mainChannel = mainChannel;
 	}
 
+	private static final Date angelitteBirthday = new Date(122, Calendar.JULY, 16);
+
 	private void initChats() {
 		chats = List.of(
 				// new PeriodicChat(() -> mainChannel.sendMessage(String.valueOf(System.currentTimeMillis())).queue(), 10_000L)
-				new VariatedChat(() -> Images.send(mainChannel, "mgtow", "DAILY REMINDER MGTOW", "MGTOW"),			 5_000L, 100L),
-				new VariatedChat(() -> Images.send(mainChannel, "stretch", "DAILY REMINDER STRETCHES", "STRETCHES"), 3_000L, 100L)
+				// new VariatedChat(() -> Images.send(mainChannel, "mgtow", "DAILY REMINDER MGTOW", "MGTOW"),			 5_000L, 100L),
+				// new VariatedChat(() -> Images.send(mainChannel, "stretch", "DAILY REMINDER STRETCHES", "STRETCHES"), 3_000L, 100L),
+				// new PeriodicChat(() -> {
+				// 	mainChannel.sendMessage("@everyone").queue();
+				// 	mainChannel.getIterableHistory().stream().findFirst().get().delete().queue();
+				// }, 43_200_000L)
+
+				new VariatedChat(() -> {
+					Date current = new Date();
+					int days = angelitteBirthday.getDate() - current.getDate();
+					int months = 12 + angelitteBirthday.getMonth() - current.getMonth();
+					if (days < 0) {
+						days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
+						months--;
+					}
+					mainChannel.sendMessage((months != 0 ? Util.properCase(NumberToText.numberToString(months))
+														   + " Month" + (months != 1 ? "s" : "") : "")
+											+ (days != 0 ? (months != 0 ? " And " : "")
+														   + Util.properCase(NumberToText.numberToString(days))
+														   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is.")
+							   .queue(message -> {
+									message.addReaction("U+1F449U+1F3FF").queue();
+									message.addReaction("U+1F44CU+1F3FF").queue();
+							   }
+					);
+				}, "Angelitte Countdown")
+
 		);
 	}
 

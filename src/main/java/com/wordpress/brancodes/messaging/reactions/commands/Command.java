@@ -1,14 +1,15 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
-import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.messaging.reactions.ExecuteResponse;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
-import com.wordpress.brancodes.messaging.reactions.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.entities.Message;
 
 import javax.annotation.RegEx;
+
+import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
 
 public class Command extends Reaction {
 
@@ -37,12 +38,16 @@ public class Command extends Reaction {
 
 	@Override
 	public boolean execute(Message message) {
-		return execute(message, message.getContentRaw());
+		return execute(message, true);
+	}
+
+	protected boolean execute(Message message, boolean contentDisplay) {
+		return execute(message, contentDisplay ? message.getContentDisplay() : message.getContentRaw());
 	}
 
 	public boolean execute(Message message, String match) {
 		if (matcher.reset(match).matches()) {
-			if (deniable && LiquidRichardBot.deny(message, message.isFromGuild() ? message.getGuild().getIdLong() : null))
+			if (deniable && deny(message))
 				return false;
 			else {
 				executeResponse.execute(message);

@@ -1,12 +1,20 @@
 package com.wordpress.brancodes.messaging.chat;
 
 import java.util.concurrent.ScheduledExecutorService;
+
 public abstract class Chat {
 
-	protected ExecuteChat chat;
+	protected final String name;
+	protected final ExecuteChat chat;
 
 	public Chat(ExecuteChat chat) {
 		this.chat = chat;
+		this.name = "Chat";
+	}
+
+	public Chat(ExecuteChat chat, String name) {
+		this.chat = chat;
+		this.name = name;
 	}
 
 	@FunctionalInterface

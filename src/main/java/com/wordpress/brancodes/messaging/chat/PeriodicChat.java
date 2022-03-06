@@ -6,15 +6,23 @@ import java.util.concurrent.TimeUnit;
 public class PeriodicChat extends Chat {
 
 	private static final Random random = new Random();
+
 	protected final long period; // milliseconds
 
 	public PeriodicChat(ExecuteChat chat) {
-		super(chat);
-		period = 86_400_000; // 1 day
+		this(chat, 86_400_000L); // 1 day
 	}
 
 	public PeriodicChat(ExecuteChat chat, long period) {
-		super(chat);
+		this(chat, period, "Periodic Chat");
+	}
+
+	public PeriodicChat(ExecuteChat chat, String name) {
+		this(chat, 86_400_000L, name);
+	}
+
+	public PeriodicChat(ExecuteChat chat, long period, String name) {
+		super(chat, name);
 		this.period = period;
 	}
 

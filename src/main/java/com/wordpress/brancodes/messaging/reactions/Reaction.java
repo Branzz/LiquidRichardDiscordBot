@@ -1,10 +1,12 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.entities.Message;
 
 import javax.annotation.RegEx;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 public class Reaction {
 
 	protected Matcher matcher;
@@ -51,8 +53,8 @@ public class Reaction {
 	// 	return false;
 	// }
 
-	protected static Matcher getMatcher(@RegEx String regex) {
-		return Pattern.compile(regex).matcher("");
+	public static Matcher getMatcher(@RegEx String regex) {
+		return Pattern.compile(regex, Pattern.UNICODE_CHARACTER_CLASS).matcher("");
 	}
 
 	public ReactionChannelType getChannelType() {
@@ -63,6 +65,7 @@ public class Reaction {
 		return category;
 	}
 
+	@Override
 	public String toString() {
 		return name;
 	}

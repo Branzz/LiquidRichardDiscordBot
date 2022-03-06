@@ -6,7 +6,7 @@ import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.commands.Commands;
 import com.wordpress.brancodes.messaging.reactions.*;
 import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.messaging.reactions.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.Util;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.*;
 public class PreparedMessages {
 
 	private static final Map<String, DynamicMessage> preparedMessages = Map.of(
-			"positive",		new UniformMessages(new Object[] { "Got It.", "Got It, Pimp.", "Ok.", "Ok, Pimp.", "Okay.", "Yes.", "Yes, Pimp.", "<:Thumbs_Up:856453032317681674>" }), //new ServerDependentSingleMessageEmoji("thumbsup")
+			"positive",		new UniformMessages(new Object[] { "Got It.", "Got It, Pimp.", "Ok.", "Ok, Pimp.", "Okay.", "Yes.", "Yes, Pimp.", ":thumbsup_tone5:" }), //new ServerDependentSingleMessageEmoji("thumbsup")
 			"talk back",	new UniformMessages(new String[] { "No.", "Not Here To Take Commands.", "No I Won't.", "Shut Up.", "Don't Talk To Me That Way.", "Don't Think I Will." }),
 			"moderation",	new UniformMessages(new String[] { ".Warn @everyone" }),
 			"images",		new UniformMessages(new String[] { "https://i.imgur.com/V2IMs46.jpeg", "https://i1.sndcdn.com/artworks-000593732349-ifevuv-t500x500.jpg", "https://i1.sndcdn.com/artworks-000525995070-tbs2ac-t500x500.jpg", "https://lastfm.freetls.fastly.net/i/u/avatar170s/6ccb4e1d055ce06608f46084c5ae7c83.webp" }),
@@ -95,8 +95,12 @@ public class PreparedMessages {
 		return embedMessages.get(request);
 	}
 
-	private static abstract class DynamicMessage {
-		abstract String get(final Long guildID);
+	public static Map<String, DynamicMessage> preparedMessages() {
+		return preparedMessages;
+	}
+
+	public static abstract class DynamicMessage {
+		public abstract String get(final Long guildID);
 	}
 
 	private static class GenerexMessage extends DynamicMessage {
@@ -108,7 +112,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) {
+		public String get(final Long guildID) {
 			return generex.random();
 		}
 
@@ -126,7 +130,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) {
+		public String get(final Long guildID) {
 			return value;
 		}
 
@@ -143,7 +147,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) {
+		public String get(final Long guildID) {
 			return value;
 		}
 	}
@@ -157,7 +161,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) { // null guild gives default emoji
+		public String get(final Long guildID) { // null guild gives default emoji
 			return Util.asEmoji(DataBase.getEmoji(guildID, emojiName));
 		}
 
@@ -188,7 +192,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) {
+		public String get(final Long guildID) {
 			return messages[random.nextInt(messages.length)].get(guildID);
 		}
 
@@ -212,7 +216,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) {
+		public String get(final Long guildID) {
 			double bound = 0;
 			do bound = random.nextDouble() * sum; while (bound != 0);
 			assert (bound != 0);
@@ -234,7 +238,7 @@ public class PreparedMessages {
 		}
 
 		@Override
-		String get(final Long guildID) {
+		public String get(final Long guildID) {
 			return null;
 		}
 

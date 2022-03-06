@@ -1,6 +1,8 @@
 package com.wordpress.brancodes.util;
 
+import com.wordpress.brancodes.main.Main;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

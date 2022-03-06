@@ -3,8 +3,7 @@ package com.wordpress.brancodes.messaging.reactions;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.reactions.commands.Commands;
 import com.wordpress.brancodes.util.Util;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +61,7 @@ public class MessageReaction {
 	// 	modMessage(event);
 	// }
 
-	public static void modMessage(final @NotNull GuildMessageReceivedEvent event) {
+	public static void modMessage(final @NotNull MessageReceivedEvent event) {
 		message(event);
 	}
 
@@ -71,7 +70,7 @@ public class MessageReaction {
 	// 		message(event);
 	// }
 
-	public static void message(final @NotNull GuildMessageReceivedEvent event) {
+	public static void message(final @NotNull MessageReceivedEvent event) {
 		// Commands.commands.filter(command -> command.getChannelType().equals(UserCategory.DEFAULT)).findFirst().ifPresent(command -> command.executeIfMatches(event.getMessage()));
 		// if (!Commands.helpCommand.executeIfMatches(event.getMessage()))
 		// 	;
@@ -81,19 +80,19 @@ public class MessageReaction {
 	// event.getAuthor().openPrivateChannel().queue(channel -> channel.sendMessage("Hey. :slight_smile:").queue());
 	// LOGGER.info("{} in {} said {}", event.getAuthor(), event.getGuild(), event.getMessage().getContentRaw());
 
-	public static void privateOwnerMessage(final @NotNull PrivateMessageReceivedEvent event, final String message) {
+	public static void privateOwnerMessage(final @NotNull MessageReceivedEvent event, final String message) {
 		// if (Commands.sendMessageCommand.executeIfMatches(event.getMessage())) {
 		//
 		// } else
 		// 	privateMessage(event, message); // If owner wants to log self messages
 	}
 
-	public static void privateBotMessage(final @NotNull PrivateMessageReceivedEvent event, final String message) {
+	public static void privateBotMessage(final @NotNull MessageReceivedEvent event, final String message) {
 		if (DataBase.respondToBotPrivate())
 			privateMessage(event, message);
 	}
 
-	public static void privateMessage(final @NotNull PrivateMessageReceivedEvent event, final String message) {
+	public static void privateMessage(final @NotNull MessageReceivedEvent event, final String message) {
 		LOGGER.info("DM from {}: \"{}\"", event.getAuthor().getName(), event.getMessage().getContentRaw());
 		switch (DataBase.userDMsProperCase(event.getAuthor().getIdLong())) {
 			case DMProperCaseNumbers:
