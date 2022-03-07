@@ -49,7 +49,6 @@ public class Commands {
 			"yawn~11:864990796088737792", "yawn~12:864990799086747668", "yawn~13:864990801867964468", "yawn~14:864990805293793310", "yawn~15:864990808766414899"*/ };
 
 	private static final Map<Character, String> homoglyphs = new HashMap<>();
-	// private static final Set<Character> homoglyphHasNum = new HashSet<>();
 
 	static {
 		Map<String, String> joHoms = ((Map<String, String>) JSONReader.getData().get("homoglyphs"));
@@ -59,34 +58,10 @@ public class Commands {
 		} else {
 			joHoms.forEach((k, v) -> {
 				homoglyphs.put(k.charAt(0), v);
-				// if (containsNum(v))
-				// 	homoglyphHasNum.add(k.charAt(0));
 			});
 
 		}
 	}
-
-	// private static boolean containsNum(final String str) {
-	// 	for (int i = 0; i < str.length(); i++) {
-	// 		final char c = str.charAt(i);
-	// 		if (c >= '0' && c <= '9')
-	// 			return true;
-	// 	}
-	// 	return false;
-	// }
-
-	// static {
-	// 	setUpThreads();
-	// }
-	//
-	// private static void setUpThreads() {
-	// 	final Thread thread = new Thread(() -> {
-	// 		if (censorDeque.getFirst().getTimeCreated().isAfter(OffsetDateTime.now().minusHours(1))) {
-	// 			Message topMessage = censorDeque.pop();
-	// 		}
-	// 	});
-	// }
-
 
 	private static final List<String> censoredWords = (List<String>) JSONReader.getData().get("censored_words");
 
@@ -124,6 +99,7 @@ public class Commands {
 		commands = List.of(
 		new Command(getCommandRegex("(((Turn)?\\s*Off)|(Shut\\s*(Down|Off|Up)))"), "Shut Down", "Shut Me Off",
 					OWNER, GUILD_AND_PRIVATE, message -> {
+			message.getJDA().cancelRequests();
 			message.getChannel().sendMessage(PreparedMessages.preparedMessages().get("positive")
 															 .get(message.getGuild().getIdLong())).queue(s -> {
 				message.getJDA().shutdown();
@@ -136,6 +112,7 @@ public class Commands {
 		}),
 		new Command(getCommandRegex("Restart"), "Restart", "Restart",
 					OWNER, GUILD_AND_PRIVATE, message -> {
+			message.getJDA().cancelRequests();
 			message.getChannel()
 				   .sendMessage(PreparedMessages.preparedMessages()
 												.get("positive")
@@ -206,20 +183,11 @@ public class Commands {
 			if (!message.isPinned() && message.getGuild().getIdLong() == 907042440924528662L) {
 				final String messageContent = message.getContentRaw();
 				final Matcher matcher = getMatcher(censoredWordRegex).reset(messageContent);
-				// final List<String> censoredWords =
-				// IntStream.range(0, matcher.groupCount()).mapToObj(matcher::group).collect(toList());
-				// while (matcher.find()) {
-				// 	censoredWords.add(matcher.group());
-				// }
 				final String[] censoredWords = matcher.results().map(MatchResult::group).toArray(String[]::new);
 				if (censoredWords.length == 0) {
 					LOGGER.info("Message: \"" + messageContent + "\" wasn't censored properly");
 					return;
 				}
-				// censoredWordsMatchers.entrySet().stream()
-				// 					 .filter(entry -> entry.getValue().reset(messageContent).find())
-				// 				  	 .flatMap(entry -> IntStream.range(0, entry.getValue().groupCount()).mapToObj(i -> entry.getValue().group(i)))
-				// 				  	 .collect(toList());
 				message.delete().queueAfter(1, TimeUnit.HOURS); // check if pinned right before delete
 				LiquidRichardBot.autodeleteLog.sendMessageEmbeds(
 						new EmbedBuilder()
@@ -382,48 +350,6 @@ public class Commands {
 		);
 	}
 
-	// /**
-	//  * this computes which censored words can be entirely composed of numbers
-	//  */
-	// static {
-	// 	Map<String, String> joHoms = ((Map<String, String>) JSONReader.getData().get("homoglyphs"));
-	// 	if (joHoms != null) {
-	// 		censoredWords.stream()
-	// 					 .map(w -> new AbstractMap.SimpleEntry<>(w, w.chars()
-	// 														.mapToObj(c -> String.valueOf((char) c))
-	// 														.map(c -> joHoms.getOrDefault(c, c))
-	// 														.map(v -> v.substring(0, delimit(v.indexOf('\\'), v.length()))
-	// 										   .chars()
-	// 										   .filter(c -> c >= '0' && c <= '9'))))
-	// 					 .map(w -> new AbstractMap.SimpleEntry<>(w.getKey(), w.getValue().map(c -> String.valueOf((char) c.findFirst().orElse(0)))
-	// 								.collect(Collectors.joining())))
-	// 					 .filter(w -> w.getValue().chars().filter(c -> c == 0).findFirst().isEmpty())
-	// 					 .forEach(System.out::println);
-	// 	}
-	// }
-
-	static int delimit(int i, int replace) {
-		return i == -1 ? replace : i;
-	}
-
-	// private static void recurseIter(final Iterator<Message> itr, final AtomicLong count) {
-	// 	while (itr.hasNext()) {
-	// 		Message message = itr.next();
-	// 		if (message.getContentDisplay().matches(censoredWordRegex)) {
-	// 			message.delete().queue(v -> {
-	// 				count.getAndIncrement();
-	// 				recurseIter(itr, count);
-	// 			});
-	// 			return;
-	// 		}
-	// 	}
-	//
-	// }
-
-	// private static String messageToString(Message message) {
-	// 	return message.getAuthor().getName() + " on " + getDate(message.getTimeCreated()) + "\n" + message.getContentDisplay();
-	// }
-
 	private static String substring(String string, int fromEndIndex) {
 		return string.substring(0, string.length() - fromEndIndex);
 	}
@@ -582,19 +508,6 @@ public class Commands {
 		}, user -> {
 
 		});
-		/*		final AtomicReference<User> user = new AtomicReference<>();
-		final int finalMessageStart = messageStart;
-		jda.retrieveUserById(userID).queue(user::set);
-			if (user.get() != null) {
-				user.get().openPrivateChannel().queue(privateChannel ->
-						privateChannel.sendMessage(IntStream.range(finalMessageStart, messageParts.length)
-									  .collect(StringBuilder::new, (sb, index) -> sb.append(messageParts[index]).append(" "), StringBuilder::append)
-									  .toString()
-									  .trim()).queue());
-			} else {
-				return "I Was Not Able To Find That User \"" + userID + "\".";
-			}
-			*/
 		return PreparedMessages.getMessage("positive") + " Will Send Unless User Was Not Found.";
 	}
 

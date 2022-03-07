@@ -34,37 +34,11 @@ public class Listener extends ListenerAdapter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Listener.class);
 	private boolean pause = false;
 
-	// @Override
-	// public void onGenericUserPresence(@NotNull final GenericUserPresenceEvent event) {
-	// 	LOGGER.info("gen: {}", event.getMember());
-	// }
-	//
-	// @Override
-	// public void onUserActivityStart(@NotNull final UserActivityStartEvent event) {
-	// 	LOGGER.info("new: {}", Objects.requireNonNull(event.getNewActivity()));
-	// }
-	//
-	// @Override
-	// public void onUserActivityEnd(@NotNull final UserActivityEndEvent event) {
-	// 	LOGGER.info("old: {}", Objects.requireNonNull(event.getOldActivity()));
-	// }
-	//
-	// @Override
-	// public void onUserUpdateActivities(@NotNull final UserUpdateActivitiesEvent event) {
-	// 	LOGGER.info("update: {}", Objects.requireNonNull(event.getNewValue())
-	// 									  .stream()
-	// 									  .map(Activity::toString)
-	// 									  .collect(Collectors.joining(",")));
-	// }
-
 	@Override
 	public void onReady(@NotNull final ReadyEvent event) {
 		LOGGER.info("{} is ready", event.getJDA().getSelfUser());
 		Config.createJDADependantProperties(event.getJDA());
 		Main.getBot().cacheDependantInit();
-		// How to leave a server:
-		// Main.getBot().getJDA().getGuilds().stream()
-		// 	.filter(guild -> guild.getIdLong() == 813184719369535528L).findFirst().get().leave().queue();
 	}
 
 	@Override
@@ -86,31 +60,6 @@ public class Listener extends ListenerAdapter {
 		DataBase.setEmoji(event.getGuild().getIdLong(), event.getOldName(), event.getNewName());
 		super.onEmoteUpdateName(event);
 	}
-
-	// @Override
-	// public void onEmoteAdded(@NotNull final EmoteAddedEvent event) {
-	// 	super.onEmoteAdded(event);
-	// }
-
-	// @Override
-	// public void onTextChannelDelete(@NotNull final TextChannelDeleteEvent event) {
-	// 	super.onTextChannelDelete(event);
-	// 	event.
-	// 	LOGGER.info("DM from {}: \"{}\n{}\" in {} DM's", LiquidRichardBot.getUserName(event.getAuthor()),
-	// 				event.getMessage().getContentRaw(), event.getMessage().getAttachments().stream().map(Message.Attachment::getUrl).collect(joining("\n,")),
-	// 				LiquidRichardBot.getUserName(event.getChannel().getUser()));
-	//
-	// }
-
-	// @Override
-	// public void onMessageReactionAdd(@NotNull final MessageReactionAddEvent event) {
-	// 	super.onMessageReactionAdd(event);
-	// 	if (event.getMessageIdLong() == 930311693878321153L
-	// 		&& event.getReactionEmote().getName().equals("\u2705")) {
-	// 		LOGGER.info(event.getUser().getName() + " added a reaction");
-	// 		event.getGuild().addRoleToMember(event.getUser().getIdLong(), Main.getBot().getVerifiedRole()).queue();
-	// 	}
-	// }
 
 	@Override
 	public void onMessageReceived(@NotNull final MessageReceivedEvent event) {

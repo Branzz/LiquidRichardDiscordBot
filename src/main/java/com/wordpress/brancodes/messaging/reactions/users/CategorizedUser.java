@@ -21,7 +21,6 @@ public class CategorizedUser {
 		// my default categories
 		// categoryMapper.put("censored", event -> event.getAuthor().getIdLong() == );
 		// categoryMapper.put("yawn", event -> event.getAuthor().getIdLong() == 717416156897738782L);
-
 	}
 
 	public CategorizedUser(MessageReceivedEvent event) {

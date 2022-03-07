@@ -1,13 +1,18 @@
 package com.wordpress.brancodes.test;
 
-import net.dv8tion.jda.api.entities.Guild;
+import com.wordpress.brancodes.util.NumberToText;
+import com.wordpress.brancodes.util.Util;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
+import java.io.FileReader;
+import java.net.URL;
+import java.time.YearMonth;
 import java.util.*;
 public class General {
 
 	//  0110100110010110100101100110100110010110011010010110100110010110100101100110100101101001100101100110
 //		0	1	1	0	1	0	0	1	1	0	0	1	0	1	1	0	1	0	0	1	0	1	1	0	0
-
 
 	public static void main(String[] args) {
 
@@ -32,6 +37,35 @@ public class General {
 		// System.out.println(lowestIndexOf(new int[] {5, 7, 9, 10, 1, 3, 2, 4, 6, 8}, 5));
 		// System.out.println(lowestIndexOf(new int[] {-5, 0, 3, 3, 5, 9, 9, 9, 9, 15}, 5));
 		// System.out.println(lowestIndexOf(new int[] {9, 15, 9, 5, 3, 9, 0, 3, -5, 9}, 5));
+
+		final Date angelitteBirthday = new Date(122, Calendar.JULY, 16);
+
+		Date current = new Date();
+		int days = angelitteBirthday.getDate() - current.getDate();
+		int months = 12 + angelitteBirthday.getMonth() - current.getMonth();
+		if (days < 0) {
+			days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
+			months--;
+		}
+		System.out.println((months != 0 ? Util.properCase(NumberToText.numberToString(months))
+										  + " Month" + (months != 1 ? "s" : "") : "")
+								+ (days != 0 ? (months != 0 ? " And " : "")
+											   + Util.properCase(NumberToText.numberToString(days))
+											   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is 18.");
+
+		// Map<Character, String> homoglyphs = new HashMap<>();
+		// try {
+		// 	URL path = Thread.currentThread().getContextClassLoader().getResource("json/jsonresources.json");
+		// 	Objects.requireNonNull(path);
+		// 	JSONObject jo = (JSONObject) new JSONParser().parse(new FileReader(path.getFile()));
+		// 	jo.forEach((k, v) -> {
+		// 		System.out.println(v);
+		// 	});
+		//
+		// } catch (Exception e) {
+		// 	System.out.println("fail");
+		// }
+
 	}
 
 	private static String removeDuplicates(String s) {

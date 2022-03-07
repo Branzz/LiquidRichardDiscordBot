@@ -24,17 +24,6 @@ public class Main {
 
 		// PoolConnection.end();
 
-		// System.out.println(Commands.commands.size());
-
-		// for (Command command : Commands.commands)
-		// 	 System.out.println(command.matcher.toString());
-
-		// final String name = "Liquid Richard";
-		// if (!bot.getJDA().getSelfUser().getName().equals(name))
-		// 	bot.setName(name);
-
-		// System.out.println(getCommandRegex("Help(\\s+(Me|Him|Her|Them|It|Every(\\s+One)?)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"));
-
 	}
 
 	public static LiquidRichardBot getBot() {

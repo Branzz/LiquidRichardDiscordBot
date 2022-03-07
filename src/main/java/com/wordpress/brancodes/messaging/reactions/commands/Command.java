@@ -60,12 +60,6 @@ public class Command extends Reaction {
 	private static final @RegEx String aliasesRegexPart = (String) Config.get("aliasesRegex");
 	private static final @RegEx String questionRegexPart = "(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)*";
 
-	// protected static Matcher getCommandRegex(String regexQuestion) {
-	// 	return getMatcher(questionRegexPart + "\\s*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s*(,|\\.+|!+|\\s)\\s*)?((" + aliasesRegexPart
-	// 					  + "\\s*(,|\\.+|!+|\\s)\\s"+ regexQuestion + ")|(" + regexQuestion + "\\s*(,|\\s)\\s*" + aliasesRegexPart
-	// 					  + "))\\s*(\\?+|\\.+|!+)?\\s*((Thanks|Thank\\s+You)\\s*(\\.+|!+)?)?\\s*");
-	// }
-
 	public static @RegEx String getCommandRegex(String regexQuestion) {
 		return getCommandRegex(regexQuestion, questionRegexPart);
 	}
