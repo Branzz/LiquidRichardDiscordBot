@@ -27,11 +27,17 @@
     "y": "yY\\u0423\\u00DD\\u0443\\u00FD",
     "z": "zZ\\u0290\\u017B"
   },
-  "censored_words": [ "cunny", "nigg", "coon", "chink",
-    "beaner", "spic", "spik", "kike", "gook", "negro",
-    "fag", "cp", "childporn", "loli", "shota", "zooph",
-    "genocide", "kys", "killyourself", "killurself", "retard",
-    "vaccin", "covid", "corona"
+  "censored_words": [
+    "beaner", "childporn", "chink",
+    "coon", "corona", "covid",
+    "cp", "cracker", "cunny", "dyke",
+    "fag", "genocide", "gook", "groid", " hate",
+    "kike", "killurself", "killyourself",
+    "kys", "loli", "negro",
+    "nigg", "paki", "pedo",
+    "retard", "shota", "slut", "spic",
+    "spik", "trann", "vaccin", "virus",
+    "wigg", "zooph"
   ],
   "custom_user_categories": {
     "censored": [ "717416156897738782" ],

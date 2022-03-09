@@ -49,7 +49,7 @@ public enum UserCategory {
 		return getUserCategory(privateMessageReceivedEvent.getJDA(), privateMessageReceivedEvent.getAuthor());
 	}
 
-	private static UserCategory getUserCategory(JDA jda, User author) {
+	public static UserCategory getUserCategory(JDA jda, User author) {
 		return TRACKED_USERS.getOrDefault(author.getIdLong(),
 										  author.equals(jda.getSelfUser())		 ? UserCategory.SELF
 										: author.isBot()						 ? UserCategory.BOT

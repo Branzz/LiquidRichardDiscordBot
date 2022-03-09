@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.test;
 
+import com.wordpress.brancodes.messaging.reactions.commands.Commands;
 import com.wordpress.brancodes.util.NumberToText;
 import com.wordpress.brancodes.util.Util;
 import org.json.simple.JSONObject;
@@ -42,7 +43,7 @@ public class General {
 
 		Date current = new Date();
 		int days = angelitteBirthday.getDate() - current.getDate();
-		int months = 12 + angelitteBirthday.getMonth() - current.getMonth();
+		int months = angelitteBirthday.getMonth() - current.getMonth();
 		if (days < 0) {
 			days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
 			months--;
@@ -51,7 +52,7 @@ public class General {
 										  + " Month" + (months != 1 ? "s" : "") : "")
 								+ (days != 0 ? (months != 0 ? " And " : "")
 											   + Util.properCase(NumberToText.numberToString(days))
-											   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is 18.");
+											   + " Day" + (days != 1 ? "s" : "") : "") + " Until.");
 
 		// Map<Character, String> homoglyphs = new HashMap<>();
 		// try {

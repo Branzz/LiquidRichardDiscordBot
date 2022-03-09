@@ -14,6 +14,10 @@ public enum ReactionChannelType {
 		this.displayName = displayName;
 	}
 
+	public static ReactionChannelType of(final ChannelType channelType) {
+		return (channelType.isMessage() && channelType.isGuild()) ? GUILD : channelType == ChannelType.PRIVATE ? PRIVATE : null;
+	}
+
 	public boolean inRange(ChannelType JDAChannelType) {
 		switch (this) {
 			case GUILD:
@@ -25,6 +29,12 @@ public enum ReactionChannelType {
 			default:
 				return false;
 		}
+	}
+
+	public boolean inRange(ReactionChannelType reactionChannelType) {
+		return this == GUILD_AND_PRIVATE || reactionChannelType == GUILD_AND_PRIVATE
+			   || (this == GUILD && reactionChannelType == GUILD)
+			   || (this == PRIVATE && reactionChannelType == PRIVATE);
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package com.wordpress.brancodes.bot;
 
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
+import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.messaging.reactions.commands.Commands;
 import com.wordpress.brancodes.util.Config;
@@ -105,7 +106,7 @@ public class Listener extends ListenerAdapter {
 							  ?	Util.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
 							  : message.getContentRaw();
 		Commands.commandsByCategoryChannel
-				.get(channelType)
+				.get(ReactionChannelType.of(channelType))
 				.get(userCategory)
 				.stream()
 				.filter(command -> command.execute(message, messageContent))

@@ -12,9 +12,12 @@ public class Main {
 
 	private static LiquidRichardBot bot;
 
+	// TODO create a todo command that loads into disk or a note command that saves
+	// TODO UPDATE README file for command.builder
 	public static void main(String... args) {
 
 		// PoolConnection.begin();
+		// TODO CONVERT TO SPRING DATA BASE
 
 		try {
 			bot = new LiquidRichardBot();
