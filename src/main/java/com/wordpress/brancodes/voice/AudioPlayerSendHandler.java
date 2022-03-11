@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.database.voice;
+package com.wordpress.brancodes.voice;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;

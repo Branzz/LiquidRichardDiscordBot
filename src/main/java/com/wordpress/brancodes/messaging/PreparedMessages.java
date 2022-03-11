@@ -8,7 +8,7 @@ import com.wordpress.brancodes.messaging.reactions.*;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
-import com.wordpress.brancodes.util.Util;
+import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -46,7 +46,8 @@ public class PreparedMessages {
 
 	private static EmbedBuilder addFieldsTo(final EmbedBuilder embedBuilder) {
 		Stream.of(ReactionChannelType.values()).forEach(channelType -> {
-				embedBuilder.addField("\u2550\u2550\u2550\u2550\u2550 " + channelType.toString() + " Commands" + " \u2550\u2550\u2550\u2550\u2550", "", false);
+				embedBuilder.addField(channelType.toString() + " Commands", "", false);
+				// embedBuilder.addField("\u2550\u2550\u2550\u2550\u2550 " + channelType.toString() + " Commands" + " \u2550\u2550\u2550\u2550\u2550", "", false);
 				Stream.of(UserCategory.values()).forEach(userCategory ->
 							 addNonEmptyFieldTo(embedBuilder, userCategory.toString(),
 												Commands.commands.stream()
@@ -162,7 +163,7 @@ public class PreparedMessages {
 
 		@Override
 		public String get(final Long guildID) { // null guild gives default emoji
-			return Util.asEmoji(DataBase.getEmoji(guildID, emojiName));
+			return CaseUtil.asEmoji(DataBase.getEmoji(guildID, emojiName));
 		}
 
 	}

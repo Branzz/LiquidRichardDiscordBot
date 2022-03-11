@@ -46,6 +46,7 @@ public final class Config {
 	public static void createJDADependantProperties(JDA jda) {
 		jda.retrieveUserById((Long) Config.get("ownerID")).queue(u -> CONFIG.put("ownerUser", u));
 		jda.retrieveUserById((Long) Config.get("creatorID")).queue(u -> CONFIG.put("creatorUser", u));
+		CONFIG.put("aliasesRegex", "@?(<@!" +  jda.getSelfUser().getId() + ">|Pimp|(Liquid )?Richard|Lil Richie)");
 	}
 
 }

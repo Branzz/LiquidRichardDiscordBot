@@ -2,7 +2,7 @@ package com.wordpress.brancodes.messaging.reactions;
 
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.reactions.commands.Commands;
-import com.wordpress.brancodes.util.Util;
+import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -96,9 +96,9 @@ public class MessageReaction {
 		LOGGER.info("DM from {}: \"{}\"", event.getAuthor().getName(), event.getMessage().getContentRaw());
 		switch (DataBase.userDMsProperCase(event.getAuthor().getIdLong())) {
 			case DMProperCaseNumbers:
-				Commands.reply(event.getMessage(), Util.properCase(message)); break;
+				Commands.reply(event.getMessage(), CaseUtil.properCase(message)); break;
 			case DMProperCaseNoNumbers:
-				Commands.reply(event.getMessage(), Util.properCaseExcludeNumbers(message)); break;
+				Commands.reply(event.getMessage(), CaseUtil.properCaseExcludeNumbers(message)); break;
 			case NoDMProperCase:
 				Commands.reply(event.getMessage(), "Don't DM Me."); break; // Taper?
 			default:

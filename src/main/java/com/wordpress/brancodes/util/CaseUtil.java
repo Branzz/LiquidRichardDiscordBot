@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.requests.RestAction;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
-public final class Util {
+public final class CaseUtil {
 
 	public static String properCase(String string) {
 		StringBuilder properCase = new StringBuilder(string.length());

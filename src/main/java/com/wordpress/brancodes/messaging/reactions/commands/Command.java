@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import javax.annotation.RegEx;
 
 import java.awt.*;
+import java.util.regex.MatchResult;
 
 import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
 
@@ -36,7 +37,8 @@ public class Command extends Reaction {
 	}
 
 	public boolean execute(Message message, String match) {
-		if (matcher.reset(match).matches()) {
+		if (matcher.reset(match).results().findAny().isPresent()) {
+		// if (matcher.reset(match).matches()) {
 			if (deniable && deny(message))
 				return false;
 			else {

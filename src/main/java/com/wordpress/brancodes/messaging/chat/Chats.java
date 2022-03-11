@@ -1,22 +1,15 @@
 package com.wordpress.brancodes.messaging.chat;
 
-import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.main.Main;
-import com.wordpress.brancodes.util.Images;
 import com.wordpress.brancodes.util.NumberToText;
-import com.wordpress.brancodes.util.Util;
-import net.dv8tion.jda.api.entities.Message;
+import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.time.YearMonth;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class Chats {
 
@@ -59,10 +52,10 @@ public class Chats {
 						days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
 						months--;
 					}
-					mainChannel.sendMessage((months != 0 ? Util.properCase(NumberToText.numberToString(months))
+					mainChannel.sendMessage((months != 0 ? CaseUtil.properCase(NumberToText.numberToString(months))
 														   + " Month" + (months != 1 ? "s" : "") : "")
 											+ (days != 0 ? (months != 0 ? " And " : "")
-														   + Util.properCase(NumberToText.numberToString(days))
+														   + CaseUtil.properCase(NumberToText.numberToString(days))
 														   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is.")
 							   .queue(message -> {
 									message.addReaction("U+1F449U+1F3FF").queue();

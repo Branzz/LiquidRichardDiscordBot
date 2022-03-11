@@ -158,4 +158,12 @@ public class LiquidRichardBot {
 		}
 	}
 
+	void findUser(String tag) {
+		for (int i = 1; i <= 9999; i++) {
+			String s = String.valueOf(i);
+			final User userByTag = jda.getUserByTag(tag, "0".repeat(4 - s.length()) + s);
+			System.out.println(tag + ": " + (userByTag != null ? userByTag.getId() : "Not found"));
+		}
+	}
+
 }

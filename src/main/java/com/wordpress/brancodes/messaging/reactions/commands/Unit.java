@@ -7,8 +7,9 @@ import java.util.function.Function;
 enum Unit { // TODO could be condensed to 1 method (but would we want more units later on?)
 	KG(n -> applyScale(n, 2.2046) + " lbs"),
 	LBS(n -> applyScale(n, 0.4536) + " kgs"),
-	M(n -> withInches(n.multiply(new BigDecimal("3.2808")))),
-	CM(n -> withInches(n.multiply(new BigDecimal(".032808")))),
+	M(n -> scaleWithInches(n, 3.2808)),
+	CM(n -> scaleWithInches(n, 0.032808)),
+	// FT(n -> )
 	SAME(BigDecimal::toString);
 
 	private final Function<BigDecimal, String> converter;
@@ -32,14 +33,15 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	}
 
 	private static String applyScale(BigDecimal input, double conversionFactor) {
-		return input.multiply(new BigDecimal(conversionFactor)).setScale(input.intValue() == 0 ? 2 : input.intValue() < 10 ? 1 : 0, RoundingMode.HALF_UP).toString();
+		return input.multiply(new BigDecimal(conversionFactor)).setScale(Math.max(0, input.stripTrailingZeros().scale()), RoundingMode.HALF_UP).toString();
 	}
 
-	private static String withInches(BigDecimal feet) {
-		final BigDecimal inches = feet.remainder(BigDecimal.ONE)
-									  .multiply(new BigDecimal(12))
-									  .setScale(0, RoundingMode.DOWN);
-		feet = feet.setScale(0, RoundingMode.DOWN);
+	private static String scaleWithInches(BigDecimal input, double scale) {
+		BigDecimal scaled = input.multiply(new BigDecimal(scale));
+		BigDecimal inches = scaled.remainder(BigDecimal.ONE)
+								.multiply(new BigDecimal(12))
+								.setScale(Math.max(0, input.stripTrailingZeros().scale()), RoundingMode.HALF_UP);
+		BigDecimal feet = scaled.setScale(0, RoundingMode.DOWN);
 		return feet + "'" + inches + "\"";
 	}
 

@@ -56,13 +56,14 @@ public class DataBase {
 	// 	return null;
 	// }
 
-	private final static Set<Long> cryUniMods = Set.of(289894216354758657L, 850200778740072458L, 841201063637549076L);
+	// private final static Set<Long> cryUniMods = Set.of(289894216354758657L, 850200778740072458L, 841201063637549076L);
+	// guildID == 929974932417437726L && (cryUniMods.contains(userID))
 	/**
 	 * Owner set with command: In server, "p, Look. Listen To <@ID>."
 	 */
 	public static Data<Boolean> userIsMod(final Long guildID, final Long userID) {
 		if (guildID != null && userID != null)
-			return new Data<>(guildID == 929974932417437726L && (cryUniMods.contains(userID)));
+			return new Data<>(guildID == 907042440924528662L && (userID == 928336417514479646L || userID == 936433911486087208L));
 		return new Data<>(false);
 		// if (guildID != null && userID != null)
 		// 	try (PoolConnection.PreparedStatementQuery preparedStatementQuery =

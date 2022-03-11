@@ -1,8 +1,8 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
-import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.database.voice.PlayerManager;
+import com.wordpress.brancodes.util.CaseUtil;
+import com.wordpress.brancodes.voice.PlayerManager;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
@@ -11,20 +11,15 @@ import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.JSONReader;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import org.apache.commons.collections4.Get;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.RegEx;
 import java.awt.*;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -34,10 +29,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.wordpress.brancodes.bot.LiquidRichardBot.*;
 import static com.wordpress.brancodes.messaging.reactions.Reaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
@@ -81,11 +77,19 @@ public class Commands {
 		return length <= 2 ? acronymCensorBuffer : (length <= 4 ? noSpaceCensorBuffer : fullCensorBuffer);
 	}
 
-	private static final @RegEx String censoredWordsRegex = orChainRegex(censoredWords.stream()
-																					  .map(Commands::censorRegex)
-																					  .toArray(String[]::new));
+	public static final @RegEx String censoredWordsRegex = censoredWords.stream()
+																		.map(Commands::censorRegex)
+																		.collect(Commands.orChainRegex());
 
-	private static final Matcher censoredWordsMatcher = getMatcher(anyEndsRegex(censoredWordsRegex));
+	private static final Matcher breakCharMatcher = getMatcher("\\\\u([\\da-fA-F]{4})");
+
+	// public static final @RegEx String censoredWordsGeneRegex =
+	// 		censoredWords.stream()
+	// 					 .map(word -> breakCharMatcher.reset(censorGeneRegex(word))
+	// 												  .replaceAll(String.valueOf((char) Integer.parseInt(breakCharMatcher.group(1), 16))))
+	// 					 .collect(Commands.orChainRegex());
+
+	private static final Matcher censoredWordsMatcher = getMatcher(censoredWordsRegex);
 
 	// private static final @RegEx String censoredUsersMatcher = orChainRegex(Stream.of("a", "x", "e")
 	// 																			 .map(Commands::censorRegex)
@@ -108,8 +112,13 @@ public class Commands {
 
 	public static Map<String, Command> commandsByName;
 
+	static final String aaveRegex = "(^|\\s)" + ((List<String>) JSONReader.getData().get("aave_terms"))
+														.stream()
+														.map(Commands::censorBasicRegex)
+														.collect(Commands.orChainRegex()) + "($|\\s)";
+
 	static {
-		commands = List.of(
+	  commands = List.of(
 		// new Command.Builder("", "Create Command", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
 		// 	// addCommand()
 		// }).build(),
@@ -132,10 +141,12 @@ public class Commands {
 				   .complete();
 			Main.restart();
 		}).helpPanel("Restart Me").build(),
+
 		new Command.Builder(getCommandRegex("Help(\\s+(Me|Him|Her|Them|It|Every(\\s+One)?)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"), "Help",
 					DEFAULT, GUILD_AND_PRIVATE, message -> PreparedMessages.replyEmbedMessage(message, "help"))
 				.helpPanel("Help On Commands (This Panel)").deniable().build(),
-		new Command.Builder("![Ss]\\s*(\\d{18,20})(\\D[\\S\\s]+)", "Say In", MOD, PRIVATE, (message, matcher) -> {
+
+		new Command.Builder("![Ss]\\s*(\\d{18,20})(\\D[\\S\\s]+)", "Say In", MOD, GUILD_AND_PRIVATE, (message, matcher) -> {
 			final TextChannel textChannelById = message.getJDA().getTextChannelById(matcher.group(1));
 			if (textChannelById == null)
 				reply(message, "I Was Not Able To Find That Channel \"" + matcher.group(1) + "\".");
@@ -144,26 +155,38 @@ public class Commands {
 				reply(message, PreparedMessages.getMessage("positive") + " Sent To " + textChannelById.getAsMention()
 							   + " In " + textChannelById.getGuild().getName());
 			}
-			}).build(),
+		}).build(),
+
 		new Command("![Ss][\\S\\s]+", "Say Here", MOD, GUILD, message -> {
 			String response = message.getContentRaw().substring(2);
 			message.delete().queue();
 			reply(message, response);
 		}),
-		new Command("![Dd]\\s*(\\d{18,20})(\\D[\\S\\s]+)", "DM", OWNER, GUILD_AND_PRIVATE, (message, matcher) ->  // (@?.{2,32})#(\d{4})
+
+		new Command("![Pp][\\S\\s]+", "Say Proper", MOD, GUILD, message -> {
+			String response = message.getContentRaw().substring(2);
+			message.delete().queue();
+			reply(message, CaseUtil.properCase(response));
+		}),
+
+		new Command("![Dd]\\s*(\\d{17,20})(\\D[\\S\\s]+)", "DM", MOD, GUILD_AND_PRIVATE, (message, matcher) ->  // (@?.{2,32})#(\d{4})
 			message.getJDA().retrieveUserById(matcher.group(1)).queue(
 			/*success*/	user -> user.openPrivateChannel().queue(privateChannel ->
-										privateChannel.sendMessage(matcher.group(2)).queue(s ->
-												reply(message, PreparedMessages.getMessage("positive") + " Sent Message."))),
+										privateChannel.sendMessage(matcher.group(2)).queue(s -> {
+												reply(message, PreparedMessages.getMessage("positive") + " Sent Message To " + getUserName(user));
+												LOGGER.info("Sent " + matcher.group(2) + " To " + getUserName(user) + " By " + getUserName(message.getAuthor()));
+										})),
 			/*failure*/	user -> reply(message, PreparedMessages.getMessage("negative") + " Failed To Find User."))
 		),
-		new Command("![Jj]\\s*(\\d{18,20})[\\S\\s]*", "Join", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
+
+		new Command("![Jj]\\s*(\\d{18,20})[\\S\\s]*", "Join Voice", MOD, GUILD_AND_PRIVATE, (message, matcher) -> {
 			final VoiceChannel voiceChannel = message.getJDA().getVoiceChannelById(matcher.group(1));
-			if (voiceChannel == null)
-				reply(message, "No Voice Channel ID Reference.");
+			// if (voiceChannel == null)
+				// reply(message, "No Voice Channel ID Reference.");
 			voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
-			reply(message, PreparedMessages.getMessage("positive") + " Will Attempt To Join.");
+			// reply(message, PreparedMessages.getMessage("positive") + " Will Attempt To Join.");
 		}),
+
 		new Command("![Ss][Ss]\\s*", "Servers", OWNER, PRIVATE, message ->
 			reply(message, "`" + message.getJDA().getGuilds().stream().map(Guild::getName).collect(joining("\n")) + "`")),
 		new Command("![Cc]\\s*", "Get Channels", OWNER, GUILD, message -> {
@@ -172,21 +195,21 @@ public class Commands {
 					   .getTextChannels()
 					   .stream()
 					   .map(c -> c.getName() + ":" + hasPermission(c, Permission.VIEW_CHANNEL))
-					   .collect(Collectors.joining(", ")));
+					   .collect(joining(", ")));
 		}),
 		new Command("(![Mm])|(" + getCommandRegex("(Get|Tell|Show|Give)\\s+(Me\\s+)?((Every|All)\\s+)?(The\\s+)?Commands") + ")",
-					"Get Commands", OWNER, GUILD_AND_PRIVATE, message ->
+					"Get Commands", MOD, GUILD_AND_PRIVATE, message ->
 			reply(message, commands.stream().map(Command::getName).collect(joining(", ", "All Commands: ", ".")))),
 		new Command("(![Rr])|(" + getCommandRegex("((Get|Tell|Show|Give)\\s+(Me\\s+)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)") + ")",
 					"Get Role", DEFAULT, GUILD, message ->
-			reply(message, "You Are " + UserCategory.getUserCategory(message.getJDA(), message.getAuthor()).getDisplayName() + ".")),
+			reply(message, "You Are " + getUserCategory(message.getJDA(), message.getAuthor()).getDisplayName() + ".")),
 		new Command("![Hh]\\s+\\d{1,20}\\s+\\d+\\s*", "DM History", OWNER, PRIVATE, message -> {
 			String[] messageParts = message.getContentRaw().split("\\s+");
 			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
 				user.openPrivateChannel().queue(privateChannel -> {
 					int amount = Integer.parseInt(messageParts[2]);
 					privateChannel.getHistory().retrievePast(amount).queue(messageHistory -> {
-						EmbedBuilder embedBuilder = new EmbedBuilder().setDescription("Message History With " + LiquidRichardBot.getUserName(user))
+						EmbedBuilder embedBuilder = new EmbedBuilder().setDescription("Message History With " + getUserName(user))
 																	  .setThumbnail(user.getAvatarUrl())
 																	  .setColor((Color) Config.get("embedColor"));
 						messageHistory.forEach(otherMessage -> embedBuilder.addField(
@@ -199,8 +222,9 @@ public class Commands {
 				});
 			});
 		}),
+
 		new Command.Builder(getCommandRegex("(Tell\\s+Me(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?"),
-					"Info", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
+					"Info", MOD, GUILD_AND_PRIVATE, (message, matcher) -> {
 			String commandName = matcher.group(19);
 			if (commandName == null)
 				commandName = matcher.group(20);
@@ -214,18 +238,26 @@ public class Commands {
 			else
 				reply(message, command.toFullString()); // TODO "btw, you don't have permission to use it / VIEW it
 		}).helpPanel("Guide On Activating A Command").build(),
+
 		new Command(getCommandRegex("\\s*(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
 										   + ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*"),
 					"Greeting", DEFAULT, GUILD_AND_PRIVATE, message ->
 			reply(message.getTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		),
-		new Command(anyEndsRegex(censoredWordsRegex), "Auto Delete", SELF, GUILD, (message, matcher) -> {
-			if (!message.isPinned() && message.getGuild().getIdLong() == 907042440924528662L) { // TODO guild subscribed to this command
+
+		new Command(censoredWordsRegex, "Auto Delete", SELF, GUILD, (message, matcher) -> {
+			if (message.getGuild().getIdLong() == 907042440924528662L && !message.isPinned()) { // TODO guild subscribed to this command
 				logWordCensor(message, matcher);
 				// LOGGER.info("Censoring: " + message.getContentDisplay());
 			}
 		}),
-		new Command.Builder(getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), "Purge All", SELF, GUILD, message -> {
+
+		new Command.Builder("[\\s\\S]*[\\u4E00-\\u9FA0][\\s\\S]*", "Censor Japanese", DEFAULT, GUILD, message -> {
+			if (message.getGuild().getIdLong() == 907042440924528662L)
+				message.delete().queue();
+		}).build(),
+
+		new Command.Builder(getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), "Purge All", MOD, GUILD, message -> {
 			reply(message, PreparedMessages.getMessage("positive"));
 			final AtomicLong count = new AtomicLong(0L);
 			message.getGuild().getChannels().forEach(channel -> {
@@ -241,6 +273,7 @@ public class Commands {
 			});
 			reply(message, PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.");
 		}).helpPanel("Purge Censor All Channels").build(),
+
 		new Command.Builder(getCommandRegex("Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here)"), "Purge Current", MOD, GUILD, message -> {
 			reply(message, PreparedMessages.getMessage("positive"));
 			final AtomicLong count = new AtomicLong(0L);
@@ -254,14 +287,16 @@ public class Commands {
 			});
 			reply(message, PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.");
 		}).helpPanel("Purge Censor Current Channel").build(),
+
 		new Command(("(-*)([\\d]+(\\.[\\d]*)?)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo][SsGg]\\w*|[Ll][Bb][Ss]?([\\s]+|$)"
-								 + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([\\s]+|$)[Mm][Ee][Tt][Ee][Rr][Ss]?([\\s]+|$)|[Cc][Mm][Ss]?([\\s]+|$))"),
+								 + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([\\s]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([\\s]+|$)|[Cc][Mm][Ss]?([\\s]+|$))"),
 					//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)("|'')
-					"Convert Units", DEFAULT, GUILD_AND_PRIVATE, (message, matcher) ->
-			reply(message, matcher.results().map(match -> (match.group(1).length() % 2 == 1 ? '-' : "")
+					"Convert Units", DEFAULT, GUILD_AND_PRIVATE, (message, matcher) -> {
+			reply(message, matcher.reset().results().map(match -> (match.group(1).length() % 2 == 1 ? '-' : "")
 												+ Unit.of(match.group(4)).convert(match.group(2)))
-								  .collect(Collectors.joining(", ")))
-		),
+								  .collect(joining(", ")));
+		}),
+
 		new Command.Builder(".*", "Delete Ping", PING_CENSORED, GUILD_AND_PRIVATE, message -> {
 			if (message.getMentions(Message.MentionType.USER)
 					   .stream()
@@ -274,20 +309,23 @@ public class Commands {
 				message.delete().queue();
 			}
 		}).deactivate().build(),
+
 		new Command.Builder("It's Time To Celebrate.", "Birthday", MOD, GUILD, message -> {
 			AudioManager audioManager = message.getGuild().getAudioManager();
-			if (!audioManager.isConnected())
-				return;
-			GuildVoiceState guildVoiceState = message.getMember().getVoiceState();
-			AudioChannel voiceChannel = guildVoiceState.getChannel();
-			Member selfMember = message.getGuild().getSelfMember();
-			if (selfMember.hasPermission(voiceChannel, Permission.VOICE_CONNECT))
-				audioManager.openAudioConnection(voiceChannel);
-			PlayerManager.loadAndPlay(message.getGuild(), "https://www.youtube.com/watch?v=paSQ9mcOUME");
+			if (!audioManager.isConnected()) {
+				GuildVoiceState guildVoiceState = message.getMember().getVoiceState();
+				if (guildVoiceState == null) return;
+				AudioChannel voiceChannel = guildVoiceState.getChannel();
+				if (voiceChannel == null) return;
+				if (message.getGuild().getSelfMember().hasPermission(voiceChannel, Permission.VOICE_CONNECT))
+					audioManager.openAudioConnection(voiceChannel);
+			}
+			PlayerManager.loadAndPlay(message.getGuild(), "Happy_Birthday_Princess.mp3");
 			// audioManager.closeAudioConnection();
-		}).helpPanel("Celebrate The Princess's Birthday").deniable().deactivate().build(),
+		}).helpPanel("Celebrate The Princess's Birthday").deniable().build(),
+
 		new Command.Builder(getCommandRegex("(The|A|An)\\s+(Mod|Moderator)s?\\s*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]*\\s*",
-											"((What|Who)\\s+(Are|Is)|(Whose|Who's|Whos|Who're))\\s+"), "Get Mods", MOD, GUILD, message ->
+											"((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+"), "Get Mods", MOD, GUILD, message ->
 			reply(message, new EmbedBuilder().setDescription("Moderators In \"" + message.getGuild().getName() + "\"")
 											 .addField("Moderators", String.join("\n", DataBase.getMods(message.getGuild().getIdLong()).get()), true)
 											 .setThumbnail(message.getGuild().getIconUrl())
@@ -302,7 +340,7 @@ public class Commands {
 												   .filter(memberID -> !memberID.equals(message.getJDA().getSelfUser().getIdLong()))
 												   .findFirst()
 												   .orElse(null),
-											LiquidRichardBot.getUserName(message.getAuthor()))
+											getUserName(message.getAuthor()))
 									.getFeedback())
 		).helpPanel("Give Moderator").deniable().deactivate().build(),
 		new Command.Builder(getCommandRegex("(((Remove|Re Move|Take)\\s*@.{1,32}\\s*('?s\\s+)?(Mod|Moderator))|(((Remove|Re Move|Take)\\s*)?(Mod|Moderator)\\s*@.{1,32}))"),
@@ -324,12 +362,25 @@ public class Commands {
 				Main.getBot().setGuildMainChannel(message.getGuild().getIdLong(), channel.get());
 			}
 		}).helpPanel("Set Main Channel").deniable().deactivate().build(),
-		new Command.Builder(".*" + censorChainRegex("america, amerimut, kek, based, healthcare, capital", "[\\s.,]*") + ".*", "Censor Target", //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
+		new Command.Builder(".*" + censorChainRegex("america, amerimut, kek, based, healthcare, capital", "[\\s.,]*") + ".*", "Censor Target",
 					CENSORED, GUILD, message -> { // TODO censor optimizer
 			if (message.getGuild().getIdLong() == 793333500303769600L)
 						// System.out.println("delete");
 				message.delete().queue();
 		}).helpPanel("Censor Targeted Users").deactivate().build(),
+		new Command.Builder(aaveRegex, "Censor AAVE", //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
+							DEFAULT, GUILD, (message, matcher) -> { // TODO censor optimizer
+			if (message.getGuild().getIdLong() == 910004207120183326L) {
+				reply(message, String.format(
+						"Please Retract This Message, %s. Are You A Person Of Color? "
+						+ "No? Then No, You Should **NOT** Be Using The Word \"%s\", "
+						+ "As It Is From From The AAVE Dialect And Is **Racist** To "
+						+ "Use It. Please Educate Your Self And Avoid Any Future "
+						+ "Microaggressions Against Black Individuals At https://aavenb.carrd.co/",
+											 CaseUtil.properCase(message.getAuthor().getName()),
+											 CaseUtil.properCase(matcher.reset().results().findFirst().get().group())));
+			}
+		}).build(),
 		new Command.Builder("([Mm][Ee]\\s*[Aa][Nn][Dd]\\s*[Ww][Hh][Oo])[^Mm][.,;:!?\\s]*", "Me&Whom", DEFAULT, GUILD, message -> {
 			if (message.getGuild().getIdLong() == 864896744491974676L)
 				reply(message, "Me And Whom.*");
@@ -356,7 +407,7 @@ public class Commands {
 					+ "|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(([Oo]+[Mm]+[Gg]+|[Ww]+[Aa]+[Ii]+[Tt]+|[Oo]+[Hh]*)\\s+)?" //([Cc][\s]*[Aa][\s]*[Nn])
 					+ "((([Ww][\\s]*[Hh][\\s]*([Ii][\\s]*[Cc][\\s]*[Hh]|[Oo]+|[Aa]+[\\s]*[Tt]|[Ee][\\s]*[Rr][\\s]*[Ee]|[Ee][\\s]*[Nn]+|[Yy]+))|[Hh][\\s]*[Oo]+[\\s]*[Ww])"
 					+ "('?[Ss]|[Ii][Ss]|[Aa][Rr][Ee])?([\\s+].*|[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s])?)"
-					+ "|([Rr]+[Ee]+[Aa]+[Ll]+[Yy]+[.?;:\\s]*))", "Questions", //Hey Pimp, Can You Help Me
+					+ "|([Rr]+[Ee]+[Aa]+[Ll]+[Yy]+[.?;:\\s]*))", "Questions", // Hey Pimp, Can You Help Me
 					DEFAULT, GUILD_AND_PRIVATE, message -> {
 			if (!message.getContentRaw().matches("[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*[Ww][Hh][Aa][Tt][.?]*\\s+([Aa][Nn]?[^?]*|[Tt][Hh][Ee]\\s+([Ff][Uu]?[Cc]?[Kk]?|[Hh][Ee]+[Ll]+))[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*")) {
 				// qCount++;
@@ -381,14 +432,14 @@ public class Commands {
 	 */
 	private static boolean logWordCensor(final Message message, final Matcher matcher) {
 		final String messageContent = message.getContentRaw();
-		final String[] censoredWords = getMatcher(censoredWordsRegex).reset(messageContent).results().map(MatchResult::group).toArray(String[]::new);
+		final String[] censoredWords = matcher.reset(messageContent).results().map(MatchResult::group).toArray(String[]::new);
 		if (censoredWords.length == 0) {
 			return false;
 		}
 		message.delete().queueAfter(1, TimeUnit.HOURS); // check if pinned right before delete
-		LiquidRichardBot.autodeleteLog.sendMessageEmbeds(
+		autodeleteLog.sendMessageEmbeds(
 				new EmbedBuilder()
-						.setAuthor(LiquidRichardBot.getUserName(message.getAuthor()), message.getJumpUrl(), message.getAuthor().getAvatarUrl())
+						.setAuthor(getUserName(message.getAuthor()), message.getJumpUrl(), message.getAuthor().getAvatarUrl())
 						.addField("Message", messageContent.substring(0, Math.min(messageContent.length(), 1024)), false)
 						.addField("ID", message.getId(), false)
 						.addField("Censored Word" + (censoredWords.length > 1 ? "s" : ""), String.join(", ", censoredWords), false)
@@ -420,16 +471,43 @@ public class Commands {
 		return sb.toString();
 	}
 
+	private static Collector<CharSequence, ?, String> orChainRegex() {
+		return Collectors.joining("|", "(", ")");
+	}
+
+	public static String censorBasicRegex(String word) {
+		final String collect = word.chars()
+								   .mapToObj(c -> c == '+' || c == '*'
+														  ? String.valueOf((char) c)
+														  : ("[" + (c == ' ' ? "\\s" : (String.valueOf((char) Character.toUpperCase(c)) + ((char) Character.toLowerCase(c)))) + "]"))
+								   .collect(joining(""));
+		return collect;
+	}
+
+	public static String censorRegex(String word) {
+		return censorRegex(word, getCensor(word.length()));
+	}
+
+	public static String censorGeneRegex(String word) {
+		return censorGeneRegex(word, getCensor(word.length()));
+	}
+
 	private static String censorRegex(String word, String joiner) {
-		final String regex = word.chars()
+		return notNumberRegex(word.chars()
+								 .mapToObj(c -> "[" + homoglyphs.getOrDefault((char) c, c == ' ' ? "\\s" : String.valueOf((char) c)) + "]+")
+								 .map(s -> word.length() <= 2 ? noLetterEndsRegex(s) : s)
+								 .collect(joining(joiner)), word.length());
+	}
+
+	private static String notNumberRegex(final String regex, int wordLength) {
+		return "((?!\\d{" + wordLength + "})" + regex + ")";
+	}
+
+	private static String censorGeneRegex(String word, String joiner) {
+		return word.chars()
 								 .mapToObj(c -> "[" + homoglyphs.getOrDefault((char) c, c == ' ' ? "\\s" : String.valueOf((char) c)) + "]+")
 								 .map(s -> word.length() <= 2 ? noLetterEndsRegex(s) : s)
 								 .collect(joining(joiner));
-		return "((?!\\d{" + word.length() + "})" + regex + ")";
-	}
-
-	private static String censorRegex(String word) {
-		return censorRegex(word, getCensor(word.length()));
 	}
 
 	final static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
@@ -448,7 +526,6 @@ public class Commands {
 
 	static {
 		commandsByName = commands.stream().collect(toMap(Reaction::getName, Function.identity()));
-		System.out.println(censorRegex(" hate"));
 	}
 
 	private static Set<Command> getCommandSet(final Command command) {
@@ -488,7 +565,7 @@ public class Commands {
 			logMissingChannelPermissions(channel);
 	}
 
-	private static CharSequence truncate(final String text) {
+	private static String truncate(final String text) {
 		return text.length() > 2000 ? text.substring(0, 998) + "..." + text.substring(text.length() - 998) : text;
 	}
 
@@ -497,6 +574,10 @@ public class Commands {
 			channel.sendMessageEmbeds(reply).queue();
 		else
 			logMissingChannelPermissions(channel);
+	}
+
+	private static Member getMember(Message message) {
+		return message.getGuild().getMember(message.getAuthor());
 	}
 
 	private static boolean canUseChannel(final TextChannel channel) {
@@ -510,7 +591,6 @@ public class Commands {
 
 	private static void logMissingChannelPermissions(final TextChannel channel) {
 		LOGGER.info("Tried to do command in {} in {}, but is missing permissions", channel, channel.getGuild());
-
 	}
 
 }

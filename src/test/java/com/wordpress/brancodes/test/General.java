@@ -1,14 +1,7 @@
 package com.wordpress.brancodes.test;
 
 import com.wordpress.brancodes.messaging.reactions.commands.Commands;
-import com.wordpress.brancodes.util.NumberToText;
-import com.wordpress.brancodes.util.Util;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
-import java.io.FileReader;
-import java.net.URL;
-import java.time.YearMonth;
 import java.util.*;
 public class General {
 
@@ -39,20 +32,20 @@ public class General {
 		// System.out.println(lowestIndexOf(new int[] {-5, 0, 3, 3, 5, 9, 9, 9, 9, 15}, 5));
 		// System.out.println(lowestIndexOf(new int[] {9, 15, 9, 5, 3, 9, 0, 3, -5, 9}, 5));
 
-		final Date angelitteBirthday = new Date(122, Calendar.JULY, 16);
-
-		Date current = new Date();
-		int days = angelitteBirthday.getDate() - current.getDate();
-		int months = angelitteBirthday.getMonth() - current.getMonth();
-		if (days < 0) {
-			days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
-			months--;
-		}
-		System.out.println((months != 0 ? Util.properCase(NumberToText.numberToString(months))
-										  + " Month" + (months != 1 ? "s" : "") : "")
-								+ (days != 0 ? (months != 0 ? " And " : "")
-											   + Util.properCase(NumberToText.numberToString(days))
-											   + " Day" + (days != 1 ? "s" : "") : "") + " Until.");
+		// final Date angelitteBirthday = new Date(122, Calendar.JULY, 16);
+		//
+		// Date current = new Date();
+		// int days = angelitteBirthday.getDate() - current.getDate();
+		// int months = angelitteBirthday.getMonth() - current.getMonth();
+		// if (days < 0) {
+		// 	days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
+		// 	months--;
+		// }
+		// System.out.println((months != 0 ? Util.properCase(NumberToText.numberToString(months))
+		// 								  + " Month" + (months != 1 ? "s" : "") : "")
+		// 						+ (days != 0 ? (months != 0 ? " And " : "")
+		// 									   + Util.properCase(NumberToText.numberToString(days))
+		// 									   + " Day" + (days != 1 ? "s" : "") : "") + " Until.");
 
 		// Map<Character, String> homoglyphs = new HashMap<>();
 		// try {

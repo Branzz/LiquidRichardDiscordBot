@@ -8,7 +8,7 @@
     "f": "fF",
     "g": "gG6\\u0120\\u0121",
     "h": "hH\\u04BA\\u04BB",
-    "i": "iI1l\\u0406\\u00CD\\u00CF\\u0456\\u00ED\\u00EF",
+    "i": "iI!1l\\u0406\\u00CD\\u00CF\\u0456\\u00ED\\u00EF",
     "j": "jJ\\u0408\\uA7B2\\u0458\\u029D",
     "k": "kK\\u039A\\u03BA",
     "l": "lL1I\\u04C0\\u1E36\\u04CF\\u1E37",
@@ -29,18 +29,24 @@
   },
   "censored_words": [
     "beaner", "childporn", "chink",
-    "coon", "corona", "covid",
-    "cp", "cracker", "cunny", "dyke",
-    "fag", "genocide", "gook", "groid", " hate",
+    "coon", "corona", "covid", "cp",
+    "cracker", "cunny", "dyke", "fag",
+    "genocide", "gook", "groid", " hate",
     "kike", "killurself", "killyourself",
-    "kys", "loli", "negro",
-    "nigg", "paki", "pedo",
-    "retard", "shota", "slut", "spic",
+    "kys", "loli", "negro", "nigg", "paki",
+    "pedo", "retard", "shota", "slut", "spic",
     "spik", "trann", "vaccin", "virus",
     "wigg", "zooph"
   ],
   "custom_user_categories": {
     "censored": [ "717416156897738782" ],
     "yawn": [ "704971546946699357" ]
-  }
+  },
+  "aave_terms": [ "chile", "asf", "purr+", "bae",
+    "boo", "sus", "simp", "hella", "deadass",
+    "headass", "tho", "doe", "cap", "shook", "lit",
+    "finna", "woke", "aggy", "fam", "ion", "ghetto",
+    "go off"
+  ],
+  "aave_response": "Please Retract This Message, %s. Are You A Person Of Color? No? Then No, You Should **NOT** Be Using The Word \"%s\", As It Is From From The AAVE Dialect And Is **Racist** To Use It. Please Educate Your Self And Avoid Any Future Microaggressions Against Black Individuals At https://aavenb.carrd.co/",
 }

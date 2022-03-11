@@ -7,26 +7,21 @@ import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.messaging.reactions.commands.Commands;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
-import com.wordpress.brancodes.util.Util;
-import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
+import com.wordpress.brancodes.util.CaseUtil;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.requests.restaction.pagination.ReactionPaginationAction;
+import net.dv8tion.jda.internal.entities.AbstractMessage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
@@ -34,6 +29,24 @@ public class Listener extends ListenerAdapter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Listener.class);
 	private boolean pause = false;
+
+	@Override
+	public void onGuildVoiceLeave(@NotNull final GuildVoiceLeaveEvent event) {
+		super.onGuildVoiceLeave(event);
+		if (event.getMember().getUser().equals(event.getJDA().getSelfUser())) {
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			Commands.commandsByName.get("Join Voice").execute(new AbstractMessage("!J " + event.getChannelLeft().getId(), "", false) {
+				@NotNull @Override public JDA getJDA() { return event.getJDA(); }
+				@Override protected void unsupported() { }
+				@Nullable @Override public MessageActivity getActivity() { return null; }
+				@Override public long getIdLong() { return 0; }
+			});
+		}
+	}
 
 	@Override
 	public void onReady(@NotNull final ReadyEvent event) {
@@ -70,11 +83,10 @@ public class Listener extends ListenerAdapter {
 			 */
 			///DataBase.respondToBotPrivate()
 			if (event.getAuthor().equals(Config.get("ownerUser")) && event.getMessage().getContentRaw().equals("!p"))
-				pause ^= true;
+				pause ^= true; // overrides every other command
 			if (!pause) {
 				messageReceived(event.getChannel().getType(), UserCategory.getUserCategory(event), event.getMessage());
-				// if (!event.getAuthor().equals(event.getJDA().getSelfUser()))
-				if (!event.getAuthor().equals(Config.get("ownerUser")))
+				if (!event.getAuthor().equals(event.getJDA().getSelfUser()) && !event.getAuthor().equals(Config.get("ownerUser")))
 					LOGGER.info("DM from {}: \"{}\"{} in {} DM's", LiquidRichardBot.getUserName(event.getAuthor()),
 								event.getMessage().getContentRaw(), event.getMessage().getAttachments().stream().map(Message.Attachment::getUrl).collect(joining("\n,")),
 								LiquidRichardBot.getUserName(event.getAuthor()));
@@ -84,13 +96,15 @@ public class Listener extends ListenerAdapter {
 			// 	event.getChannel().sendMessage(Util.properCase(event.getMessage().getContentRaw())).queue();
 			// DataBase.respondToBots(event.getGuild().getIdLong()).get()
 			if (!pause) {
-				messageReceived(event.getChannel().getType(), checkMod(event, UserCategory.getUserCategory(event)), event.getMessage());
+				messageReceived(event.getChannel().getType(), checkMod(event, UserCategory.getUserCategory(event)), event.getMessage()); // TODO refactor extract
 			}
 		}
 	}
 
 	private static UserCategory checkMod(@NotNull final MessageReceivedEvent event, final UserCategory userCategory) {
-		return (userCategory == UserCategory.DEFAULT && event.isFromGuild() && DataBase.userIsMod(event.getGuild().getIdLong(), event.getAuthor().getIdLong()).get())
+		return (userCategory == UserCategory.DEFAULT
+				&& event.isFromGuild()
+				&& DataBase.userIsMod(event.getGuild().getIdLong(), event.getAuthor().getIdLong()).get())
 					   ? UserCategory.MOD : userCategory;
 	}
 
@@ -103,15 +117,15 @@ public class Listener extends ListenerAdapter {
 		// 			userCategory);
 		final String contentDisplay = message.getContentDisplay();
 		final String messageContent = MorseUtil.isMorse(contentDisplay)
-							  ?	Util.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
+							  ?	CaseUtil.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
 							  : message.getContentRaw();
 		Commands.commandsByCategoryChannel
 				.get(ReactionChannelType.of(channelType))
 				.get(userCategory)
 				.stream()
 				.filter(command -> command.execute(message, messageContent))
-				.findFirst()
-				.ifPresent(command -> LOGGER.info("Ran {} command by {} in {} in {}", //Commands.qCount +
+				.findFirst() // forEach(
+				.ifPresent(command -> LOGGER.info("Ran {} command by {} in #{} in {}", //Commands.qCount +
 									  command,
 									  LiquidRichardBot.getUserName(message.getAuthor()),
 									  message.getChannel().getName(),
