@@ -5,31 +5,33 @@ import net.dv8tion.jda.api.entities.Message;
 
 import javax.annotation.RegEx;
 import java.security.InvalidParameterException;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Reaction {
+public class Reaction { // weird encapsulation between this and command; Commands.java -> Reactions.java ?
 
 	protected Matcher matcher;
 	protected String name;
 	protected UserCategory category;
 	protected ReactionChannelType channelCategory;
-	protected ExecuteResponse executeResponse;
-	protected ExecuteMatcherResponse executeMatcherResponse;
+	protected Function<Message, Boolean> executeResponse;
+	protected BiFunction<Message, Matcher, Boolean> executeMatcherResponse;
 
-	public Reaction(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, ExecuteResponse executeResponse) {
-		this(regex, name, category, channelCategory);
+	public Reaction(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, Function<Message, Boolean> executeResponse) {
+		this(name, regex, category, channelCategory);
 		this.executeResponse = executeResponse;
 		this.executeMatcherResponse = null;
 	}
 
-	public Reaction(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, ExecuteMatcherResponse executeMatcherResponse) {
-		this(regex, name, category, channelCategory);
+	public Reaction(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
+		this(name, regex, category, channelCategory);
 		this.executeResponse = null;
 		this.executeMatcherResponse = executeMatcherResponse;
 	}
 
-	public Reaction(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory) {
+	public Reaction(String name, @RegEx String regex, UserCategory category, ReactionChannelType channelCategory) {
 		this.matcher = getMatcher(regex);
 		if (name.length() > 16)
 			throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
@@ -46,11 +48,11 @@ public class Reaction {
 		return false;
 	}
 
-	protected void accept(final Message message) {
+	protected boolean accept(final Message message) {
 		if (executeResponse != null)
-			executeResponse.accept(message);
+			return executeResponse.apply(message);
 		else
-			executeMatcherResponse.accept(message, matcher);
+			return executeMatcherResponse.apply(message, matcher);
 	}
 
 	// protected boolean matchesCommand(final String message) {
@@ -70,7 +72,7 @@ public class Reaction {
 	}
 
 	public static Matcher getMatcher(@RegEx String regex) {
-		return getMatcher(regex,"");
+		return getMatcher(regex, "");
 	}
 
 	public ReactionChannelType getChannelType() {

@@ -1,7 +1,5 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
-import com.wordpress.brancodes.messaging.reactions.ExecuteMatcherResponse;
-import com.wordpress.brancodes.messaging.reactions.ExecuteResponse;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
@@ -13,7 +11,11 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import javax.annotation.RegEx;
 
 import java.awt.*;
-import java.util.regex.MatchResult;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
 
 import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
 
@@ -23,12 +25,8 @@ public class Command extends Reaction {
 	protected boolean deniable = false;
 	protected boolean deactivated = false;
 
-	public Command(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, ExecuteResponse executeResponse) {
-		super(regex, name, category, channelCategory, executeResponse);
-	}
-
-	public Command(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, ExecuteMatcherResponse executeMatcherResponse) {
-		super(regex, name, category, channelCategory, executeMatcherResponse);
+	protected Command(String name, @RegEx String regex, UserCategory category, ReactionChannelType channelCategory) {
+		super(name, regex, category, channelCategory);
 	}
 
 	@Override
@@ -42,8 +40,7 @@ public class Command extends Reaction {
 			if (deniable && deny(message))
 				return false;
 			else {
-				accept(message);
-				return true;
+				return accept(message);
 			}
 		}
 		return false;
@@ -94,30 +91,19 @@ public class Command extends Reaction {
 		private String name;
 		private UserCategory category;
 		private ReactionChannelType channelCategory;
-		private ExecuteResponse executeResponse;
-		private ExecuteMatcherResponse executeMatcherResponse;
+		private Function<Message, Boolean> executeResponse;
+		private BiFunction<Message, Matcher, Boolean> executeMatcherResponse;
 		private String description;
 		private boolean deniable;
 		private boolean deactivated;
 
-		public Builder(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, ExecuteResponse executeResponse) {
+		public Builder(String name, @RegEx String regex, UserCategory category, ReactionChannelType channelCategory) {
 			this.regex = regex;
 			this.name = name;
 			this.category = category;
 			this.channelCategory = channelCategory;
-			this.executeResponse = executeResponse;
-			executeMatcherResponse = null;
-			description = null;
-			deniable = false;
-		}
-
-		public Builder(@RegEx String regex, String name, UserCategory category, ReactionChannelType channelCategory, ExecuteMatcherResponse executeMatcherResponse) {
-			this.regex = regex;
-			this.name = name;
-			this.category = category;
-			this.channelCategory = channelCategory;
-			this.executeResponse = null;
-			this.executeMatcherResponse = executeMatcherResponse;
+			// this.executeResponse = executeResponse;
+			// executeMatcherResponse = null;
 			description = null;
 			deniable = false;
 		}
@@ -132,24 +118,50 @@ public class Command extends Reaction {
 			return this;
 		}
 
-		public Builder deactivate() {
+		public Builder deactivated() {
 			this.deactivated = true;
 			return this;
 		}
 
+		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
+			this.executeResponse = executeResponse;
+			return this;
+		}
+
+		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
+			this.executeMatcherResponse = executeMatcherResponse;
+			return this;
+		}
+
+		public Builder execute(Consumer<Message> executeResponse) {
+			this.executeResponse = m -> {
+				executeResponse.accept(m);
+				return true;
+			};
+			return this;
+		}
+
+		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
+			this.executeMatcherResponse = (m, r) -> {
+				executeMatcherResponse.accept(m, r);
+				return true;
+			};
+			return this;
+		}
+
 		public Command build() {
-			final Command command = getNew();
+			if (executeResponse == null && executeMatcherResponse == null)
+				throw new IllegalArgumentException("Must define execute");
+			final Command command = new Command(name, regex, category, channelCategory);
+			if (executeResponse == null)
+				command.executeMatcherResponse = executeMatcherResponse;
+			else
+				command.executeResponse = executeResponse;
 			command.description = description;
 			command.deniable = deniable;
 			command.deactivated = deactivated;
-			return command;
-		}
 
-		private Command getNew() {
-			if (executeResponse == null)
-				return new Command(regex, name, category, channelCategory, executeMatcherResponse);
-			else
-				return new Command(regex, name, category, channelCategory, executeResponse);
+			return command;
 		}
 
 	}

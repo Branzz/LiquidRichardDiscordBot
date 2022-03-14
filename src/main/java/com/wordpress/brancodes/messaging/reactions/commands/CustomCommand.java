@@ -1,10 +1,10 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
-import com.wordpress.brancodes.messaging.reactions.ExecuteResponse;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.entities.Message;
 
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 
 public class CustomCommand extends Command {
@@ -26,9 +26,9 @@ public class CustomCommand extends Command {
 	// public CustomCommand(Message message, Matcher matcher, String input) {
 	// }
 
-	public CustomCommand(final String regex, final String name, final UserCategory category, final ReactionChannelType channelCategory, final ExecuteResponse executeResponse) {
-		super(regex, name, category, channelCategory, executeResponse);
+	public CustomCommand(final String regex, final String name, final UserCategory category, final ReactionChannelType channelCategory,
+						 final BiFunction<Message, Matcher, Boolean> executer) {
+		super(regex, name, category, channelCategory);
 	}
-
 
 }
