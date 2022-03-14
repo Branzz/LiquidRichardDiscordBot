@@ -6,10 +6,8 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.FileReader;
 import java.net.URL;
-import java.util.Map;
 import java.util.Objects;
 
 public class JSONReader {
@@ -22,7 +20,7 @@ public class JSONReader {
 
 	static {
 		try {
-			URL path = contextClassLoader.getResource("json/jsonresources.json");
+			URL path = contextClassLoader.getResource("static/json/jsonresources.json");
 			Objects.requireNonNull(path);
 			JSONData = (JSONObject) new JSONParser().parse(new FileReader(path.getFile()));
 		} catch (Exception e) {

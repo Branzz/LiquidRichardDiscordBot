@@ -104,7 +104,7 @@ public class Listener extends ListenerAdapter {
 	private static UserCategory checkMod(@NotNull final MessageReceivedEvent event, final UserCategory userCategory) {
 		return (userCategory == UserCategory.DEFAULT
 				&& event.isFromGuild()
-				&& DataBase.userIsMod(event.getGuild().getIdLong(), event.getAuthor().getIdLong()).get())
+				&& DataBase.userIsMod(event.getAuthor().getIdLong(), event.getGuild().getIdLong()).get())
 					   ? UserCategory.MOD : userCategory;
 	}
 

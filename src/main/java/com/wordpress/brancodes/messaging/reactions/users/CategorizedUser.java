@@ -4,9 +4,7 @@ import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -25,7 +23,7 @@ public class CategorizedUser {
 
 	public CategorizedUser(MessageReceivedEvent event) {
 		this(event, event.getAuthor().equals(Config.get("ownerUser")),
-			 event.isFromGuild() && DataBase.userIsMod(event.getGuild().getIdLong(), event.getAuthor().getIdLong()).get(),
+			 event.isFromGuild() && DataBase.userIsMod(event.getAuthor().getIdLong(), event.getGuild().getIdLong()).get(),
 			 event.getAuthor().isBot(),
 			 event.getAuthor().equals(event.getJDA().getSelfUser()));
 	}

@@ -1,13 +1,10 @@
 package com.wordpress.brancodes.database;
 
 import com.wordpress.brancodes.messaging.PreparedMessages;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
 import java.util.*;
 
 /**
@@ -22,32 +19,32 @@ public class DataBase {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataBase.class);
 
-	public static void initializeTables() {
-		try (PoolConnection.ConnectionQuery connectionQuery = new PoolConnection.ConnectionQuery()) {
-			LOGGER.info("Connected to database");
-			Statement statement = connectionQuery.getStatement();
-			final String[] statements = new String[] {
-				"CREATE TABLE IF NOT EXISTS users (`id` INTEGER PRIMARY KEY, dmcase boolean, dmnumbers boolean, relationship INTEGER);",
-				"CREATE TABLE IF NOT EXISTS guilds (`id` INTEGER PRIMARY KEY, main_channel INTEGER,"
-				+ "FOREIGN KEY (`id`) REFERENCES emojis (guild_id));",
-				"CREATE TABLE IF NOT EXISTS ignored_channels (channel_id INTEGER, guild_id INTEGER,"
-				+ "FOREIGN KEY (guild_id) REFERENCES guilds (`id`));",
-				"CREATE TABLE IF NOT EXISTS channels (`id` INTEGER,"
-				+ "FOREIGN KEY (`id`) REFERENCES ignored_channels (channel_id));",
-				"CREATE TABLE IF NOT EXISTS emojis (guild_id INTEGER PRIMARY KEY, `id` INTEGER, replaced_name varchar(255));",
-				"CREATE TABLE IF NOT EXISTS mods (user_id INTEGER, guild_id INTEGER,"
-				+ "FOREIGN KEY (user_id) REFERENCES users (`id`),"
-				+ "FOREIGN KEY (guild_id) REFERENCES guilds (`id`));",
-			};
-			DatabaseMetaData dm = connectionQuery.getConnection().getMetaData();
-			// TODO add servers that it has now joined
-			LOGGER.info("Driver name: {} Driver version: {} Product name: {} Product version: {} "
-						+ dm.getDriverName(), dm.getDriverVersion(), dm.getDatabaseProductName(), dm.getDatabaseProductVersion());
-		} catch (SQLException e) {
-			LOGGER.warn("Error connecting to database");
-			e.printStackTrace();
-		}
-	}
+	// public static void initializeTables() {
+	// 	try (PoolConnection.ConnectionQuery connectionQuery = new PoolConnection.ConnectionQuery()) {
+	// 		LOGGER.info("Connected to database");
+	// 		Statement statement = connectionQuery.getStatement();
+	// 		final String[] statements = new String[] {
+	// 			"CREATE TABLE IF NOT EXISTS users (`id` INTEGER PRIMARY KEY, dmcase boolean, dmnumbers boolean, relationship INTEGER);",
+	// 			"CREATE TABLE IF NOT EXISTS guilds (`id` INTEGER PRIMARY KEY, main_channel INTEGER,"
+	// 			+ "FOREIGN KEY (`id`) REFERENCES emojis (guild_id));",
+	// 			"CREATE TABLE IF NOT EXISTS ignored_channels (channel_id INTEGER, guild_id INTEGER,"
+	// 			+ "FOREIGN KEY (guild_id) REFERENCES guilds (`id`));",
+	// 			"CREATE TABLE IF NOT EXISTS channels (`id` INTEGER,"
+	// 			+ "FOREIGN KEY (`id`) REFERENCES ignored_channels (channel_id));",
+	// 			"CREATE TABLE IF NOT EXISTS emojis (guild_id INTEGER PRIMARY KEY, `id` INTEGER, replaced_name varchar(255));",
+	// 			"CREATE TABLE IF NOT EXISTS mods (user_id INTEGER, guild_id INTEGER,"
+	// 			+ "FOREIGN KEY (user_id) REFERENCES users (`id`),"
+	// 			+ "FOREIGN KEY (guild_id) REFERENCES guilds (`id`));",
+	// 		};
+	// 		DatabaseMetaData dm = connectionQuery.getConnection().getMetaData();
+	// 		// TODO add servers that it has now joined
+	// 		LOGGER.info("Driver name: {} Driver version: {} Product name: {} Product version: {} "
+	// 					+ dm.getDriverName(), dm.getDriverVersion(), dm.getDatabaseProductName(), dm.getDatabaseProductVersion());
+	// 	} catch (SQLException e) {
+	// 		LOGGER.warn("Error connecting to database");
+	// 		e.printStackTrace();
+	// 	}
+	// }
 
 	// private static Data updateDatabase(String sql) {
 	// 	try (PoolConnection.PreparedStatementQuery preparedStatementQuery = new PoolConnection.PreparedStatementQuery("?")) {
@@ -61,7 +58,7 @@ public class DataBase {
 	/**
 	 * Owner set with command: In server, "p, Look. Listen To <@ID>."
 	 */
-	public static Data<Boolean> userIsMod(final Long guildID, final Long userID) {
+	public static Data<Boolean> userIsMod(final Long userID, final Long guildID) {
 		if (guildID != null && userID != null)
 			return new Data<>(guildID == 907042440924528662L && (userID == 928336417514479646L || userID == 936433911486087208L));
 		return new Data<>(false);
@@ -80,26 +77,27 @@ public class DataBase {
 	}
 
 	public static Data<Long> addMod(@Nullable final Long guildID, @Nullable final Long userID, final String userName) {
-		if (guildID != null && userID != null && !userIsMod(guildID, userID).get())
-			try (PoolConnection.PreparedStatementQuery preparedStatementQuery
-						 = new PoolConnection.PreparedStatementQuery("INSERT INTO mods (user_id, guild_id) VALUES(?, ?)")) {
-				PreparedStatement query = preparedStatementQuery.getPreparedStatement();
-				query.setLong(1, userID);
-				query.setLong(2, guildID);
-				preparedStatementQuery.executeResultSet();
-				return new Data<>(null, guildID);
-			} catch (SQLException e) {
-				LOGGER.warn("Error establishing database query");
-				// e.printStackTrace();
-				return new Data<>(null, "Data Base Error.");
-			}
-		else {
-			if (guildID == null || userID == null)
-				return new Data<>(null, PreparedMessages.getMessage(guildID, "missing").replaceAll("\\{}",
-						guildID == null ? userID == null ? "Guild And User" : "Guild" : "User"));
-			else
-				return new Data<>(null, PreparedMessages.getMessage(guildID, "userNotA"));
-		}
+		return null;
+	// 	if (guildID != null && userID != null && !userIsMod(guildID, userID).get())
+	// 		try (PoolConnection.PreparedStatementQuery preparedStatementQuery
+	// 					 = new PoolConnection.PreparedStatementQuery("INSERT INTO mods (user_id, guild_id) VALUES(?, ?)")) {
+	// 			PreparedStatement query = preparedStatementQuery.getPreparedStatement();
+	// 			query.setLong(1, userID);
+	// 			query.setLong(2, guildID);
+	// 			preparedStatementQuery.executeResultSet();
+	// 			return new Data<>(null, guildID);
+	// 		} catch (SQLException e) {
+	// 			LOGGER.warn("Error establishing database query");
+	// 			// e.printStackTrace();
+	// 			return new Data<>(null, "Data Base Error.");
+	// 		}
+	// 	else {
+	// 		if (guildID == null || userID == null)
+	// 			return new Data<>(null, PreparedMessages.getMessage(guildID, "missing").replaceAll("\\{}",
+	// 					guildID == null ? userID == null ? "Guild And User" : "Guild" : "User"));
+	// 		else
+	// 			return new Data<>(null, PreparedMessages.getMessage(guildID, "userNotA"));
+	// 	}
 	}
 
 	public static Data<Long> removeMod(@Nullable final Long guildID, @Nullable final Long userID) {

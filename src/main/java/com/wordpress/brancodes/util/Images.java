@@ -1,8 +1,6 @@
 package com.wordpress.brancodes.util;
 
-import com.wordpress.brancodes.messaging.chat.Chats;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -11,15 +9,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
@@ -70,7 +63,7 @@ public class Images {
 	}
 
 	private static Stream<String> getURLs(String directory) {
-		try (InputStream path = loader.getResourceAsStream("urls/" + directory)) {
+		try (InputStream path = loader.getResourceAsStream("static/urls/" + directory)) {
 			if (path != null)
 				return IOUtils.readLines(path, StandardCharsets.UTF_8).stream();
 		} catch (IOException e) {
