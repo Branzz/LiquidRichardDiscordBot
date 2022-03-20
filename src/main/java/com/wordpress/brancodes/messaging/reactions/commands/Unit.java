@@ -4,13 +4,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
 
 enum Unit { // TODO could be condensed to 1 method (but would we want more units later on?)
-	KG(n -> applyScale(n, 2.2046) + " lbs"),
-	LBS(n -> applyScale(n, 0.4536) + " kgs"),
-	M(n -> scaleWithInches(n, 3.2808)),
-	CM(n -> scaleWithInches(n, 0.032808)),
+	KG(n -> applyScale(n, 2.2046226218487) + " lbs"),
+	LBS(n -> applyScale(n, 0.45359237) + " kgs"),
+	M(n -> scaleWithInches(n, 3.2808398950131)),
+	CM(n -> scaleWithInches(n, .0328083989501)),
 	FT(n -> applyScale(n, 0.3048) + " m"),
+	IN(n -> applyScale(n, 2.54) + " cm"),
 	SAME(BigDecimal::toString);
 
 	private final Function<BigDecimal, String> converter;
@@ -26,6 +28,7 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 			case 'M': case 'm': return M;
 			case 'C': case 'c': return CM;
 			case 'F': case 'f': return FT;
+			case 'I': case 'i': return IN;
 			default: return SAME;
 		}
 	}
@@ -63,12 +66,26 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	 * @return null if not convertible
 	 */
 	public static String convertUnit(final MatchResult match) {
+		// Matcher x = null;
+		// x.group("inches");
 		String converted;
-		if (match.group(3) != null)
-			converted = convertFeetInchUnit(match.group(5), match.group(6), match.group(8));
-		else
-			converted = Unit.of(match.group(13)).convert(match.group(10));
-
+		// for (int i = 4; i <= 15; i++) {
+		// 	System.out.println(i + ": " + match.group(i));
+		// }
+		if (match.group(3) != null) {
+			if (match.group(3).equals("5'11"))
+				return "Short.";
+			String inches = match.group(7);
+			String inchDecimal;
+			if (inches == null) {
+				inches = "0";
+				inchDecimal = match.group(10);
+			} else {
+				inchDecimal = match.group(9);
+			}
+			converted = convertFeetInchUnit(match.group(5), inches, inchDecimal);
+		} else
+			converted = Unit.of(match.group(13)).convert(match.group(12));
 		if (match.group(1).length() % 2 == 1)
 			return '-' + converted;
 		else

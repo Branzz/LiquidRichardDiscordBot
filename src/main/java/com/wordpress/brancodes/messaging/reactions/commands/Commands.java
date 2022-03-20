@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.managers.AudioManager;
+import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -186,6 +188,14 @@ public class Commands {
 			return true;
 			// reply(message, PreparedMessages.getMessage("positive") + " Will Attempt To Join.");
 		}).build(),
+		new Command.Builder("Disconnect", "![Dd]|Disconnect\\.?", MOD, GUILD).executeStatus((Message message) -> {
+			final AudioManager audioManager = message.getGuild().getAudioManager();
+			if (audioManager.isConnected()) {
+				audioManager.closeAudioConnection();
+				return true;
+			}
+			return false;
+		}).build(),
 		new Command.Builder("Servers", "![Ss][Ss]\\s*", OWNER, PRIVATE).execute(message ->
 			reply(message, "`" + message.getJDA().getGuilds().stream().map(Guild::getName).collect(joining("\n")) + "`")).build(),
 		new Command.Builder("Get Channels", "![Cc]\\s*", OWNER, GUILD).execute(message -> {
@@ -261,7 +271,8 @@ public class Commands {
 				return false;
 		}).build(),
 
-		new Command.Builder("Censor Japanese", "[\\s\\S]*[\\u4E00-\\u9FA0][\\s\\S]*", DEFAULT, GUILD).executeStatus(message -> {
+		new Command.Builder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message -> {
+			///[]+/u
 			if (message.getGuild().getIdLong() == 907042440924528662L) {
 				message.delete().queue();
 				return true;
@@ -301,9 +312,9 @@ public class Commands {
 			reply(message, PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.");
 		}).helpPanel("Purge Censor Current Channel").build(),
 
-		new Command.Builder("Convert Units", ("(-*)((((\\d+)'[ ]*)(\\d+(\\.(\\d*))?)?)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
-											  + "|((\\d+(\\.([\\d]*))?)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo][SsGg]\\w*|[Ll][Bb][Ss]?([\\s]+|$)"
-											    + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([\\s]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([\\s]+|$)|[Cc][Mm][Ss]?([\\s]+|$))))"),
+		new Command.Builder("Convert Units", ("(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
+											  + "|(\\d+\\.?\\d*|\\.\\d+)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo][SsGg]\\w*|[Ll][Bb][Ss]?([^\\w]|$)"
+											  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ii][Nn]\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 							DEFAULT, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
 			String reply = matcher.reset()
@@ -332,15 +343,30 @@ public class Commands {
 			}
 		}).deactivated().build(),
 
-		new Command.Builder("Birthday", "It'?s Time To Celebrate.?", MOD, GUILD).executeStatus(message -> {
+		new Command.Builder("Birthday", "It'?s Time To Celebrate\\.?", DEFAULT, GUILD).executeStatus(message -> {
 			AudioManager audioManager = message.getGuild().getAudioManager();
 			if (!audioManager.isConnected()) {
 				GuildVoiceState guildVoiceState = message.getMember().getVoiceState();
-				if (guildVoiceState == null) return false;
-				AudioChannel voiceChannel = guildVoiceState.getChannel();
-				if (voiceChannel == null) return false;
+				AudioChannel voiceChannel = null;
+				if (!guildVoiceState.inAudioChannel()) {
+					final List<VoiceChannel> voiceChannels = message.getGuild().getVoiceChannels();
+					if (voiceChannels.isEmpty()) {
+						final ChannelAction<VoiceChannel> vC = message.getGuild().createVoiceChannel("Celebration Time.");
+						message.getGuild().getCategories().stream().findFirst().ifPresent(vC::setParent);
+						vC.queue(channel -> {
+							if (message.getGuild().getSelfMember().hasPermission(channel, Permission.VOICE_CONNECT))
+								audioManager.openAudioConnection(channel);
+							// else return false; TODO ???
+						});
+					}
+					else
+						voiceChannel = voiceChannels.get(0);
+				} else
+					voiceChannel = guildVoiceState.getChannel();
 				if (message.getGuild().getSelfMember().hasPermission(voiceChannel, Permission.VOICE_CONNECT))
 					audioManager.openAudioConnection(voiceChannel);
+				else
+					return false;
 			}
 			PlayerManager.loadAndPlay(message.getGuild(), "static/Happy_Birthday_Princess.mp3");
 			return true;
@@ -499,8 +525,9 @@ public class Commands {
 	public static String censorBasicRegex(String word) {
 		final String collect = word.chars()
 								   .mapToObj(c -> c == '+' || c == '*'
-														  ? String.valueOf((char) c)
-														  : ("[" + (c == ' ' ? "\\s" : (String.valueOf((char) Character.toUpperCase(c)) + ((char) Character.toLowerCase(c)))) + "]"))
+												  ? String.valueOf((char) c)
+												  : ("[" + (c == ' ' ? "\\s" : (String.valueOf((char) Character.toUpperCase(c))
+																				+ ((char) Character.toLowerCase(c)))) + "]"))
 								   .collect(joining(""));
 		return collect;
 	}
@@ -612,6 +639,16 @@ public class Commands {
 
 	private static void logMissingChannelPermissions(final TextChannel channel) {
 		LOGGER.info("Tried to do command in {} in {}, but is missing permissions", channel, channel.getGuild());
+	}
+
+	abstract class Test {
+
+		int a = 0;
+
+		Test() {
+
+		}
+
 	}
 
 }

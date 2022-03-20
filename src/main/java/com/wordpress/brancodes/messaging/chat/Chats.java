@@ -47,7 +47,7 @@ public class Chats {
 				new VariatedChat(() -> {
 					Date current = new Date();
 					int days = angelitteBirthday.getDate() - current.getDate();
-					int months = 12 + angelitteBirthday.getMonth() - current.getMonth();
+					int months = angelitteBirthday.getMonth() - current.getMonth();
 					if (days < 0) {
 						days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
 						months--;

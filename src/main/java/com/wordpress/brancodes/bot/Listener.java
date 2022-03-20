@@ -30,6 +30,7 @@ public class Listener extends ListenerAdapter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Listener.class);
 	private boolean pause = false;
 
+
 	@Override
 	public void onGuildVoiceLeave(@NotNull final GuildVoiceLeaveEvent event) {
 		super.onGuildVoiceLeave(event);
