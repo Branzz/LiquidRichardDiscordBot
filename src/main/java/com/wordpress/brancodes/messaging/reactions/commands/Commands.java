@@ -422,7 +422,7 @@ public class Commands {
 						+ "No? Then No, You Should **NOT** Be Using The Word \"%s\", "
 						+ "As It Is From From The AAVE Dialect And Is **Racist** To "
 						+ "Use It. Please Educate Your Self And Avoid Any Future "
-						+ "Microaggressions Against Black Individuals At https://aavenb.carrd.co/",
+						+ "Microaggressions Against Black Individuals At aavenb.carrd.co",
 											 CaseUtil.properCase(message.getAuthor().getName()),
 											 CaseUtil.properCase(matcher.reset().results().findFirst().get().group())));
 			}
