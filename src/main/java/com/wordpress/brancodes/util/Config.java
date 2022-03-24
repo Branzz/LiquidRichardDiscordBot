@@ -14,12 +14,11 @@ public final class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
 	private static final Object[] DEFAULT_KEYVALUES = {
-			"token", "OTIwNTUzMzQ2MTUzMTk3NTk4.YbmCHA.9hswC9CBFmVQjXXoCol_aSvlIVg",
+			"token", "",
 			"prefix", "",
 			"suffix", "",
 			"aliases", new String[] { },
-//			"aliasesRegex", "((@?(<@920553346153197598>|Pimp|(Liquid )?Richard|Lil Richie)",
-			"ownerID", 849711011456221285L, // Don't make a bot's ID
+			"ownerID", 0L, // Don't make this a bot's ID
 			"creatorID", 849711011456221285L,
 			"embedColor", new Color(47, 49, 54) };
 	private static final Properties CONFIG = new Properties();
