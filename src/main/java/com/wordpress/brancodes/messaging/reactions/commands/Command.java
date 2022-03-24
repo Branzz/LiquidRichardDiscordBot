@@ -10,7 +10,6 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import javax.annotation.RegEx;
 
-import java.awt.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -21,16 +20,20 @@ import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
 
 public class Command extends Reaction {
 
-	protected String description = null;
-	protected boolean deniable = false;
-	protected boolean deactivated = false;
+	protected String description;
+	protected boolean deniable;
 
-	protected Command(String name, @RegEx String regex, UserCategory category, ReactionChannelType channelCategory) {
-		super(name, regex, category, channelCategory);
+	protected Command(String name, Matcher matcher, UserCategory userCategory, ReactionChannelType channelCategory,
+					  String description, boolean deniable, boolean deactivated) {
+		super(name, matcher, deactivated, userCategory, channelCategory);
+		this.description = description;
+		this.deniable = deniable;
 	}
 
 	@Override
 	public boolean execute(Message message) {
+		if (deactivated)
+			return false;
 		return execute(message, message.getContentRaw());
 	}
 
@@ -68,17 +71,8 @@ public class Command extends Reaction {
 		return description;
 	}
 
-	public boolean isDeactivated() {
-		return deactivated;
-	}
-
 	public MessageEmbed toFullString() {
-		final EmbedBuilder embedBuilder =
-				new EmbedBuilder().setTitle(name)
-								  .setColor(Color.ORANGE)
-								  .addField("RegEx", matcher.pattern().toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\\*", "\\\\*"), true)
-								  .addField("User", category.toString(), true)
-								  .addField("Location", channelCategory.toString(), true);
+		final EmbedBuilder embedBuilder = getMessageEmbed();
 		if (description != null)
 			embedBuilder.appendDescription(description);
 		if (deniable)
@@ -86,26 +80,32 @@ public class Command extends Reaction {
 		return embedBuilder.build();
 	}
 
-	public static class Builder {
-		private String regex;
-		private String name;
-		private UserCategory category;
-		private ReactionChannelType channelCategory;
-		private Function<Message, Boolean> executeResponse;
-		private BiFunction<Message, Matcher, Boolean> executeMatcherResponse;
-		private String description;
-		private boolean deniable;
-		private boolean deactivated;
+	public static class Builder extends Reaction.Builder {
+		protected String description = null;
+		protected boolean deniable = false;
 
-		public Builder(String name, @RegEx String regex, UserCategory category, ReactionChannelType channelCategory) {
-			this.regex = regex;
-			this.name = name;
-			this.category = category;
-			this.channelCategory = channelCategory;
-			// this.executeResponse = executeResponse;
-			// executeMatcherResponse = null;
-			description = null;
-			deniable = false;
+		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
+			super(name, regex, userCategory, channelCategory);
+		}
+
+		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
+			super.executeStatus(executeResponse);
+			return this;
+		}
+
+		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
+			super.executeStatus(executeMatcherResponse);
+			return this;
+		}
+
+		public Builder execute(Consumer<Message> executeResponse) {
+			super.execute(executeResponse);
+			return this;
+		}
+
+		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
+			super.execute(executeMatcherResponse);
+			return this;
 		}
 
 		public Builder helpPanel(String description) {
@@ -119,48 +119,23 @@ public class Command extends Reaction {
 		}
 
 		public Builder deactivated() {
-			this.deactivated = true;
-			return this;
-		}
-
-		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
-			this.executeResponse = executeResponse;
-			return this;
-		}
-
-		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
-			this.executeMatcherResponse = executeMatcherResponse;
-			return this;
-		}
-
-		public Builder execute(Consumer<Message> executeResponse) {
-			this.executeResponse = m -> {
-				executeResponse.accept(m);
-				return true;
-			};
-			return this;
-		}
-
-		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
-			this.executeMatcherResponse = (m, r) -> {
-				executeMatcherResponse.accept(m, r);
-				return true;
-			};
+			super.deactivated();
 			return this;
 		}
 
 		public Command build() {
 			if (executeResponse == null && executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
-			final Command command = new Command(name, regex, category, channelCategory);
+			final Command command = new Command(name, getMatcher(regex), userCategory, channelCategory,
+					description, deniable, deactivated);
 			if (executeResponse == null)
 				command.executeMatcherResponse = executeMatcherResponse;
 			else
 				command.executeResponse = executeResponse;
+//			Command command = new Command(description, deniable, deactivated);
 			command.description = description;
 			command.deniable = deniable;
 			command.deactivated = deactivated;
-
 			return command;
 		}
 

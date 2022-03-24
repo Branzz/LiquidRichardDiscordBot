@@ -1,6 +1,6 @@
 package com.wordpress.brancodes.test;
 
-import com.wordpress.brancodes.messaging.reactions.commands.Commands;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 
 import java.util.*;
 public class General {
@@ -10,6 +10,15 @@ public class General {
 
 	public static void main(String[] args) {
 
+		UserCategory[] userCategories = UserCategory.values();
+		for (UserCategory userCategory1 : userCategories) {
+			for (UserCategory userCategory2 : userCategories) {
+				System.out.println(userCategory1 + "\t|\t"
+						+ userCategory2+ ": " +
+						userCategory1.compareTo(userCategory2) + " " +
+						userCategory1.inRange(userCategory2));
+			}
+		}
 		// String[] str = { "", "", "" };
 		// for (int i = 0; i < 100; i++)  {
 		// 	str[0] += String.valueOf(i % 3 == 0 ? 1 : 0);

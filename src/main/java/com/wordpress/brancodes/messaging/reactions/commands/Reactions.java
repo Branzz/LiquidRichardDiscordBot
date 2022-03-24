@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
+import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.voice.PlayerManager;
@@ -27,7 +28,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -42,9 +43,9 @@ import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
 import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
 import static java.util.stream.Collectors.*;
 
-public class Commands {
+public class Reactions {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Commands.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Reactions.class);
 
 	public static int qCount = 0;
 	final static boolean reactionQuestions = false;
@@ -80,8 +81,8 @@ public class Commands {
 	}
 
 	public static final @RegEx String censoredWordsRegex = censoredWords.stream()
-																		.map(Commands::censorRegex)
-																		.collect(Commands.orChainRegex());
+																		.map(Reactions::censorRegex)
+																		.collect(Reactions.orChainRegex());
 
 	private static final Matcher breakCharMatcher = getMatcher("\\\\u([\\da-fA-F]{4})");
 
@@ -110,17 +111,17 @@ public class Commands {
 		return "(?<![\\w]+)" + regex + "(?![\\w]+)";
 	}
 
-	public static List<Command> commands;
+	public static List<Reaction> reactions;
 
-	public static Map<String, Command> commandsByName;
+	public static Map<String, Reaction> commandsByName;
 
 	static final String aaveRegex = "(^|\\s)" + ((List<String>) JSONReader.getData().get("aave_terms"))
 														.stream()
-														.map(Commands::censorBasicRegex)
-														.collect(Commands.orChainRegex()) + "($|\\s)";
+														.map(Reactions::censorBasicRegex)
+														.collect(Reactions.orChainRegex()) + "($|\\s)";
 
 	static {
-	  commands = List.of(
+	  reactions = List.of(
 		// new Command.Builder("", "Create Command", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
 		// 	// addCommand()
 		// }).build(),
@@ -147,7 +148,7 @@ public class Commands {
 							DEFAULT, GUILD_AND_PRIVATE).helpPanel("Help On Commands (This Panel)").deniable().execute(
 			message -> PreparedMessages.replyEmbedMessage(message, "help"))
 		.build(),
-		new Command.Builder("Say In", "![Ss]\\s*(\\d{18,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
+		new Command.Builder("Say In", "^![Ss]\\s*(\\d{18,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
 			final TextChannel textChannelById = message.getJDA().getTextChannelById(matcher.group(1));
 			if (textChannelById == null) {
 				reply(message, "I Was Not Able To Find That Channel \"" + matcher.group(1) + "\".");
@@ -159,17 +160,17 @@ public class Commands {
 				return true;
 			}
 		}).build(),
-		new Command.Builder("Say Here", "![Ss][\\S\\s]+", MOD, GUILD).execute(message -> {
+		new Command.Builder("Say Here", "^![Ss][\\S\\s]+", MOD, GUILD).execute(message -> {
 			String response = message.getContentRaw().substring(2);
 			message.delete().queue();
 			reply(message, response);
 		}).build(),
-		new Command.Builder("Say Proper", "![Pp][\\S\\s]+", MOD, GUILD).execute(message -> {
+		new Command.Builder("Say Proper", "^![Pp][\\S\\s]+", MOD, GUILD).execute(message -> {
 			String response = message.getContentRaw().substring(2);
 			message.delete().queue();
 			reply(message, CaseUtil.properCase(response));
 		}).build(),
-		new Command.Builder("DM", "![Dd]\\s*(\\d{17,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).execute((message, matcher) ->  // (@?.{2,32})#(\d{4})
+		new Command.Builder("DM", "^![Dd]\\s*(\\d{17,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).execute((message, matcher) ->  // (@?.{2,32})#(\d{4})
 			message.getJDA().retrieveUserById(matcher.group(1)).queue(
 			/*success*/	user -> user.openPrivateChannel().queue(privateChannel ->
 										privateChannel.sendMessage(matcher.group(2)).queue(s -> {
@@ -178,7 +179,7 @@ public class Commands {
 										})),
 			/*failure*/	user -> reply(message, PreparedMessages.getMessage("negative") + " Failed To Find User."))
 		).build(),
-		new Command.Builder("Join Voice", "![Jj]\\s*(\\d{18,20})[\\S\\s]*", MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
+		new Command.Builder("Join Voice", "^![Jj]\\s*(\\d{18,20})[\\S\\s]*", MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
 			final VoiceChannel voiceChannel = message.getJDA().getVoiceChannelById(matcher.group(1));
 			if (voiceChannel == null) {
 				reply(message, "Couldn't Find That Voice Channel ID.");
@@ -188,7 +189,7 @@ public class Commands {
 			return true;
 			// reply(message, PreparedMessages.getMessage("positive") + " Will Attempt To Join.");
 		}).build(),
-		new Command.Builder("Disconnect", "![Dd]|Disconnect\\.?", MOD, GUILD).executeStatus((Message message) -> {
+		new Command.Builder("Disconnect", "^![Dd][Ii]|Disconnect\\.?", MOD, GUILD).executeStatus((Message message) -> {
 			final AudioManager audioManager = message.getGuild().getAudioManager();
 			if (audioManager.isConnected()) {
 				audioManager.closeAudioConnection();
@@ -196,9 +197,9 @@ public class Commands {
 			}
 			return false;
 		}).build(),
-		new Command.Builder("Servers", "![Ss][Ss]\\s*", OWNER, PRIVATE).execute(message ->
+		new Command.Builder("Servers", "^![Ss][Ss]\\s*", OWNER, PRIVATE).execute(message ->
 			reply(message, "`" + message.getJDA().getGuilds().stream().map(Guild::getName).collect(joining("\n")) + "`")).build(),
-		new Command.Builder("Get Channels", "![Cc]\\s*", OWNER, GUILD).execute(message -> {
+		new Command.Builder("Get Channels", "^![Cc]\\s*", OWNER, GUILD).execute(message -> {
 			System.out.printf("Channels in %s: %s\n", message.getGuild(),
 				message.getGuild()
 					   .getTextChannels()
@@ -206,11 +207,20 @@ public class Commands {
 					   .map(c -> c.getName() + ":" + hasPermission(c, Permission.VIEW_CHANNEL))
 					   .collect(joining(", ")));
 		}).build(),
-		new Command.Builder("Get Commands", "(![Mm])|(" + getCommandRegex("(Get|Tell|Show|Give)\\s+(Me\\s+)?((Every|All)\\s+)?(The\\s+)?Commands") + ")", MOD, GUILD_AND_PRIVATE).execute(message ->
-			reply(message, commands.stream().map(Command::getName).collect(joining(", ", "All Commands: ", ".")))).build(),
-		new Command.Builder("Get Role", "(![Rr])|(" + getCommandRegex("((Get|Tell|Show|Give)\\s+(Me\\s+)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)") + ")", DEFAULT, GUILD).execute(message ->
+		new Command.Builder("Get Commands", "(^![Mm])|(" + getCommandRegex("(Get|Tell|Show|Give)\\s+(Me\\s+)?((Every|All)\\s+)?(The\\s+)?Commands") + ")", MOD, GUILD_AND_PRIVATE).execute(message -> {
+			Map<Boolean, String> deactivatedGroupReactions = reactions.stream().filter(r -> r instanceof Command)
+					.collect(groupingBy(Reaction::isDeactivated, Collectors.mapping(Reaction::getName, joining(", ", "", "."))));
+			reply(message, "All Commands: " + deactivatedGroupReactions.get(false) + "\nDeactivated:\n" + deactivatedGroupReactions.get(true));
+		}).build(),
+		new Command.Builder("Disable Command", "^![Dd][Cc]([\\W\\w]+)", MOD, GUILD).executeStatus((message, matcher) ->
+			parseCommand(message, command -> {
+					command.deactivate();
+					reply(message, PreparedMessages.getMessage(message.getGuild().getIdLong(), "positive") + ". Disabled.");
+			}, matcher.group(1))
+		).build(),
+		new Command.Builder("Get Role", "(^![Rr])|(" + getCommandRegex("((Get|Tell|Show|Give)\\s+(Me\\s+)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)") + ")", DEFAULT, GUILD).execute(message ->
 			reply(message, "You Are " + getUserCategory(message.getJDA(), message.getAuthor()).getDisplayName() + ".")).build(),
-		new Command.Builder("DM History", "![Hh]\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, PRIVATE).execute(message -> {
+		new Command.Builder("DM History", "^![Hh]\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, PRIVATE).execute(message -> {
 			String[] messageParts = message.getContentRaw().split("\\s+");
 			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
 				user.openPrivateChannel().queue(privateChannel -> {
@@ -231,38 +241,26 @@ public class Commands {
 		}).build(),
 
 		new Command.Builder("Info", getCommandRegex("(Tell\\s+Me(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?"),
-							MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
-			String commandName = matcher.group(19);
-			if (commandName == null)
-				commandName = matcher.group(20);
-			if (commandName == null) {
-				LOGGER.info("Command Info regex group number misplacement encountered");
-				return false;
-			}
-			final Command command = commandsByName.get(commandName);
-			if (command == null) {
-				reply(message, "That Command Doesn't Exist."); // TODO Generegexify
-				return false;
-			} else {
-				reply(message, command.toFullString()); // TODO "btw, you don't have permission to use it / VIEW it
-				return true;
-			}
-		}).helpPanel("Guide On Activating A Command").build(),
+							MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) ->
+			parseCommand(message, command -> reply(message, command.toFullString()), matcher.group(19), matcher.group(20))
+		).helpPanel("Guide On Activating A Command").build(),
 
+		new Command.Builder("Example", getCommandRegex("(Tell|Show|Give)\\s+(Me\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)"),
+							DEFAULT, GUILD_AND_PRIVATE).executeStatus((message, matcher) ->
+			parseCommand(message, command -> reply(message, new Generex((command.getRegex())).random()), matcher.group(22), matcher.group(23))
+		).helpPanel("Give Example On How To Activate A Command").build(),
 		// new Command.Builder("Execute Code", "![Ee].+", OWNER, GUILD_AND_PRIVATE).execute(message -> {
 		// 	final String content = message.getContentRaw().substring(2);
 		// 	// JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		// 	// compiler.run(null, null, null, javaFile.toFile().getAbsolutePath());
 		// 	// javaFile.getParent().resolve(className);
 		// }).deactivate().build(),
-
-		new Command.Builder("Greeting", getCommandRegex("\\s*(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
-																   + ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*"),
+		new Reaction.Builder("Greeting", "^(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
+																   + ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*$",
 							DEFAULT, GUILD_AND_PRIVATE).execute(message ->
 			reply(message.getTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		).build(),
-
-		new Command.Builder("Auto Delete", censoredWordsRegex, SELF, GUILD).executeStatus((message, matcher) -> {
+		new Reaction.Builder("Auto Delete", censoredWordsRegex, SELF, GUILD).executeStatus((message, matcher) -> {
 			if (message.getGuild().getIdLong() == 907042440924528662L && !message.isPinned()) { // TODO guild subscribed to this command
 				logWordCensor(message, matcher);
 				// LOGGER.info("Censoring: " + message.getContentDisplay());
@@ -270,15 +268,12 @@ public class Commands {
 			} else
 				return false;
 		}).build(),
-
-		new Command.Builder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message -> {
-			///[]+/u
+		new Reaction.Builder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message -> {
 			if (message.getGuild().getIdLong() == 907042440924528662L) {
 				message.delete().queue();
 				return true;
 			} else
 				return false;
-
 		}).build(),
 
 		new Command.Builder("Purge All", getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), MOD, GUILD).execute(message -> {
@@ -292,10 +287,11 @@ public class Commands {
 							count.getAndIncrement();
 							// logWordCensor(message, matcher);
 						}
-					}));
+					})).whenComplete((n, t) ->
+						reply(message, PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")
+					);
 				}
 			});
-			reply(message, PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.");
 		}).helpPanel("Purge Censor All Channels").build(),
 
 		new Command.Builder("Purge Current", getCommandRegex("Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here)"), MOD, GUILD).execute(message -> {
@@ -311,8 +307,7 @@ public class Commands {
 			});
 			reply(message, PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.");
 		}).helpPanel("Purge Censor Current Channel").build(),
-
-		new Command.Builder("Convert Units", ("(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
+		new Reaction.Builder("Convert Units", ("(?<!^[?.!][Mm]ute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 											  + "|(\\d+\\.?\\d*|\\.\\d+)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo][SsGg]\\w*|[Ll][Bb][Ss]?([^\\w]|$)"
 											  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ii][Nn]\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
@@ -330,7 +325,7 @@ public class Commands {
 			}
 		}).build(),
 
-		new Command.Builder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
+		new Reaction.Builder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
 			if (message.getMentions(Message.MentionType.USER)
 					   .stream()
 					   .anyMatch(i -> i.getIdLong() == 849711011456221285L)) {
@@ -390,7 +385,7 @@ public class Commands {
 												   .orElse(null),
 											getUserName(message.getAuthor()))
 									.getFeedback())
-		).helpPanel("Give Moderator").deniable().deactivated().build(),
+		).helpPanel("Give Moderator To User").deniable().deactivated().build(),
 		new Command.Builder("Remove Mod", getCommandRegex("(((Remove|Re Move|Take)\\s*@.{1,32}\\s*('?s\\s+)?(Mod|Moderator))|(((Remove|Re Move|Take)\\s*)?(Mod|Moderator)\\s*@.{1,32}))"), OWNER, GUILD).execute(message ->
 			reply(message, DataBase.removeMod(
 									message.getGuild().getIdLong(),
@@ -409,12 +404,12 @@ public class Commands {
 			}
 		}).helpPanel("Set Main Channel").deniable().deactivated().build(),
 		new Command.Builder("Censor Target", ".*" + censorChainRegex("america, amerimut, kek, based, healthcare, capital", "[\\s.,]*") + ".*", CENSORED, GUILD)
-				.helpPanel("Censor Targeted Users").execute(message -> { // TODO censor optimizer
+				.execute(message -> { // TODO censor optimizer
 			if (message.getGuild().getIdLong() == 793333500303769600L)
 						// System.out.println("delete");
 				message.delete().queue();
-		}).deactivated().build(),
-		new Command.Builder("Censor AAVE", aaveRegex,  //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
+		}).helpPanel("Censor Targeted Users").deactivated().build(),
+		new Reaction.Builder("Censor AAVE", aaveRegex,  //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
 							DEFAULT, GUILD).execute((message, matcher) -> { // TODO censor optimizer
 			if (message.getGuild().getIdLong() == 910004207120183326L) {
 				reply(message, String.format(
@@ -427,11 +422,11 @@ public class Commands {
 											 CaseUtil.properCase(matcher.reset().results().findFirst().get().group())));
 			}
 		}).build(),
-		new Command.Builder("Me&Whom", "([Mm][Ee]\\s*[Aa][Nn][Dd]\\s*[Ww][Hh][Oo])[^Mm][.,;:!?\\s]*", DEFAULT, GUILD).execute(message -> {
+		new Reaction.Builder("Me&Whom", "([Mm][Ee]\\s*[Aa][Nn][Dd]\\s*[Ww][Hh][Oo])[^Mm][.,;:!?\\s]*", DEFAULT, GUILD).execute(message -> {
 			if (message.getGuild().getIdLong() == 864896744491974676L)
 				reply(message, "Me And Whom.*");
 		}).deactivated().build(),
-		new Command.Builder("Yawn", ".*", YAWN, GUILD_AND_PRIVATE).execute(message -> {
+		new Reaction.Builder("Yawn", ".*", YAWN, GUILD_AND_PRIVATE).execute(message -> {
 			// if (message.getAuthor().getIdLong() == 749625271937663027L)
 			if (!message.isFromGuild() || hasPermission(message.getTextChannel(), Permission.MESSAGE_EXT_EMOJI))
 				for (final String yawnEmoji : YAWN_EMOJIS) {
@@ -443,17 +438,17 @@ public class Commands {
 				logMissingChannelPermissions(message.getTextChannel());
 			}
 		}).deactivated().build(),
-		new Command.Builder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message -> {
+		new Reaction.Builder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message -> {
 			if (message.getAuthor().getIdLong() == 748583074073280532L) { // TheRealBrady
 					message.addReaction("U+1F3F3U+FE0FU+200DU+1F308").queue();
 					return true;
 			} else
 				return false;
 		}).deactivated().build(),
-		new Command.Builder("Questions", "((.*(\\?|:(grey_)?question:|\u2753|\u2754))"
+		new Reaction.Builder("Questions", "((.*(\\?|:(grey_)?question:|\u2753|\u2754))"
 										 + "|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(\\?|:(grey_)?question:|\u2753|\u2754)))[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*"
 										 + "|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(([Oo]+[Mm]+[Gg]+|[Ww]+[Aa]+[Ii]+[Tt]+|[Oo]+[Hh]*)\\s+)?" //([Cc][\s]*[Aa][\s]*[Nn])
-										 + "((([Ww][\\s]*[Hh][\\s]*([Ii][\\s]*[Cc][\\s]*[Hh]|[Oo]+|[Aa]+[\\s]*[Tt]|[Ee][\\s]*[Rr][\\s]*[Ee]|[Ee][\\s]*[Nn]+|[Yy]+))|[Hh][\\s]*[Oo]+[\\s]*[Ww])"
+										 + "((([Ww][\\s]*[Hh][\\s]*([Ii][\\s]*[Cc][\\s]*[Hh]|[Oo]+|[Aa]+[\\s]*[Tt]|[Ee][\\s]*[Rr][\\s]*[Ee]|[Ee][\\sReaction]*[Nn]+|[Yy]+))|[Hh][\\s]*[Oo]+[\\s]*[Ww])"
 										 + "('?[Ss]|[Ii][Ss]|[Aa][Rr][Ee])?([\\s+].*|[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s])?)"
 										 + "|([Rr]+[Ee]+[Aa]+[Ll]+[Yy]+[.?;:\\s]*))",  // Hey Pimp, Can You Help Me
 							DEFAULT, GUILD_AND_PRIVATE).execute(message -> {
@@ -471,8 +466,37 @@ public class Commands {
 					reply(message, "Not Here To Answer Questions.");
 			}
 		}).deactivated().build()
-	  ).stream().filter(c -> !c.isDeactivated()).collect(toList());
+	  );
 	}
+
+	private static boolean parseCommand(Message message, Consumer<Reaction> successMessage, String... potentialMatches) {
+		String commandName = null;
+		for (String potentialMatch : potentialMatches) {
+			if (potentialMatch != null) {
+				commandName = potentialMatch;
+			}
+		}
+		if (commandName == null) {
+			LOGGER.error("Command Info regex group number misplacement encountered");
+			return false;
+		}
+		final Reaction reaction = commandsByName.get(commandName);
+		if (reaction == null) {
+			reply(message, "That Command Doesn't Exist.");
+			return false;
+		} else {
+			successMessage.accept(reaction);
+			return true;
+		}
+
+	}
+
+	private static Matcher charGroupSpecials = getMatcher("\\[.*(\\\\([sdDsSwW]).*)+\\]");
+
+//	private static String fixCharGroups(String regex) {
+//		charGroupSpecials.reset(regex).results().forEach(match -> replace(regex, match.start(), match.end(), extractToUnion(match)));
+//		return regex;
+//	}
 
 	/**
 	 * @return if the message should have been censored
@@ -564,31 +588,31 @@ public class Commands {
 		return dateTimeFormatter.format(date);
 	}
 
-	public static final Map<ReactionChannelType, Map<UserCategory, Set<Command>>> commandsByCategoryChannel =
+	public static final Map<ReactionChannelType, Map<UserCategory, Set<Reaction>>> commandsByCategoryChannel =
 			Stream.of(ReactionChannelType.values()).collect(toMap(channelType -> channelType, channelType ->
 			Stream.of(UserCategory.values()).collect(toMap(userCategory -> userCategory, userCategory ->
-					commands.stream()
+					reactions.stream()
 							.filter(cT -> cT.getChannelType().inRange(channelType))
 							.filter(uC -> uC.getUserCategory().inRange(userCategory))
 							.collect(toSet())))));
 
 	static {
-		commandsByName = commands.stream().collect(toMap(Reaction::getName, Function.identity()));
+		commandsByName = reactions.stream().collect(toMap(Reaction::getName, Function.identity()));
 	}
 
-	private static Set<Command> getCommandSet(final Command command) {
+	private static Set<Reaction> getCommandSet(final Reaction command) {
 		return commandsByCategoryChannel.get(command.getChannelType())
 										.get(command.getUserCategory());
 	}
 
-	static boolean addCommand(Command command) {
-		final Set<Command> commandSet = getCommandSet(command);
+	static boolean addCommand(Reaction command) {
+		final Set<Reaction> commandSet = getCommandSet(command);
 		if (commandSet.stream().anyMatch(c -> c.equals(command) || c.getName().equals(command.getName())))
 			return false;
 		return commandSet.add(command);
 	}
 
-	static void removeCommand(Command command) {
+	static void removeCommand(Reaction command) {
 		getCommandSet(command).remove(command);
 	}
 
@@ -639,16 +663,6 @@ public class Commands {
 
 	private static void logMissingChannelPermissions(final TextChannel channel) {
 		LOGGER.info("Tried to do command in {} in {}, but is missing permissions", channel, channel.getGuild());
-	}
-
-	abstract class Test {
-
-		int a = 0;
-
-		Test() {
-
-		}
-
 	}
 
 }

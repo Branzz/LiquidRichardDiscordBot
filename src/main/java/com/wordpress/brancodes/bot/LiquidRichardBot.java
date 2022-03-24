@@ -4,6 +4,7 @@ import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chat.ChatScheduler;
 import com.wordpress.brancodes.messaging.chat.Chats;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -94,6 +95,8 @@ public class LiquidRichardBot {
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+
+//		System.out.println(UserCategory.getUserCategory(jda, jda.getSelfUser()));
 
 		// verifiedRole = jda.getGuildById(929974932417437726L).getRoles().stream().filter(n -> n.getName().equals("Verified")).findFirst().get();
 
