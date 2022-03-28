@@ -44,8 +44,7 @@ public class Reaction { // weird encapsulation between this and command; Command
 
 	public boolean execute(Message message, String match) {
 		if (matcher.reset(match).results().findAny().isPresent()) {
-			accept(message);
-			return true;
+			return accept(message);
 		}
 		return false;
 	}

@@ -1,9 +1,8 @@
-package com.wordpress.brancodes.messaging.chat;
+package com.wordpress.brancodes.messaging.chats;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;

@@ -55,11 +55,12 @@ public class PreparedMessages {
 										.filter(r -> !r.isDeactivated())
 										.filter(c -> c instanceof Command)
 										.map(c -> (Command) c)
+										.filter(Command::visibleDescription)
 										.filter(cT -> cT.getChannelType() == channelType)
 										.filter(uC -> uC.getUserCategory() == userCategory)
 										.map(c -> c.getName() + ": " + c.getDescription())
 										.collect(joining(", ")),
-									 true));
+									 false));
 				});
 		// embedBuilder
 		// embedBuilder.addField(Category::getDisplayName())

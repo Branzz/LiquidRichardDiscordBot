@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -78,6 +79,13 @@ public class Listener extends ListenerAdapter {
 	}
 
 	@Override
+	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
+		if (event.getGuild().getIdLong() == 953143574453706792L)
+			event.getMember().modifyNickname("Tommy.").queue();
+		super.onGuildMemberJoin(event);
+	}
+
+	@Override
 	public void onMessageReceived(@NotNull final MessageReceivedEvent event) {
 		if (event.isFromType(ChannelType.PRIVATE)) {
 			/*
@@ -125,6 +133,7 @@ public class Listener extends ListenerAdapter {
 				.get(ReactionChannelType.of(channelType))
 				.get(userCategory)
 				.stream()
+//				.peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated() && reaction.execute(message, messageContent))
 				// map to their error responses and print it if none succeed
 				.findFirst() // forEach(
@@ -133,7 +142,7 @@ public class Listener extends ListenerAdapter {
 									  reaction.getClass().getSimpleName(),
 									  LiquidRichardBot.getUserName(message.getAuthor()),
 									  message.getChannel().getName(),
-									  message.isFromGuild() ? message.getGuild().getName() : "DMs"));
+									  message.isFromGuild() ? message.getGuild().getName() : "'s DMs"));
 	}
 
 }

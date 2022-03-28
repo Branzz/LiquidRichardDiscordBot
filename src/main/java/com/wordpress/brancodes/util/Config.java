@@ -20,7 +20,8 @@ public final class Config {
 			"aliases", new String[] { },
 			"ownerID", 0L, // Don't make this a bot's ID
 			"creatorID", 849711011456221285L,
-			"embedColor", new Color(47, 49, 54) };
+			"embedColor", new Color(47, 49, 54)
+	};
 	private static final Properties CONFIG = new Properties();
 
 	static {

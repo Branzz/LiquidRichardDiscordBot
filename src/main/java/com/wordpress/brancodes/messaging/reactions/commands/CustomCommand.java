@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 	 * message: id, channel, author, mentionedUsers, time, jumpURL // admin: delete, pin
 	 * user: id, name, pfpURL, bannerURL
 	 * channel: id, name, sendMessage(str)
+	 * guild /l can't do these things if declare it non-guild command and similar
 	 * functions:
 	 * num group(num), addReaction(emoji), user getUser(id)
 	 * channel getChannel(id), sendMessage(str), sendMessage(id, str)
