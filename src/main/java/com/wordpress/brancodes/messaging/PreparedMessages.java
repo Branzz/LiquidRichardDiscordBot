@@ -3,7 +3,7 @@ package com.wordpress.brancodes.messaging;
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.messaging.reactions.commands.Command;
-import com.wordpress.brancodes.messaging.reactions.commands.Commands;
+import com.wordpress.brancodes.messaging.reactions.commands.Reactions;
 import com.wordpress.brancodes.messaging.reactions.*;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
@@ -49,14 +49,18 @@ public class PreparedMessages {
 				embedBuilder.addField(channelType.toString() + " Commands", "", false);
 				// embedBuilder.addField("\u2550\u2550\u2550\u2550\u2550 " + channelType.toString() + " Commands" + " \u2550\u2550\u2550\u2550\u2550", "", false);
 				Stream.of(UserCategory.values()).forEach(userCategory ->
-							 addNonEmptyFieldTo(embedBuilder, userCategory.toString(),
-												Commands.commands.stream()
-																 .filter(cT -> cT.getChannelType() == channelType)
-																 .filter(uC -> uC.getUserCategory() == userCategory)
-																 .map(Command::getDescription)
-																 .filter(Objects::nonNull)
-																 .collect(joining(", ")),
-												true));
+						addNonEmptyFieldTo(embedBuilder, userCategory.toString(),
+								Reactions.reactions
+										.stream()
+										.filter(r -> !r.isDeactivated())
+										.filter(c -> c instanceof Command)
+										.map(c -> (Command) c)
+										.filter(Command::visibleDescription)
+										.filter(cT -> cT.getChannelType() == channelType)
+										.filter(uC -> uC.getUserCategory() == userCategory)
+										.map(c -> c.getName() + ": " + c.getDescription())
+										.collect(joining(", ")),
+									 false));
 				});
 		// embedBuilder
 		// embedBuilder.addField(Category::getDisplayName())
@@ -73,11 +77,11 @@ public class PreparedMessages {
 	}
 
 	public static void reply(final Message message, final Long guildID, final String request) {
-		Commands.reply(message, getMessage(guildID, request));
+		Reactions.reply(message, getMessage(guildID, request));
 	}
 
 	public static void replyEmbedMessage(final Message message, final String request) {
-		Commands.reply(message, getEmbedMessage(request));
+		Reactions.reply(message, getEmbedMessage(request));
 	}
 
 	/**

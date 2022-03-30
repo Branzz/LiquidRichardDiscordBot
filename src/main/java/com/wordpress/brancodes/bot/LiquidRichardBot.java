@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -49,7 +47,8 @@ public class LiquidRichardBot {
 				GatewayIntent.DIRECT_MESSAGE_REACTIONS,
 				GatewayIntent.GUILD_EMOJIS,
 				GatewayIntent.GUILD_VOICE_STATES
-				// GatewayIntent.GUILD_PRESENCES
+//				GatewayIntent.GUILD_MEMBERS,
+						// GatewayIntent.GUILD_PRESENCES
 		)
 				  .disableCache(EnumSet.of(
 				  		CacheFlag.ROLE_TAGS
@@ -99,6 +98,9 @@ public class LiquidRichardBot {
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
 
 		setConsole();
+
+//		System.out.println(Reactions.censoredWordsRegex);
+//		System.out.println(UserCategory.getUserCategory(jda, jda.getSelfUser()));
 
 		// verifiedRole = jda.getGuildById(929974932417437726L).getRoles().stream().filter(n -> n.getName().equals("Verified")).findFirst().get();
 

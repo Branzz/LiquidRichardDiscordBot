@@ -1,6 +1,6 @@
 package com.wordpress.brancodes.util;
 
-import com.wordpress.brancodes.messaging.reactions.commands.Commands;
+import com.wordpress.brancodes.messaging.reactions.commands.Reactions;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public class JSONReader {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Commands.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Reactions.class);
 
 	private static final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 

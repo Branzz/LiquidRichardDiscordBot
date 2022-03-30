@@ -8,6 +8,10 @@ import java.util.Set;
 @Table(name = "guilds")
 public class Guild {
 
+/*
+add fields?:
+server nickname and pfp
+ */
 	@Id
 	@Column(name = "id", nullable = false)
 	private long id;

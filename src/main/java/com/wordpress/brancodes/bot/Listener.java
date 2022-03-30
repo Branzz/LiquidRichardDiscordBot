@@ -3,8 +3,9 @@ package com.wordpress.brancodes.bot;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
+import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
-import com.wordpress.brancodes.messaging.reactions.commands.Commands;
+import com.wordpress.brancodes.messaging.reactions.commands.Reactions;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import com.wordpress.brancodes.util.CaseUtil;
@@ -14,6 +15,7 @@ import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -40,7 +42,7 @@ public class Listener extends ListenerAdapter {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			Commands.commandsByName.get("Join Voice").execute(new AbstractMessage("!J " + event.getChannelLeft().getId(), "", false) {
+			Reactions.commandsByName.get("Join Voice").execute(new AbstractMessage("!J " + event.getChannelLeft().getId(), "", false) {
 				@NotNull @Override public JDA getJDA() { return event.getJDA(); }
 				@Override protected void unsupported() { }
 				@Nullable @Override public MessageActivity getActivity() { return null; }
@@ -77,6 +79,13 @@ public class Listener extends ListenerAdapter {
 	}
 
 	@Override
+	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
+		if (event.getGuild().getIdLong() == 953143574453706792L)
+			event.getMember().modifyNickname("Tommy.").queue();
+		super.onGuildMemberJoin(event);
+	}
+
+	@Override
 	public void onMessageReceived(@NotNull final MessageReceivedEvent event) {
 		if (event.isFromType(ChannelType.PRIVATE)) {
 			/*
@@ -110,27 +119,30 @@ public class Listener extends ListenerAdapter {
 	}
 
 	private void messageReceived(final ChannelType channelType, final UserCategory userCategory, final Message message) {
-		// LOGGER.info("Message \"{}\" by {} in #{} ChannelType: {} UserCategory: {}",
-		// 			message.getContentRaw(),
-		// 			LiquidRichardBot.getUserName(message.getAuthor()),
-		// 			message.getChannel().getName(),
-		// 			channelType,
-		// 			userCategory);
+//		 LOGGER.info("Message \"{}\" by {} in #{} ChannelType: {} UserCategory: {}",
+//		 			message.getContentRaw(),
+//		 			LiquidRichardBot.getUserName(message.getAuthor()),
+//		 			message.getChannel().getName(),
+//		 			channelType,
+//		 			userCategory);
 		final String contentDisplay = message.getContentDisplay();
 		final String messageContent = MorseUtil.isMorse(contentDisplay)
 							  ?	CaseUtil.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
 							  : message.getContentRaw();
-		Commands.commandsByCategoryChannel
+		Reactions.commandsByCategoryChannel
 				.get(ReactionChannelType.of(channelType))
 				.get(userCategory)
 				.stream()
-				.filter(command -> command.execute(message, messageContent))
+//				.peek(System.out::println)
+				.filter(reaction -> !reaction.isDeactivated() && reaction.execute(message, messageContent))
+				// map to their error responses and print it if none succeed
 				.findFirst() // forEach(
-				.ifPresent(command -> LOGGER.info("Ran {} command by {} in #{} in {}", //Commands.qCount +
-									  command,
+				.ifPresent(reaction -> LOGGER.info("Ran {} {} by {} in #{} in {}", //Commands.qCount +
+									  reaction,
+									  reaction.getClass().getSimpleName(),
 									  LiquidRichardBot.getUserName(message.getAuthor()),
 									  message.getChannel().getName(),
-									  message.isFromGuild() ? message.getGuild().getName() : "DMs"));
+									  message.isFromGuild() ? message.getGuild().getName() : "'s DMs"));
 	}
 
 }

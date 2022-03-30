@@ -17,11 +17,11 @@ public final class Config {
 			"token", "",
 			"prefix", "",
 			"suffix", "",
-			"aliases", new String[] { "" },
-			"aliasesRegex", "",
-			"ownerID", 0, // Don't make a bot's ID
-			"creatorID", 0,
-			"embedColor", new Color(47, 49, 54) };
+			"aliases", new String[] { },
+			"ownerID", 0L, // Don't make this a bot's ID
+			"creatorID", 849711011456221285L,
+			"embedColor", new Color(47, 49, 54)
+	};
 	private static final Properties CONFIG = new Properties();
 
 	static {
@@ -46,7 +46,8 @@ public final class Config {
 	public static void createJDADependantProperties(JDA jda) {
 		jda.retrieveUserById((Long) Config.get("ownerID")).queue(u -> CONFIG.put("ownerUser", u));
 		jda.retrieveUserById((Long) Config.get("creatorID")).queue(u -> CONFIG.put("creatorUser", u));
-		CONFIG.put("aliasesRegex", "@?(<@!" +  jda.getSelfUser().getId() + ">|Pimp|(Liquid )?Richard|Lil Richie)");
+//		CONFIG.put("aliasesRegex", "@?(<@!" + jda.getSelfUser().getId() + ">|Pimp|(Liquid )?Richard|Lil Richie)");
+		CONFIG.put("aliasesRegex", "(Pimp|(Liquid )?Richard|Lil Richie)");
 	}
 
 }

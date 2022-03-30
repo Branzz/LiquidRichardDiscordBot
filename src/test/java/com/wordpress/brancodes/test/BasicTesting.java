@@ -1,10 +1,5 @@
 package com.wordpress.brancodes.test;
 
-import com.wordpress.brancodes.messaging.reactions.commands.Commands;
-
-import java.util.*;
-import java.util.regex.Matcher;
-
 import static com.wordpress.brancodes.messaging.reactions.Reaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
 import static java.util.stream.Collectors.joining;

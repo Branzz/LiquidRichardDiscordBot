@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.messaging.chat;
+package com.wordpress.brancodes.messaging.chats;
 
 import com.wordpress.brancodes.util.NumberToText;
 import com.wordpress.brancodes.util.CaseUtil;

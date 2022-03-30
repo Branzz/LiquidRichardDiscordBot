@@ -1,13 +1,10 @@
-package com.wordpress.brancodes.messaging.chat;
+package com.wordpress.brancodes.messaging.chats;
 
 import net.dv8tion.jda.api.entities.TextChannel;
 
-import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public class ChatScheduler {
 

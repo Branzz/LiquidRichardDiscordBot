@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.messaging.chat;
+package com.wordpress.brancodes.messaging.chats;
 
 import java.util.concurrent.ScheduledExecutorService;
 
