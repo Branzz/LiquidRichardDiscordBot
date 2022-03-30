@@ -20,8 +20,6 @@ public class Main {
 	// TODO UPDATE README file for command.builder
 	public static void main(String... args) {
 
-
-
 		// PoolConnection.begin();
 		// TODO CONVERT TO SPRING DATA BASE
 

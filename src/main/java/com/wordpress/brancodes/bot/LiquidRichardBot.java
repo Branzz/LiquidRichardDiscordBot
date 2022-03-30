@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.bot;
 
+import com.wordpress.brancodes.main.ChannelOutputStream;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chat.ChatScheduler;
@@ -15,7 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,15 +93,21 @@ public class LiquidRichardBot {
 		guildChatSchedulers =
 				jda.getGuildCache()
 				   .applyStream(guilds -> guilds.filter(guild -> enabledGuilds.contains(guild.getIdLong()))
-				   							    .collect(toMap(Guild::getIdLong, guild -> new ChatScheduler(new Chats(guild.getDefaultChannel())))));
+				   							    .collect(toMap(Guild::getIdLong, guild -> new ChatScheduler(new Chats(guild.getSystemChannel())))));
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+
+		setConsole();
 
 		// verifiedRole = jda.getGuildById(929974932417437726L).getRoles().stream().filter(n -> n.getName().equals("Verified")).findFirst().get();
 
 		// setGuildMainChannel(722001554374131713L, jda.getTextChannelById(823025247883755531L));
 		//setGuildMainChannel(873658002710888448L, jda.getTextChannelById(873658293493592074L));
+	}
+
+	private void setConsole() {
+		System.setOut(new PrintStream(new ChannelOutputStream(jda.getTextChannelById(955111291272450048L))));
 	}
 
 	private static final ClassLoader loader = Thread.currentThread().getContextClassLoader();

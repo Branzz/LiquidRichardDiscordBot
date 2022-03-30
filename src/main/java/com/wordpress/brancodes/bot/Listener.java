@@ -60,7 +60,7 @@ public class Listener extends ListenerAdapter {
 	public void onGuildJoin(@NotNull final GuildJoinEvent event) {
 		DataBase.addGuild(event.getGuild().getIdLong());
 		// DataBase.setMainChannel(event.getGuild().getIdLong(), event.getGuild().getDefaultChannel().getIdLong());
-		Main.getBot().addChats(event.getGuild().getIdLong(), event.getGuild().getDefaultChannel());
+		Main.getBot().addChats(event.getGuild().getIdLong(), event.getGuild().getSystemChannel());
 		LOGGER.info("JOINED GUILD: {}", event.getGuild().getName());
 	}
 
