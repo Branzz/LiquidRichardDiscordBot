@@ -3,8 +3,8 @@ package com.wordpress.brancodes.bot;
 import com.wordpress.brancodes.main.ChannelOutputStream;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
-import com.wordpress.brancodes.messaging.chat.ChatScheduler;
-import com.wordpress.brancodes.messaging.chat.Chats;
+import com.wordpress.brancodes.messaging.chats.ChatScheduler;
+import com.wordpress.brancodes.messaging.chats.Chats;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -97,8 +97,10 @@ public class LiquidRichardBot {
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
 
-		setConsole();
+		// setConsole();
 
+		// LOGGER.info("a\nbb\ncccccc\nbth");
+		// jda.retrieveUserById(955111291272450048L).queue();
 //		System.out.println(Reactions.censoredWordsRegex);
 //		System.out.println(UserCategory.getUserCategory(jda, jda.getSelfUser()));
 
@@ -109,6 +111,7 @@ public class LiquidRichardBot {
 	}
 
 	private void setConsole() {
+		LOGGER.info("Setting sysout to log channel...");
 		System.setOut(new PrintStream(new ChannelOutputStream(jda.getTextChannelById(955111291272450048L))));
 	}
 

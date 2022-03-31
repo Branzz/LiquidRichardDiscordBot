@@ -12,9 +12,9 @@ public class Main {
 
 	// DAILY REMINDER
 	// TODO create a todo command that loads into disk or a note command that saves
-	// TODO UPDATE README file for command.builder
 	// TODO make ERROR logging exception output in disc log channel be multi line up to 2000 chars instead
 	// TODO case insensitive regex char
+	// TODO append logging to command
 	public static void main(String... args) {
 
 		// PoolConnection.begin();

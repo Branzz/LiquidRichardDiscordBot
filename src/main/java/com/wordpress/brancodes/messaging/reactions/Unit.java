@@ -1,10 +1,9 @@
-package com.wordpress.brancodes.messaging.reactions.commands;
+package com.wordpress.brancodes.messaging.reactions;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
 
 enum Unit { // TODO could be condensed to 1 method (but would we want more units later on?)
 	KG(n -> applyScale(n, 2.2046226218487) + " lbs"),
@@ -52,6 +51,10 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 								.multiply(new BigDecimal(12))
 								.setScale(Math.max(0, input.stripTrailingZeros().scale()), RoundingMode.HALF_UP);
 		BigDecimal feet = scaled.setScale(0, RoundingMode.DOWN);
+		if (feet.equals(BigDecimal.ZERO))
+			return inches + "\"";
+		if (inches.equals(BigDecimal.ZERO))
+			return feet + "'";
 		return feet + "'" + inches + "\"";
 	}
 
@@ -73,17 +76,17 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 		// 	System.out.println(i + ": " + match.group(i));
 		// }
 		if (match.group(3) != null) {
-			if (match.group(3).equals("5'11"))
+			if (match.group(4).equals("5'11"))
 				return "Short.";
-			String inches = match.group(7);
+			String inchWhole = match.group(7);
 			String inchDecimal;
-			if (inches == null) {
-				inches = "0";
+			if (inchWhole == null) {
+				inchWhole = "0";
 				inchDecimal = match.group(10);
 			} else {
 				inchDecimal = match.group(9);
 			}
-			converted = convertFeetInchUnit(match.group(5), inches, inchDecimal);
+			converted = convertFeetInchUnit(match.group(5), match.group(6), inchWhole, inchDecimal);
 		} else
 			converted = Unit.of(match.group(13)).convert(match.group(12));
 		if (match.group(1).length() % 2 == 1)
@@ -99,13 +102,12 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	/**
 	 * @return null if not convertible
 	 */
-	public static String convertFeetInchUnit(String feet, String inches, String decimal) {
+	public static String convertFeetInchUnit(String feet, final String inches, String inchWhole, String inchDecimal) {
 		int scale;
-		if (inches == null) {
-			inches = "0";
+		if (inchWhole == null) {
 			scale = Math.max(0, 2 + new BigDecimal(feet).stripTrailingZeros().scale());
 		} else {
-			scale = decimal == null ? 2 : Math.max(2, decimal.length());
+			scale = inchDecimal == null ? 2 : Math.max(2, inchDecimal.length());
 		}
 		final BigDecimal product = Unit.inchesToFeet(feet, inches).multiply(new BigDecimal("0.3048"));
 		final boolean cmRange = product.compareTo(new BigDecimal("10")) < 0;

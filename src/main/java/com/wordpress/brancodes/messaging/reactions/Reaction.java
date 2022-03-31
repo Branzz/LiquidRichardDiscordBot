@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -17,39 +18,54 @@ import java.util.regex.Pattern;
 
 public class Reaction { // weird encapsulation between this and command; Commands.java -> Reactions.java ?
 
-	protected String name;
-	protected Matcher matcher;
+	protected final String name;
+	protected final Matcher matcher;
 	protected boolean deactivated;
-	protected UserCategory userCategory;
-	protected ReactionChannelType channelCategory;
-	protected Function<Message, Boolean> executeResponse;
-	protected BiFunction<Message, Matcher, Boolean> executeMatcherResponse;
+	protected final UserCategory userCategory;
+	protected final ReactionChannelType channelCategory;
+	protected final Function<Message, ReactionResponse> executeResponse;
+	protected final BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
-	protected Reaction() { }
+	private Reaction() {
+		name = null;
+		matcher = null;
+		deactivated = true;
+		userCategory = null;
+		channelCategory = null;
+		executeResponse = null;
+		executeMatcherResponse = null;
+	}
 
-	protected Reaction(String name, Matcher matcher, boolean deactivated, UserCategory userCategory,
-					   ReactionChannelType channelCategory) {
-		this.matcher = matcher;
+	protected Reaction(String name, Matcher matcher, boolean deactivated, UserCategory userCategory, ReactionChannelType channelCategory,
+					   Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
 		if (name.length() > 16)
 			throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
 		this.name = name;
+		this.matcher = matcher;
 		this.deactivated = deactivated;
 		this.userCategory = userCategory;
 		this.channelCategory = channelCategory;
+		if (executeResponse == null) {
+			this.executeResponse = null;
+			this.executeMatcherResponse = executeMatcherResponse;
+		} else {
+			this.executeResponse = executeResponse;
+			this.executeMatcherResponse = null;
+		}
 	}
 
-	public boolean execute(final Message message) {
+	public ReactionResponse execute(final Message message) {
 		return execute(message, message.getContentRaw());
 	}
 
-	public boolean execute(Message message, String match) {
+	public ReactionResponse execute(Message message, String match) {
 		if (matcher.reset(match).results().findAny().isPresent()) {
 			return accept(message);
 		}
-		return false;
+		return new ReactionResponse(false);
 	}
 
-	protected boolean accept(final Message message) {
+	protected ReactionResponse accept(final Message message) {
 		if (executeResponse != null)
 			return executeResponse.apply(message);
 		else
@@ -130,8 +146,8 @@ public class Reaction { // weird encapsulation between this and command; Command
 		protected boolean deactivated = false;
 		protected UserCategory userCategory;
 		protected ReactionChannelType channelCategory;
-		protected Function<Message, Boolean> executeResponse;
-		protected BiFunction<Message, Matcher, Boolean> executeMatcherResponse;
+		protected Function<Message, ReactionResponse> executeResponse;
+		protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			this.regex = regex;
@@ -145,20 +161,10 @@ public class Reaction { // weird encapsulation between this and command; Command
 			return this;
 		}
 
-		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
-			this.executeResponse = executeResponse;
-			return this;
-		}
-
-		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
-			this.executeMatcherResponse = executeMatcherResponse;
-			return this;
-		}
-
 		public Builder execute(Consumer<Message> executeResponse) {
 			this.executeResponse = m -> {
 				executeResponse.accept(m);
-				return true;
+				return new ReactionResponse(true);
 			};
 			return this;
 		}
@@ -166,20 +172,35 @@ public class Reaction { // weird encapsulation between this and command; Command
 		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
 			this.executeMatcherResponse = (m, r) -> {
 				executeMatcherResponse.accept(m, r);
-				return true;
+				return new ReactionResponse(true);
 			};
+			return this;
+		}
+
+		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
+			this.executeResponse = message -> new ReactionResponse(executeResponse.apply(message));
+			return this;
+		}
+
+		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
+			executeResponse((message, matcher) -> new ReactionResponse(executeMatcherResponse.apply(message, matcher)));
+			return this;
+		}
+
+		public Builder executeResponse(Function<Message, ReactionResponse> executeResponse) {
+			this.executeResponse = executeResponse;
+			return this;
+		}
+
+		public Builder executeResponse(BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
+			this.executeMatcherResponse = executeMatcherResponse;
 			return this;
 		}
 
 		public Reaction build() {
 			if (executeResponse == null && executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
-			final Reaction reaction = new Reaction(name, getMatcher(regex), deactivated, userCategory, channelCategory);
-			if (executeResponse == null)
-				reaction.executeMatcherResponse = executeMatcherResponse;
-			else
-				reaction.executeResponse = executeResponse;
-			return reaction;
+			return new Reaction(name, getMatcher(regex), deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
 		}
 
 	}

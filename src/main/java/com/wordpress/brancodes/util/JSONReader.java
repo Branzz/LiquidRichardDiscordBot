@@ -1,6 +1,6 @@
 package com.wordpress.brancodes.util;
 
-import com.wordpress.brancodes.messaging.reactions.commands.Reactions;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;

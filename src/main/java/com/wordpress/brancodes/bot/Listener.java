@@ -3,9 +3,9 @@ package com.wordpress.brancodes.bot;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
-import com.wordpress.brancodes.messaging.reactions.commands.Command;
+import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
-import com.wordpress.brancodes.messaging.reactions.commands.Reactions;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import com.wordpress.brancodes.util.CaseUtil;
@@ -24,6 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.AbstractMap;
+import java.util.Map;
 
 import static java.util.stream.Collectors.joining;
 
@@ -134,15 +137,21 @@ public class Listener extends ListenerAdapter {
 				.get(userCategory)
 				.stream()
 //				.peek(System.out::println)
-				.filter(reaction -> !reaction.isDeactivated() && reaction.execute(message, messageContent))
+				.filter(reaction -> !reaction.isDeactivated())
+				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
+				.filter(response -> response.getValue().status())
 				// map to their error responses and print it if none succeed
 				.findFirst() // forEach(
-				.ifPresent(reaction -> LOGGER.info("Ran {} {} by {} in #{} in {}", //Commands.qCount +
-									  reaction,
-									  reaction.getClass().getSimpleName(),
+				.ifPresent(reactionAndResponse -> LOGGER.info(addLogStatus(String.format("Ran %s %s by %s in #%s in %s", //Commands.qCount +
+									  reactionAndResponse.getKey(),
+									  reactionAndResponse.getKey().getClass().getSimpleName(),
 									  LiquidRichardBot.getUserName(message.getAuthor()),
 									  message.getChannel().getName(),
-									  message.isFromGuild() ? message.getGuild().getName() : "'s DMs"));
+									  message.isFromGuild() ? message.getGuild().getName() : "'s DMs"), reactionAndResponse.getValue())));
+	}
+
+	private static String addLogStatus(final String string, ReactionResponse response) {
+		return response.hasLogResponse() ? string + ": " + response.getLogResponse() : string;
 	}
 
 }

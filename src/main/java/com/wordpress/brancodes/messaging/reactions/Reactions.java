@@ -1,21 +1,18 @@
-package com.wordpress.brancodes.messaging.reactions.commands;
+package com.wordpress.brancodes.messaging.reactions;
 
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.messaging.chats.Chats;
+import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.voice.PlayerManager;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
-import com.wordpress.brancodes.messaging.reactions.Reaction;
-import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.JSONReader;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
@@ -27,9 +24,10 @@ import javax.annotation.RegEx;
 import java.awt.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -173,14 +171,22 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 		}).build(),
 		new Command.Builder("Say Here", "^![Ss][\\S\\s]+", MOD, GUILD).execute(message -> {
-			String response = message.getContentRaw().substring(2);
+			String response = truncate(message.getContentRaw().substring(2));
 			message.delete().queue();
-			message.reply(truncate(response)).queue();
+			if (message.getMessageReference() != null) {
+				message.getReferencedMessage().reply(response).queue();
+			} else {
+				reply(message, response);
+			}
 		}).build(),
 		new Command.Builder("Say Proper", "^![Pp][\\S\\s]+", MOD, GUILD).execute(message -> {
-			String response = message.getContentRaw().substring(2);
+			String response = truncate(CaseUtil.properCase(message.getContentRaw().substring(2)));
 			message.delete().queue();
-			message.reply(truncate(CaseUtil.properCase(response))).queue();
+			if (message.getMessageReference() != null) {
+				message.getReferencedMessage().reply(response).queue();
+			} else {
+				reply(message, response);
+			}
 		}).build(),
 		new Command.Builder("DM", "^![Dd]\\s*(\\d{17,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).execute((message, matcher) ->  // (@?.{2,32})#(\d{4})
 			message.getJDA().retrieveUserById(matcher.group(1)).queue(
@@ -189,7 +195,7 @@ public class Reactions { // TODO convert into singleton (?)
 												message.reply(truncate(PreparedMessages.getMessage("positive") + " Sent Message To " + getUserName(user))).queue();
 												LOGGER.info("Sent " + matcher.group(2) + " To " + getUserName(user) + " By " + getUserName(message.getAuthor()));
 										})),
-			/*failure*/	user -> message.reply(truncate(PreparedMessages.getMessage("negative") + " Failed To Find User.")))
+			/*failure*/	user -> message.reply(truncate(PreparedMessages.getMessage("negative") + " Failed To Find User.")).queue())
 		).build(),
 		new Command.Builder("Join Voice", "^![Jj]\\s*(\\d{18,20})[\\S\\s]*", MOD, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
 			final VoiceChannel voiceChannel = message.getJDA().getVoiceChannelById(matcher.group(1));
@@ -224,10 +230,18 @@ public class Reactions { // TODO convert into singleton (?)
 					.collect(groupingBy(Reaction::isDeactivated, Collectors.mapping(Reaction::getName, joining(", ", "", "."))));
 			message.reply(truncate("All Commands: " + deactivatedGroupReactions.get(false) + "\nDeactivated:\n" + deactivatedGroupReactions.get(true))).queue();
 		}).build(),
-		new Command.Builder("Disable Command", "^![Dd][Cc]([\\W\\w]+)", MOD, GUILD).executeStatus((message, matcher) ->
+		new Command.Builder("Disable Command", "^![Dd][Cc]\\s+([\\W\\w]+)", MOD, GUILD).executeStatus((message, matcher) ->
 			parseCommand(message, command -> {
+					if (command.getName().equals("Disable Command"))
+						return;
 					command.deactivate();
-					message.reply(truncate(PreparedMessages.getMessage(message.getGuild().getIdLong(), "positive") + ". Disabled.")).queue();
+					message.reply(truncate(PreparedMessages.getMessage(message.getGuild().getIdLong(), "positive") + " Disabled " + command)).queue();
+			}, matcher.group(1))
+		).build(),
+		new Command.Builder("Enable Command", "^![Ee][Cc]\\s+([\\W\\w]+)", OWNER, GUILD).executeStatus((message, matcher) ->
+			parseCommand(message, command -> {
+					command.activate();
+					message.reply(truncate(PreparedMessages.getMessage(message.getGuild().getIdLong(), "positive") + " Enabled " + command)).queue();
 			}, matcher.group(1))
 		).build(),
 		new Command.Builder("Get Role", "(^![Rr])|(" + getCommandRegex("((Get|Tell|Show|Give)\\s+(Me\\s+)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)") + ")", DEFAULT, GUILD).execute(message ->
@@ -253,16 +267,18 @@ public class Reactions { // TODO convert into singleton (?)
 			});
 		}).build(),
 
-		new Command.Builder("Nick", "Nick\\s+([\\w]{2,32})\\s[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
-			message.getMentionedMembers().forEach(member -> {
+		new Command.Builder("Nick All", "Nick\\s+([\\w]{2,32})\\s[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
+			message.getMentionedMembers().forEach(member -> { // TODO bad return status... needs to wait for queue?
 				try { member.modifyNickname(matcher.group(1)).queue();
-				} catch (InsufficientPermissionException ignored) { }
+				} catch (InsufficientPermissionException ignored) {
+					// return false;
+				}
 			});
 			return true;
-		}).deactivated().build(),
+		}).build(),
 
 		new Command.Builder("Kick All", "Kick[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
-			message.getMentionedMembers().forEach(member -> {
+			message.getMentionedMembers().forEach(member -> { // TODO bad return status... needs to wait for queue? (if found nobody?)
 				try { member.kick().queue();
 				} catch (InsufficientPermissionException ignored) { }
 			});
@@ -289,14 +305,16 @@ public class Reactions { // TODO convert into singleton (?)
 							DEFAULT, GUILD_AND_PRIVATE).execute(message ->
 			reply(message.getTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		).build(),
-		new Reaction.Builder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD).executeStatus((message, matcher) -> {
+		new Reaction.Builder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD).executeResponse((message, matcher) -> {
 			if ((message.getGuild().getIdLong() != 953143574453706792L && (message.getGuild().getIdLong() == 722001554374131713L || message.getGuild().getIdLong() == 907042440924528662L))
 						&& !message.isPinned()) { // TODO guild subscribed to this command
-				logWordCensor(message, matcher);
+				final String censoredWords = logWordCensor(message, matcher);
+				if (censoredWords == null)
+					return new ReactionResponse(false);
 				// LOGGER.info("Censoring: " + message.getContentDisplay());
-				return true;
+				return new ReactionResponse(censoredWords);
 			} else
-				return false;
+				return new ReactionResponse(false);
 		}).build(),
 		new Reaction.Builder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message -> {
 			if (message.getGuild().getIdLong() == 907042440924528662L) {
@@ -341,17 +359,18 @@ public class Reactions { // TODO convert into singleton (?)
 											  + "|(\\d+\\.?\\d*|\\.\\d+)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo][SsGg]\\w*|[Ll][Bb][Ss]?([^\\w]|$)"
 											  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ii][Nn]\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
-							DEFAULT, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
-			String reply = matcher.reset()
-								  .results()
-								  .map(Unit::convertUnit)
-								  .filter(Objects::nonNull)
-								  .collect(joining(", "));
-			if (reply.length() == 0)
-				return false;
+							DEFAULT, GUILD_AND_PRIVATE).executeResponse((message, matcher) -> {
+			List<Entry<String, String>> censoredPairs =
+					matcher.reset()
+						   .results()
+						   .map(match -> new SimpleEntry<>(match.group(0), Unit.convertUnit(match)))
+						   .filter(convert -> convert.getKey() != null)
+						   .collect(toList());
+			if (censoredPairs.size() == 0)
+				return new ReactionResponse(false);
 			else {
-				message.reply(truncate(reply)).queue();
-				return true;
+				message.reply(truncate(censoredPairs.stream().map(Entry::getValue).collect(joining(", ")))).queue();
+				return new ReactionResponse(censoredPairs.stream().map(e -> e.getKey() + " -> " + e.getValue()).collect(joining(", ")));
 			}
 		}).build(),
 
@@ -436,9 +455,7 @@ public class Reactions { // TODO convert into singleton (?)
 		}).helpPanel("Set Main Channel").deniable().deactivated().build(),
 		new Command.Builder("Censor Target", ".*" + censorChainRegex("america, amerimut, kek, based, healthcare, capital", "[\\s.,]*") + ".*",
 				CENSORED, GUILD).executeStatus(message -> { // TODO censor optimizer
-			if (message.getGuild().getIdLong() == 793333500303769600L)
-						// System.out.println("delete");
-			{
+			if (message.getGuild().getIdLong() == 793333500303769600L) {
 				message.delete().queue();
 				return true;
 			} else
@@ -460,8 +477,7 @@ public class Reactions { // TODO convert into singleton (?)
 				return false;
 		}).build(),
 		new Reaction.Builder("Me&Whom", "([Mm][Ee]\\s*[Aa][Nn][Dd]\\s*[Ww][Hh][Oo])[^Mm][.,;:!?\\s]*", DEFAULT, GUILD).execute(message -> {
-			if (message.getGuild().getIdLong() == 864896744491974676L)
-				reply(message, "Me And Whom.*");
+			reply(message, "Me And Whom.*");
 		}).deactivated().build(),
 		new Reaction.Builder("Yawn", ".*", YAWN, GUILD_AND_PRIVATE).execute(message -> {
 			// if (message.getAuthor().getIdLong() == 749625271937663027L)
@@ -474,7 +490,7 @@ public class Reactions { // TODO convert into singleton (?)
 					message.addReaction("U+1F971").queue();
 				logMissingChannelPermissions(message.getTextChannel());
 			}
-		}).deactivated().build(),
+		}).build(),
 		new Reaction.Builder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message -> {
 			if (message.getAuthor().getIdLong() == 748583074073280532L) { // TheRealBrady
 					message.addReaction("U+1F3F3U+FE0FU+200DU+1F308").queue();
@@ -535,24 +551,25 @@ public class Reactions { // TODO convert into singleton (?)
 //	}
 
 	/**
-	 * @return if the message should have been censored
+	 * @return word(s) being censored
 	 */
-	private static boolean logWordCensor(final Message message, final Matcher matcher) {
+	private static String logWordCensor(final Message message, final Matcher matcher) {
 		final String messageContent = message.getContentRaw();
 		final String[] censoredWords = matcher.reset(messageContent).results().map(MatchResult::group).toArray(String[]::new);
 		if (censoredWords.length == 0) {
-			return false;
+			return null;
 		}
 		message.delete().queueAfter(1, TimeUnit.HOURS);
+		final String words = String.join(", ", censoredWords);
 		autodeleteLog.sendMessageEmbeds(
 				new EmbedBuilder()
 						.setAuthor(getUserName(message.getAuthor()), message.getJumpUrl(), message.getAuthor().getAvatarUrl())
 						.addField("Message", messageContent.substring(0, Math.min(messageContent.length(), 1024)), false)
 						.addField("ID", message.getId(), false)
-						.addField("Censored Word" + (censoredWords.length > 1 ? "s" : ""), String.join(", ", censoredWords), false)
+						.addField("Censored Word" + (censoredWords.length > 1 ? "s" : ""), words, false)
 						.setColor(Color.RED)
 						.build()).queue();
-		return true;
+		return words;
 	}
 
 	private static String substring(String string, int fromEndIndex) {
@@ -602,20 +619,20 @@ public class Reactions { // TODO convert into singleton (?)
 
 	private static String censorRegex(String word, String joiner) {
 		return notNumberRegex(word.chars()
-								 .mapToObj(c -> "[" + homoglyphs.getOrDefault((char) c, c == ' ' ? "\\s" : String.valueOf((char) c)) + "]+")
-								 .map(s -> word.length() <= 2 ? noLetterEndsRegex(s) : s)
-								 .collect(joining(joiner)), word.length());
+								  .mapToObj(c -> "[" + homoglyphs.getOrDefault((char) c, c == ' ' ? "\\s" : String.valueOf((char) c)) + "]+")
+								  .map(s -> word.length() <= 2 ? noLetterEndsRegex(s) : s)
+								  .collect(joining(joiner)), word.length(), joiner);
 	}
 
-	private static String notNumberRegex(final String regex, int wordLength) {
-		return "((?!\\d{" + wordLength + "})" + regex + ")";
+	private static String notNumberRegex(final String regex, int wordLength, String joiner) {
+		return "((?!(\\d){" + wordLength + "})" + regex + ")";
 	}
 
 	private static String censorGeneRegex(String word, String joiner) {
 		return word.chars()
-								 .mapToObj(c -> "[" + homoglyphs.getOrDefault((char) c, c == ' ' ? "\\s" : String.valueOf((char) c)) + "]+")
-								 .map(s -> word.length() <= 2 ? noLetterEndsRegex(s) : s)
-								 .collect(joining(joiner));
+				   .mapToObj(c -> "[" + homoglyphs.getOrDefault((char) c, c == ' ' ? "\\s" : String.valueOf((char) c)) + "]+")
+				   .map(s -> word.length() <= 2 ? noLetterEndsRegex(s) : s)
+				   .collect(joining(joiner));
 	}
 
 	final static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");

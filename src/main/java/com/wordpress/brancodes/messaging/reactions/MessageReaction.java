@@ -1,7 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions;
 
 import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.messaging.reactions.commands.Reactions;
 import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
