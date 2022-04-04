@@ -6,13 +6,14 @@ layout style: `return_type name(arg_type)`
 * types
   * `num`
   * `str`
+    * reverse, lower case, proper case, upper case, substr(num, num), length
   * `bool`
   * `id` (long/String)
   * `url` (str)
   * `<type> gettable`
     * `static <type> get(any)`
   * `user` gettable
-    * `id`, `str name`, `url|id pfp`, `url|id banner`, `role(role)`, `ban`, `kick`, `nick`
+    * `id`, `str name`, `url|id pfp`, `url|id banner`, `role(role)`, `ban()`, `kick()`, `nick(str)`
   * `channel` gettable
     * `id`, `str name`, `send(str)`
   * `message` gettable

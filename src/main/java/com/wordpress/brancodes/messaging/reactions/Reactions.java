@@ -2,14 +2,15 @@ package com.wordpress.brancodes.messaging.reactions;
 
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.messaging.reactions.commands.Command;
-import com.wordpress.brancodes.util.CaseUtil;
-import com.wordpress.brancodes.voice.PlayerManager;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
+import com.wordpress.brancodes.messaging.reactions.Reaction.Builder;
+import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.JSONReader;
+import com.wordpress.brancodes.voice.PlayerManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -24,10 +25,8 @@ import javax.annotation.RegEx;
 import java.awt.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -40,11 +39,12 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.wordpress.brancodes.bot.LiquidRichardBot.*;
+import static com.wordpress.brancodes.bot.LiquidRichardBot.autodeleteLog;
+import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
 import static com.wordpress.brancodes.messaging.reactions.Reaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
-import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
 import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
+import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
 import static java.util.stream.Collectors.*;
 
 public class Reactions { // TODO convert into singleton (?)
@@ -325,21 +325,22 @@ public class Reactions { // TODO convert into singleton (?)
 		}).build(),
 
 		new Command.Builder("Purge All", getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), MOD, GUILD).execute(message -> {
-			message.reply(truncate(PreparedMessages.getMessage("positive"))).queue();
+//			message.reply(truncate(PreparedMessages.getMessage("positive"))).queue();
 			final AtomicLong count = new AtomicLong(0L);
 			message.getGuild().getChannels().forEach(channel -> {
 				if (channel.getType().isMessage()) {
 					((MessageChannel) channel).getIterableHistory().takeAsync(300).thenAccept(list -> list.forEach(m -> {
 						if (m.getContentRaw().length() > 0 && censoredWordsMatcher.reset(m.getContentRaw()).matches() && !m.isPinned()) {
-							m.delete().queue();
-							count.getAndIncrement();
+							System.out.println(m.getContentRaw());
+							m.delete().complete();
 							// logWordCensor(message, matcher);
 						}
 					})).whenComplete((n, t) ->
-						message.reply(truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue()
+						count.getAndIncrement()
 					);
 				}
 			});
+			message.reply(truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue();
 		}).helpPanel("Purge Censor All Channels").build(),
 
 		new Command.Builder("Purge Current", getCommandRegex("Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here)"), MOD, GUILD).execute(message -> {
@@ -355,22 +356,30 @@ public class Reactions { // TODO convert into singleton (?)
 			});
 			message.reply(truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue();
 		}).helpPanel("Purge Censor Current Channel").build(),
-		new Reaction.Builder("Convert Units", ("(?<!^[?.!][Mm]ute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
+		new Builder("Convert Units", ("(?<!^[?.!][Mm]ute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 											  + "|(\\d+\\.?\\d*|\\.\\d+)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo][SsGg]\\w*|[Ll][Bb][Ss]?([^\\w]|$)"
-											  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ii][Nn]\\w*))"),
+											  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ff]([Ee][Ee])[Tt]\\w*|[Ii][Nn]\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 							DEFAULT, GUILD_AND_PRIVATE).executeResponse((message, matcher) -> {
-			List<Entry<String, String>> censoredPairs =
-					matcher.reset()
-						   .results()
-						   .map(match -> new SimpleEntry<>(match.group(0), Unit.convertUnit(match)))
-						   .filter(convert -> convert.getKey() != null)
-						   .collect(toList());
-			if (censoredPairs.size() == 0)
+			List<MatchResult> matches = matcher.reset().results().collect(toList());
+			if (matches.size() == 0) {
+				LOGGER.error("failed to convert " + message.getContentRaw());
 				return new ReactionResponse(false);
-			else {
-				message.reply(truncate(censoredPairs.stream().map(Entry::getValue).collect(joining(", ")))).queue();
-				return new ReactionResponse(censoredPairs.stream().map(e -> e.getKey() + " -> " + e.getValue()).collect(joining(", ")));
+			} else {
+				StringJoiner converted = new StringJoiner(", ");
+				StringJoiner conversionArrow = new StringJoiner(", ");
+				for (MatchResult match : matches) {
+					String convertedUnit = Unit.convertUnit(match);
+					converted.add(convertedUnit);
+					conversionArrow.add(match.group(0) + " -> " + convertedUnit);
+				}
+				Map.Entry<String, String> bmi = Unit.getBMI(matches);
+				if (bmi != null) {
+					converted.add(bmi.getKey());
+					conversionArrow.add(bmi.getValue());
+				}
+				message.reply(truncate(converted.toString())).queue();
+				return new ReactionResponse(conversionArrow.toString());
 			}
 		}).build(),
 
