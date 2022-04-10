@@ -1,6 +1,5 @@
 package com.wordpress.brancodes.messaging.reactions;
 
-import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -126,7 +125,13 @@ public class Reaction { // weird encapsulation between this and command; Command
 	}
 
 	/**
-	 * for children classes to add on to it
+	 * for children classes to add on to its toFullString embed builder
+	 * <pre>
+	 * \@Override
+	 * public MessageEmbed toFullString() {
+	 *     return getMessageEmbed.addField("MyProperty", property.toString(), true).build();
+	 * }
+	 * </pre>
 	 */
 	protected EmbedBuilder getMessageEmbed() {
 		return new EmbedBuilder().setTitle(name)
@@ -141,7 +146,7 @@ public class Reaction { // weird encapsulation between this and command; Command
 	}
 
 	public static class Builder {
-		protected String regex;
+		protected Matcher matcher;
 		protected String name;
 		protected boolean deactivated = false;
 		protected UserCategory userCategory;
@@ -150,7 +155,7 @@ public class Reaction { // weird encapsulation between this and command; Command
 		protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			this.regex = regex;
+			this.matcher = getMatcher(regex);
 			this.name = name;
 			this.userCategory = userCategory;
 			this.channelCategory = channelCategory;
@@ -164,7 +169,7 @@ public class Reaction { // weird encapsulation between this and command; Command
 		public Builder execute(Consumer<Message> executeResponse) {
 			this.executeResponse = m -> {
 				executeResponse.accept(m);
-				return new ReactionResponse(true);
+				return ReactionResponse.SUCCESS;
 			};
 			return this;
 		}
@@ -172,7 +177,7 @@ public class Reaction { // weird encapsulation between this and command; Command
 		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
 			this.executeMatcherResponse = (m, r) -> {
 				executeMatcherResponse.accept(m, r);
-				return new ReactionResponse(true);
+				return ReactionResponse.SUCCESS;
 			};
 			return this;
 		}
@@ -200,7 +205,7 @@ public class Reaction { // weird encapsulation between this and command; Command
 		public Reaction build() {
 			if (executeResponse == null && executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
-			return new Reaction(name, getMatcher(regex), deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
+			return new Reaction(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
 		}
 
 	}

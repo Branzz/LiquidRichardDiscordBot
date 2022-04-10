@@ -139,7 +139,7 @@ public class Command extends Reaction {
 		public Command build() {
 			if (executeResponse == null && executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
-			final Command command = new Command(name, getMatcher(regex), deactivated, userCategory, channelCategory,
+			final Command command = new Command(name, matcher, deactivated, userCategory, channelCategory,
 												description, deniable, executeResponse, executeMatcherResponse);
 //			Command command = new Command(description, deniable, deactivated);
 			command.description = description;

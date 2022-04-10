@@ -1,9 +1,15 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import net.dv8tion.jda.api.requests.RestAction;
+
 public class ReactionResponse {
+
+	public static ReactionResponse SUCCESS = new ReactionResponse(true);
+	public static ReactionResponse FAILURE = new ReactionResponse(false);
 
 	private final boolean status;
 	private final String logResponse;
+	private RestAction response;
 
 	public ReactionResponse(final boolean status, final String logResponse) {
 		this.status = status;
@@ -30,6 +36,19 @@ public class ReactionResponse {
 
 	public String getLogResponse() {
 		return logResponse;
+	}
+
+	public ReactionResponse onFailureReply(RestAction response) {
+		this.response = response;
+		return this;
+	}
+
+	public void queueFailureResponse() {
+		response.queue();
+	}
+
+	public boolean hasFailureResponse() {
+		return response != null;
 	}
 
 }

@@ -143,7 +143,7 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	public static String convertFeetInchString(String feet, final String inches, String inchWhole, String inchDecimal) {
 		int scale = getScale(inchWhole, feet, inchDecimal);
 		final BigDecimal product = Unit.inchesToFeet(feet, inches == null ? "0" : inches).multiply(new BigDecimal("0.3048"));
-		final boolean cmRange = product.compareTo(new BigDecimal("1")) < 0;
+		final boolean cmRange = product.compareTo(new BigDecimal("1")) <= 0;
 		final BigDecimal converted = product.setScale(cmRange ? scale + 1 : scale, RoundingMode.HALF_UP);
 		if (cmRange)
 			return converted.movePointRight(2) + " cm";
@@ -161,7 +161,7 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 		return scale;
 	}
 
-	public static Entry<String, String> getBMI(Iterable<MatchResult> matches) {
+	public static Entry<String, String> getBMI(Iterable<MatchResult> matches) { // TODO convert (BMI/this method) to class?
 		BigDecimal convertedHeight = null, convertedWeight = null;
 		BigDecimal height = null, weight = null;
 		int heightCount = 0, weightCount = 0;
@@ -203,8 +203,12 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 			}
 		}
 		if (heightCount == 1 && weightCount == 1) {
-			String bmi = getBMI(convertedHeight, convertedWeight);
-			return new SimpleEntry<>(bmi + " BMI", "(" + height + " m, " + weight + " kg) -> " + bmi + " BMI");
+			BigDecimal bmiVal = getBMI(convertedHeight, convertedWeight);
+			double bmiDouble = bmiVal.doubleValue();
+			String bmi = bmiVal.toPlainString();
+			return new SimpleEntry<>(bmi + " BMI (" + (bmiDouble < 18.5 ? "Underweight"
+					: bmiDouble < 25 ? "Healthy" : bmiDouble < 30 ? "Overweight" : "Obese") + ')',
+					"(" + height + " m, " + weight + " kg) -> " + bmi + " BMI");
 		} else
 			return null;
 	}
@@ -215,9 +219,11 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	 * @param convertedWeight in m
 	 */
 	@NotNull
-	private static String getBMI(BigDecimal convertedHeight, BigDecimal convertedWeight) {
-		return convertedWeight.divide(convertedHeight, RoundingMode.HALF_UP).divide(convertedHeight, RoundingMode.HALF_UP)
-				.setScale(1, RoundingMode.HALF_UP).toPlainString();
+	private static BigDecimal getBMI(BigDecimal convertedHeight, BigDecimal convertedWeight) {
+		return convertedWeight.setScale(2, RoundingMode.HALF_UP)
+				.divide(convertedHeight.setScale(2, RoundingMode.HALF_UP), RoundingMode.HALF_UP)
+				.divide(convertedHeight, RoundingMode.HALF_UP)
+				.setScale(1, RoundingMode.HALF_UP);
 	}
 
 }

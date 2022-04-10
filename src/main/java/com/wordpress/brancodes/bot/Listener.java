@@ -2,15 +2,18 @@ package com.wordpress.brancodes.bot;
 
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
+import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
-import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageActivity;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -26,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.AbstractMap;
-import java.util.Map;
+import java.util.Comparator;
 
 import static java.util.stream.Collectors.joining;
 
@@ -61,6 +64,7 @@ public class Listener extends ListenerAdapter {
 		Main.getBot().cacheDependantInit();
 	}
 
+
 	@Override
 	public void onGuildJoin(@NotNull final GuildJoinEvent event) {
 		DataBase.addGuild(event.getGuild().getIdLong());
@@ -83,9 +87,13 @@ public class Listener extends ListenerAdapter {
 
 	@Override
 	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
-		if (event.getGuild().getIdLong() == 953143574453706792L)
-			event.getMember().modifyNickname("Tommy.").queue();
 		super.onGuildMemberJoin(event);
+//		if (event.getGuild().getIdLong() == 953143574453706792L)
+//			event.getMember().modifyNickname("Tommy.").queue();
+//		if (event.getGuild().getIdLong() == 907042440924528662L) {
+//			event.getJDA().getTextChannelById(907111693446950912L).sendMessage("Hello " + event.getMember().getAsMention() + " Due To Recent Developments It Is Of The Utmost Importance That All Of Our Members Are Of Heterosexual Nature. We Can And Will Not Allow Any Member Of The LGBT Community Here In Fact Our Server Shuns Their Sodomitic Lifestyle. To Assure Our Members Conform To Said Ideals We Require Proof. I Would Kindly Ask You To Send A Senior Moderator A Picture Of Your Butthole. We Assure That The Pictures Will Be Handled With Utmost Privacy.");
+//		.queue);
+// }
 	}
 
 	@Override
@@ -132,22 +140,43 @@ public class Listener extends ListenerAdapter {
 		final String messageContent = MorseUtil.isMorse(contentDisplay)
 							  ?	CaseUtil.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
 							  : message.getContentRaw();
-		Reactions.commandsByCategoryChannel
-				.get(ReactionChannelType.of(channelType))
-				.get(userCategory)
+		Reactions.getReactions(ReactionChannelType.of(channelType), userCategory)
 				.stream()
 //				.peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())
 				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
-				.filter(response -> response.getValue().status())
-				// map to their error responses and print it if none succeed
-				.findFirst() // forEach(
-				.ifPresent(reactionAndResponse -> LOGGER.info(addLogStatus(String.format("Ran %s %s by %s in #%s in %s", //Commands.qCount +
-									  reactionAndResponse.getKey(),
-									  reactionAndResponse.getKey().getClass().getSimpleName(),
-									  LiquidRichardBot.getUserName(message.getAuthor()),
-									  message.getChannel().getName(),
-									  message.isFromGuild() ? message.getGuild().getName() : "'s DMs"), reactionAndResponse.getValue())));
+//				.filter(response -> response.getValue().status()).findFirst() // method 1
+				.min(Comparator.comparing(r -> r.getValue().status())) // method 3
+				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
+
+		// method 2
+
+//		List<SimpleEntry<Reaction, ReactionResponse>> reactions = Reactions.commandsByCategoryChannel
+//				.get(ReactionChannelType.of(channelType))
+//				.get(userCategory)
+//				.stream()
+////				.peek(System.out::println)
+//				.filter(reaction -> !reaction.isDeactivated())
+//				.map(reaction -> new SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
+//				.filter(response -> response.getValue().status())
+//				.collect(Collectors.toList());
+//		Optional<SimpleEntry<Reaction, ReactionResponse>> firstSuccess = reactions.stream().filter(reaction -> reaction.getValue().status()).findFirst();
+//		if (firstSuccess.isPresent()) {
+//			logReactionResponse(message, firstSuccess.get().getKey(), firstSuccess.get().getValue());
+//		} else {
+//			reactions.stream().findFirst().ifPresent(reaction -> logReactionResponse(message, reaction.getKey(), reaction.getValue()));
+//		}
+	}
+
+	static void logReactionResponse(Message message, Reaction reaction, ReactionResponse response) {
+		if (response.status() || response.hasFailureResponse())
+			LOGGER.info(addLogStatus(String.format("%s %s %s by %s in #%s in %s", //Commands.qCount +
+					response.status() ? "Ran" : "Failed to run",
+					reaction,
+					reaction.getClass().getSimpleName(),
+					LiquidRichardBot.getUserName(message.getAuthor()),
+					message.getChannel().getName(),
+					message.isFromGuild() ? message.getGuild().getName() : "'s DMs"), response));
 	}
 
 	private static String addLogStatus(final String string, ReactionResponse response) {

@@ -1,8 +1,6 @@
 package com.wordpress.brancodes.util;
 
-import com.wordpress.brancodes.main.Main;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +12,7 @@ public final class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
 	private static final Object[] DEFAULT_KEYVALUES = {
-			"token", "OTIwNTUzMzQ2MTUzMTk3NTk4.YbmCHA.YFkMFBpwhQx1KxdHxBppcpksyEs",
+			"token", "OTIwNTUzMzQ2MTUzMTk3NTk4.YbmCHA.vW0g8IeSTcHwN41A3muuhJdzdr4",
 			"prefix", "Pimp",
 			"suffix", "",
 			"aliases", new String[] { },

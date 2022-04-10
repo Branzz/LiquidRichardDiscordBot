@@ -19,7 +19,7 @@ layout style: `return_type name(arg_type)`
   * `message` gettable
     * `id`, `channel`, `user author`, `guild`, `list<user> mentionedUsers|channels|roles`?, `str time`, `url jump`, `react(emoji)`
       perms needed: `delete`, `pin`
-  * `guild` gettable
+  * `server` gettable
     * `id`, `name`, `owner`
   * `emoji` gettable
   * `list<type>`
@@ -55,10 +55,10 @@ no regex input: just split by spaces
 
 examples:
 ```js
-if request == request.guild.owner
+if request == request.server.owner
     if (group(0) == ban)
         user.get(group(1)).ban
-        send(banned 'em)
+        send(banned them)
     else if (group(0) == kick)
         user.get(group(1)).kick
 else failure
