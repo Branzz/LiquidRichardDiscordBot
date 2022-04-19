@@ -11,7 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -105,6 +108,7 @@ public class Images {
 		mainChannel.sendMessage(chat + "\n\r" + url)
 				   .queue();
 	}
+
 
 	// public static File getFile(String key) {
 	// 	ArrayDeque<File> files = IMAGE_FILES.get(key);

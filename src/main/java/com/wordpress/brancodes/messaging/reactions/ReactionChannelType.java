@@ -15,7 +15,7 @@ public enum ReactionChannelType {
 	}
 
 	public static ReactionChannelType of(final ChannelType channelType) {
-		return (channelType.isMessage() && channelType.isGuild()) ? GUILD : channelType == ChannelType.PRIVATE ? PRIVATE : null;
+		return ((channelType.isThread() || channelType.isMessage()) && channelType.isGuild()) ? GUILD : channelType == ChannelType.PRIVATE ? PRIVATE : null;
 	}
 
 	public boolean inRange(ChannelType JDAChannelType) {

@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMuteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.entities.AbstractMessage;
@@ -54,6 +55,15 @@ public class Listener extends ListenerAdapter {
 				@Nullable @Override public MessageActivity getActivity() { return null; }
 				@Override public long getIdLong() { return 0; }
 			});
+		}
+	}
+
+	@Override
+	public void onGuildVoiceMute(@NotNull GuildVoiceMuteEvent event) {
+		super.onGuildVoiceMute(event);
+		if (event.getMember().getUser().getIdLong() == Main.getBot().getJDA().getSelfUser().getIdLong()) {
+			if (event.isMuted())
+			event.getMember().mute(false).queue();
 		}
 	}
 

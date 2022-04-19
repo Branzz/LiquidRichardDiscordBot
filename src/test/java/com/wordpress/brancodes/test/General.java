@@ -2,7 +2,11 @@ package com.wordpress.brancodes.test;
 
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 public class General {
 
 	//  0110100110010110100101100110100110010110011010010110100110010110100101100110100101101001100101100110
@@ -139,4 +143,27 @@ public class General {
 		return d!=0||x==0&&y==0;
 	}
 
+	public static <T> void explanationOfOrChainControlFlow(Supplier<T>[] optionalGetters) {
+		T nullableT = optionalGetters[0].get();
+		if (nullableT != null) {
+			return;
+		} else {
+			nullableT = optionalGetters[1].get();
+			if (nullableT != null) {
+				return;
+			} else {
+				nullableT = optionalGetters[2].get();
+				if (nullableT != null) {
+					return;
+				} else {
+					/* ... */
+				}
+
+			}
+		}
+	}
+
+	public static <T> void explanationOfOrChain(Stream<Optional<T>> optionalGetters) {
+		optionalGetters.reduce((a, b) -> a.or(() -> b)).get();
+	}
 }
