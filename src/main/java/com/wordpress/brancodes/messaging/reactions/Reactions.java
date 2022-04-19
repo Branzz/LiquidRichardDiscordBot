@@ -9,6 +9,7 @@ import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
+import com.wordpress.brancodes.util.ImageUtil;
 import com.wordpress.brancodes.util.JSONReader;
 import com.wordpress.brancodes.voice.PlayerManager;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -437,6 +438,24 @@ public class Reactions { // TODO convert into singleton (?)
 					// audioManager.closeAudioConnection();
 				}).helpPanel("Celebrate The Princess's Birthday").deniable().build(),
 
+				new Reaction.Builder("Speech Bubble", "^[Ss][Pp][Ee][Ee][Cc][Hh]\\s*[Bb][Uu][Bb][Bb][Ll][Ee]",
+						DEFAULT, GUILD_AND_PRIVATE).executeStatus((Message message) -> {
+					if (message.getGuild().getIdLong() != 910004207120183326L || message.getChannel().getIdLong() == 910004207610904673L)
+						return returnStatusPresentOrElse(
+							Optional.ofNullable(message.getReferencedMessage()).flatMap(ImageUtil::getFirstImageOrEmbed)
+							.or(() -> ImageUtil.getFirstImage(message) // will users ever be able to send embeds?
+							.or(() -> message.getStickers().stream().findFirst().map(sticker -> ImageUtil.URLToAttachment(sticker.getIconUrl()))
+							.or(() -> message.getMentionedMembers().stream().filter(member -> !message.isFromGuild() || (message.getReferencedMessage() == null
+											|| (message.getReferencedMessage().getAuthor().getIdLong() != member.getUser().getIdLong()))).findFirst()
+									.map(member -> ImageUtil.URLToAttachment(member.getEffectiveAvatarUrl()))
+							.or(() -> ImageUtil.searchFirstAttachment(message))))),
+						image -> ImageUtil.sendSpeechBubbleImage(message, image));
+					else return false;
+				}).build(),
+				new Reaction.Builder("Harita", "^[Hh]aritard$", DEFAULT, GUILD).execute(message -> {
+					message.getChannel().sendMessage("https://media.discordapp.net/attachments/722001554944819202/965120982480224296/Screenshot_20220415-020148_Chrome.png.jpg").queue();
+					message.delete().queue();
+				}).build(),
 				new Command.Builder("Get Mods", getCommandRegex("(The|A|An)\\s+(Mod|Moderator)s?\\s*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]*\\s*",
 						"((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+"), MOD, GUILD).execute(message ->
 						reply(message, new EmbedBuilder().setDescription("Moderators In \"" + message.getGuild().getName() + "\"")
@@ -496,27 +515,20 @@ public class Reactions { // TODO convert into singleton (?)
 					} else
 						return false;
 				}).deactivated().build(),
-				new Reaction.Builder("Thingie", "Remember Folx:[\\w\\W]+", BOT, GUILD).executeStatus(message -> {
-					if (message.getAuthor().getIdLong() == 957145731456720947L) {
-						message.reply("Good Job Thingie.").queue();
-						return true;
-					} else {
-						return false;
-					}
-				}).build(),
 				new Reaction.Builder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
-					if (message.getMember().getIdLong() == 155149108183695360L
-							&& message.getGuild().getIdLong() == 907042440924528662L) {
-						Optional<Member> member = message.getMentionedMembers().stream().findFirst();
-						if (member.isEmpty())
-							return false;
-						else {
-							reply(message, "Hello " + member.get().getAsMention() + " .");
-							return true;
+							if (message.getMember().getIdLong() == 155149108183695360L
+									&& message.getGuild().getIdLong() == 907042440924528662L) {
+								Optional<Member> member = message.getMentionedMembers().stream().findFirst();
+								if (member.isEmpty())
+									return false;
+								else {
+									reply(message, "Hello " + member.get().getAsMention() + " .");
+									return true;
+								}
+							} else
+								return false;
 						}
-					} else
-						return false;
-				}).deactivated().build(),
+				).deactivated().build(),
 				new Reaction.Builder("Me&Whom", "([Mm][Ee]\\s*[Aa][Nn][Dd]\\s*[Ww][Hh][Oo])[^Mm][.,;:!?\\s]*", DEFAULT, GUILD).execute(message -> {
 					reply(message, "Me And Whom.*");
 				}).deactivated().build(),
@@ -676,7 +688,7 @@ public class Reactions { // TODO convert into singleton (?)
 
 	final static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
 
-	public static String timeStampOf(final OffsetDateTime date) {
+	private static String timeStampOf(final OffsetDateTime date) {
 		return dateTimeFormatter.format(date);
 	}
 
@@ -778,6 +790,13 @@ public class Reactions { // TODO convert into singleton (?)
 		} else {
 			return emptySupplier.get();
 		}
+	}
+
+	/**
+	 * {@link java.util.Optional#ifPresentOrElse(Consumer, Runnable)} with a return type
+	 */
+	public static <T> boolean returnStatusPresentOrElse(Optional<T> optional, Consumer<? super T> action) {
+		return returnPresentOrElse(optional, t -> { action.accept(t); return true; }, () -> false);
 	}
 
 }

@@ -8,6 +8,7 @@ import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandCompiler.TokenType;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.entities.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.util.Streamable;
 
 import java.util.*;
@@ -65,7 +66,6 @@ public class CustomCommand {
 
 	static Map<String, Type<?>> types = namedMap(Streamable.of(
 			new VoidType(),
-			new ListType("list"),
 			new PrimitiveType<Long>("num", String::valueOf, n -> n != 0),
 			new PrimitiveType<String>("str", Long::valueOf, Boolean::valueOf),
 			new PrimitiveType<Boolean>("bool", String::valueOf),
@@ -126,6 +126,7 @@ public class CustomCommand {
 				.implement((InterfaceType<ISnowflake>) getType("identifiable"))
 		);
 		putType(new ClassType<Emote>("emoji"));
+		putType(new ClassType<List<Instance>>("list"));
 	}
 
 	static Map<String, Method> publicMethods = namedMap(Streamable.of(
@@ -497,24 +498,47 @@ public class CustomCommand {
 		}
 	}
 
-	static class ListType extends Type<List<?>> {
-		public ListType(String name) {
+	static class ListType<E> extends ClassType<List<E>> {
+
+		public ListType(String name, Type<E> elementType) {
 			super(name);
 		}
 
-		@Override
-		ListInstance create(List<?> real) {
-			return new ListInstance(real);
+//		@Override
+		ListType<E>.ListInstance create(List<E> real) {
+			return new ListType<E>.ListInstance(real);
 		}
 
-		class ListInstance extends Type<List<?>>.Instance {
-			public ListInstance(List<?> real) {
+		class ListInstance extends ClassType<List<E>>.ClassTypeInstance implements List<E> {
+			public ListInstance(List<E> real) {
 				super(real);
 			}
-		}
 
-		@Override
-		public void set(Type<List<?>> type) { }
+			@Override public int size() { return real.size(); }
+			@Override public boolean isEmpty() { return real.isEmpty(); }
+			@Override public boolean contains(Object o) { return real.contains(o); }
+			@Override @NotNull public Iterator<E> iterator() { return real.iterator(); }
+			@Override @NotNull public Object[] toArray() { return real.toArray(); }
+			@Override @NotNull public <T> T[] toArray(@NotNull T[] a) { return real.toArray(a); }
+			@Override public boolean add(E e) { return real.add(e); }
+			@Override public boolean remove(Object o) { return real.remove(o); }
+			@Override public boolean containsAll(@NotNull Collection<?> c) { return real.containsAll(c); }
+			@Override public boolean addAll(@NotNull Collection<? extends E> c) { return real.addAll(c); }
+			@Override public boolean addAll(int index, @NotNull Collection<? extends E> c) { return real.addAll(index, c); }
+			@Override public boolean removeAll(@NotNull Collection<?> c) { return real.removeAll(c); }
+			@Override public boolean retainAll(@NotNull Collection<?> c) { return real.retainAll(c); }
+			@Override public void clear() { real.clear(); }
+			@Override public E get(int index) { return real.get(index); }
+			@Override public E set(int index, E element) { return real.set(index, element); }
+			@Override public void add(int index, E element) { real.add(index, element); }
+			@Override public E remove(int index) { return real.remove(index); }
+			@Override public int indexOf(Object o) { return real.indexOf(o); }
+			@Override public int lastIndexOf(Object o) { return real.lastIndexOf(o); }
+			@Override @NotNull public ListIterator<E> listIterator() { return real.listIterator(); }
+			@Override @NotNull public ListIterator<E> listIterator(int index) { return real.listIterator(); }
+			@Override @NotNull public List<E> subList(int fromIndex, int toIndex) { return real.subList(fromIndex, toIndex); }
+
+		}
 
 	}
 
