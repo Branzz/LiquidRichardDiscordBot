@@ -5,6 +5,7 @@ import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.ChatScheduler;
 import com.wordpress.brancodes.messaging.chats.Chats;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -85,7 +86,7 @@ public class LiquidRichardBot {
 	// 	guildChatSchedulers.put(guildID, new ChatScheduler(new Chats(guildID)));
 	// }
 
-	private static final Set<Long> enabledGuilds = Set.of(873658002710888448L);
+	private static final Set<Long> enabledGuilds = Set.of(910004207120183326L);
 	public static TextChannel autodeleteLog;
 
 	public void cacheDependantInit() {
@@ -96,6 +97,38 @@ public class LiquidRichardBot {
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+
+		/* send starboard embed messages to test channel */
+
+		// final TextChannel channel = jda.getGuildById(722001554374131713L)
+		// 							.getTextChannels()
+		// 							.stream()
+		// 							.filter(c -> c.getName()
+		// 										  .equals("test"))
+		// 							.findFirst()
+		// 							.get();
+		// jda.getGuildById(910004207120183326L)
+		//    .getTextChannels()
+		//    .stream()
+		//    .filter(c -> c.getName().equals("starboard"))
+		//    .findFirst()
+		//    .ifPresent(c -> c.getIterableHistory().forEachAsync(m -> {
+		// 	   channel.sendMessage(m).queue();
+		// 	   m.getAttachments().forEach(a -> a.);
+		// 		// System.out.println(
+		// 		// 		m.getAuthor().getName() + " " + Reactions.timeStampOf(m.getTimeCreated()) + "\n" +
+		// 		// 		m.getContentDisplay() + "\n" +
+		// 		// 		m.getAttachments().stream().map(m -> {
+		// 		// 			if (m.isImage() || m.isVideo()) {
+		// 		// 				m.getUrl()
+		// 		// 			} else {
+		// 		// 				m.
+		// 		// 			}
+		// 		// 		}).collect(joining(", "))
+		// 		// );
+		// 		return true;
+		//    }));
+
 
 		// setConsole();
 

@@ -496,20 +496,27 @@ public class Reactions { // TODO convert into singleton (?)
 					} else
 						return false;
 				}).deactivated().build(),
+				new Reaction.Builder("Thingie", "Remember Folx:[\\w\\W]+", BOT, GUILD).executeStatus(message -> {
+					if (message.getAuthor().getIdLong() == 957145731456720947L) {
+						message.reply("Good Job Thingie.").queue();
+						return true;
+					} else {
+						return false;
+					}
+				}).build(),
 				new Reaction.Builder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
-							if (message.getMember().getIdLong() == 155149108183695360L
-									&& message.getGuild().getIdLong() == 907042440924528662L) {
-								Optional<Member> member = message.getMentionedMembers().stream().findFirst();
-								if (member.isEmpty())
-									return false;
-								else {
-									reply(message, "Hello " + member.get().getAsMention() + " .");
-									return true;
-								}
-							} else
-								return false;
+					if (message.getMember().getIdLong() == 155149108183695360L
+							&& message.getGuild().getIdLong() == 907042440924528662L) {
+						Optional<Member> member = message.getMentionedMembers().stream().findFirst();
+						if (member.isEmpty())
+							return false;
+						else {
+							reply(message, "Hello " + member.get().getAsMention() + " .");
+							return true;
 						}
-				).deactivated().build(),
+					} else
+						return false;
+				}).deactivated().build(),
 				new Reaction.Builder("Me&Whom", "([Mm][Ee]\\s*[Aa][Nn][Dd]\\s*[Ww][Hh][Oo])[^Mm][.,;:!?\\s]*", DEFAULT, GUILD).execute(message -> {
 					reply(message, "Me And Whom.*");
 				}).deactivated().build(),
@@ -669,7 +676,7 @@ public class Reactions { // TODO convert into singleton (?)
 
 	final static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
 
-	private static String timeStampOf(final OffsetDateTime date) {
+	public static String timeStampOf(final OffsetDateTime date) {
 		return dateTimeFormatter.format(date);
 	}
 

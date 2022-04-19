@@ -1,9 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions.commands.custom;
 
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +15,10 @@ public class CustomCommandCompiler {
 					.collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
 	public static List<TokenType> tokenize(String code) {
+		List<TokenType> tokens = new ArrayList<>();
+		for (int i = 0, j = 1; i < code.length(); i++) {
+
+		}
 		return null;
 	}
 
@@ -80,6 +81,26 @@ public class CustomCommandCompiler {
 
 		public String[] getSymbols() {
 			return symbols;
+		}
+
+	}
+
+	class DelimitToken implements TokenType {
+		final int indentLevel;
+
+		public DelimitToken(String token) {
+			int indentCount = 0;
+			for (char c : token.toCharArray()) {
+				if (c == '\t')
+					indentCount += 4;
+				else if (c == ' ')
+					indentCount++;
+			}
+			this.indentLevel = indentCount;
+		}
+
+		public DelimitToken(int indentLevel) {
+			this.indentLevel = indentLevel;
 		}
 
 	}

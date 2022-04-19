@@ -56,7 +56,7 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	}
 
 	private static BigDecimal applyScale(BigDecimal input, double conversionFactor) {
-		return input.multiply(new BigDecimal(conversionFactor)).setScale(Math.max(0, input.stripTrailingZeros().scale()), RoundingMode.HALF_UP);
+		return input.multiply(new BigDecimal(conversionFactor)).setScale(Math.max(1, input.stripTrailingZeros().scale()), RoundingMode.HALF_UP);
 	}
 
 	private static String scaleWithInches(BigDecimal input, double scale) {
@@ -143,7 +143,7 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	public static String convertFeetInchString(String feet, final String inches, String inchWhole, String inchDecimal) {
 		int scale = getScale(inchWhole, feet, inchDecimal);
 		final BigDecimal product = Unit.inchesToFeet(feet, inches == null ? "0" : inches).multiply(new BigDecimal("0.3048"));
-		final boolean cmRange = product.compareTo(new BigDecimal("1")) <= 0;
+		final boolean cmRange = product.compareTo(new BigDecimal("2")) <= 0;
 		final BigDecimal converted = product.setScale(cmRange ? scale + 1 : scale, RoundingMode.HALF_UP);
 		if (cmRange)
 			return converted.movePointRight(2) + " cm";
@@ -220,8 +220,8 @@ enum Unit { // TODO could be condensed to 1 method (but would we want more units
 	 */
 	@NotNull
 	private static BigDecimal getBMI(BigDecimal convertedHeight, BigDecimal convertedWeight) {
-		return convertedWeight.setScale(2, RoundingMode.HALF_UP)
-				.divide(convertedHeight.setScale(2, RoundingMode.HALF_UP), RoundingMode.HALF_UP)
+		return convertedWeight.setScale(3, RoundingMode.HALF_UP)
+				.divide(convertedHeight.setScale(3, RoundingMode.HALF_UP), RoundingMode.HALF_UP)
 				.divide(convertedHeight, RoundingMode.HALF_UP)
 				.setScale(1, RoundingMode.HALF_UP);
 	}

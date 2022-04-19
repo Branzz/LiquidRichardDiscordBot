@@ -142,45 +142,26 @@ public class Listener extends ListenerAdapter {
 							  : message.getContentRaw();
 		Reactions.getReactions(ReactionChannelType.of(channelType), userCategory)
 				.stream()
-//				.peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())
 				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
-//				.filter(response -> response.getValue().status()).findFirst() // method 1
 				.min(Comparator.comparing(r -> r.getValue().status())) // method 3
 				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
 
-		// method 2
-
-//		List<SimpleEntry<Reaction, ReactionResponse>> reactions = Reactions.commandsByCategoryChannel
-//				.get(ReactionChannelType.of(channelType))
-//				.get(userCategory)
-//				.stream()
-////				.peek(System.out::println)
-//				.filter(reaction -> !reaction.isDeactivated())
-//				.map(reaction -> new SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
-//				.filter(response -> response.getValue().status())
-//				.collect(Collectors.toList());
-//		Optional<SimpleEntry<Reaction, ReactionResponse>> firstSuccess = reactions.stream().filter(reaction -> reaction.getValue().status()).findFirst();
-//		if (firstSuccess.isPresent()) {
-//			logReactionResponse(message, firstSuccess.get().getKey(), firstSuccess.get().getValue());
-//		} else {
-//			reactions.stream().findFirst().ifPresent(reaction -> logReactionResponse(message, reaction.getKey(), reaction.getValue()));
-//		}
 	}
 
 	static void logReactionResponse(Message message, Reaction reaction, ReactionResponse response) {
-		if (response.status() || response.hasFailureResponse())
-			LOGGER.info(addLogStatus(String.format("%s %s %s by %s in #%s in %s", //Commands.qCount +
-					response.status() ? "Ran" : "Failed to run",
-					reaction,
-					reaction.getClass().getSimpleName(),
-					LiquidRichardBot.getUserName(message.getAuthor()),
-					message.getChannel().getName(),
-					message.isFromGuild() ? message.getGuild().getName() : "'s DMs"), response));
-	}
-
-	private static String addLogStatus(final String string, ReactionResponse response) {
-		return response.hasLogResponse() ? string + ": " + response.getLogResponse() : string;
+		if (response.status()) {
+			String log = String.format("%s %s %s by %s in #%s in %s", //Commands.qCount +
+									   response.status() ? "Ran" : "Failed to run",
+									   reaction,
+									   reaction.getClass().getSimpleName(),
+									   LiquidRichardBot.getUserName(message.getAuthor()),
+									   message.getChannel().getName(),
+									   message.isFromGuild() ? message.getGuild().getName() : "'s DMs");
+			if (response.status() || response.hasFailureResponse())
+				log = response.hasLogResponse() ? log + ": " + response.getLogResponse() : log;
+			LOGGER.info(log);
+		}
 	}
 
 }

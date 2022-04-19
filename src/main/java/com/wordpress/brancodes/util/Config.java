@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 public final class Config {
@@ -31,6 +33,15 @@ public final class Config {
 		// 	LOGGER.warn("Interrupted exception while initializing");
 		// 	e.printStackTrace();
 		// }
+		try (InputStream input = Config.class.getClassLoader().getResourceAsStream("static/private/LRB_private.properties")) {
+			Properties prop = new Properties();
+			CONFIG.load(input);
+			System.out.println(prop);
+		} catch (IOException io) {
+			io.printStackTrace();
+			LOGGER.error("Couldn't load private properties file");
+		}
+
 	}
 
 	public static Object get(Object key) {

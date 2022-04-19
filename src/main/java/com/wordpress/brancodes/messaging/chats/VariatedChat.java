@@ -77,7 +77,7 @@ public class VariatedChat extends PeriodicChat {
 		// return getNextDelay();
 		// Date next = new Date(121, Calendar.AUGUST, 13, 18, 1, 1);
 		Date current = new Date();
-		Date next = new Date(121, current.getMonth(), current.getDate(), 18, 15, 0);
+		Date next = new Date(121, current.getMonth(), current.getDate(), 20, 0, 0);
 		LOGGER.info(name + " scheduled for: " + next);
 		return next.getTime() - new Date().getTime();
 		// return current.getTime() - new Date().getTime() + 5000;
