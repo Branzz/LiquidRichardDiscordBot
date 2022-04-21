@@ -1,12 +1,14 @@
 package com.wordpress.brancodes.util;
 
 import com.wordpress.brancodes.main.Main;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageEmbed.AuthorInfo;
 import net.dv8tion.jda.api.entities.MessageEmbed.ImageInfo;
 import net.dv8tion.jda.api.entities.MessageEmbed.Thumbnail;
 import net.dv8tion.jda.internal.JDAImpl;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,12 +63,19 @@ public class ImageUtil {
 
 	}
 
-	public static Optional<Attachment> getFirstImageOrEmbed(Message message) {
-		return getFirstImage(message).or(() -> getFirstEmbedImage(message));
+	@NotNull
+	public static Optional<Attachment> getFirstImageEmbedOrSticker(Message message) {
+		return getFirstImage(message).or(() -> getFirstEmbedImage(message).or(() -> getFirstSticker(message)));
 	}
 
+	@NotNull
 	public static Optional<Attachment> getFirstImage(Message message) {
 		return message.getAttachments().stream().filter(Attachment::isImage).findFirst();
+	}
+
+	@NotNull
+	public static Optional<Attachment> getFirstSticker(Message message) {
+		return message.getStickers().stream().findFirst().map(sticker -> ImageUtil.URLToAttachment(sticker.getIconUrl()));
 	}
 
 	@Nullable
@@ -78,7 +87,7 @@ public class ImageUtil {
 	private static ImageInfo authorToImageInfo(AuthorInfo authorInfo) {
 		return authorInfo == null ? null : new ImageInfo(authorInfo.getProxyIconUrl(), authorInfo.getProxyIconUrl(), 0, 0);
 	}
-
+	@NotNull
 	public static Optional<Attachment> getFirstEmbedImage(Message message) {
 		return message.getEmbeds().stream()
 				.map(embed -> embed.getImage() != null ? embed.getImage()
@@ -95,26 +104,32 @@ public class ImageUtil {
 				});
 	}
 
+	public static Optional<Attachment> getFirstEmote(Message message) {
+		return message.getEmotes().stream().findFirst().map(emote -> URLToAttachment(emote.getImageUrl()));
+	}
+
+	@NotNull
+	public static Optional<Message.Attachment> getMentionedMemberPFP(final Message message) {
+		return message.getMentionedMembers()
+					  .stream()
+					  .filter(member -> !message.isFromGuild()
+										|| (message.getReferencedMessage() == null // dont include @ of referenced user
+												|| (message.getReferencedMessage().getAuthor().getIdLong() != member.getUser().getIdLong())))
+					  .findFirst()
+					  .map(member -> ImageUtil.URLToAttachment(member.getEffectiveAvatarUrl()));
+	}
+
+	@NotNull
 	public static Optional<Attachment> searchFirstAttachment(Message message) {
-		AtomicReference<Optional<Attachment>> optionalAttachment = new AtomicReference<>(Optional.empty());
+		AtomicReference<Attachment> optionalAttachment = new AtomicReference<>();
 		try {
-			message.getChannel().getIterableHistory().takeUntilAsync(10, m -> {
-				Optional<Attachment> firstImage = getFirstImage(m);
-				if (firstImage.isPresent()) {
-					optionalAttachment.set(firstImage);
-					return true;
-				}
-				Optional<Attachment> firstEmbedImage = getFirstEmbedImage(m);
-				if (firstEmbedImage.isPresent()) {
-					optionalAttachment.set(firstEmbedImage);
-					return true;
-				}
-				return false;
-			}).get();
-		} catch (InterruptedException | ExecutionException e) {
+			message.getChannel().getIterableHistory().takeUntilAsync(10, m ->
+				  Reactions.presentOrElseReturnStatus(getFirstImageEmbedOrSticker(m), optionalAttachment::set)).get();
+		}
+		catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
 		}
-		return optionalAttachment.get();
+		return Optional.of(optionalAttachment.get());
 	}
 
 	public static Attachment URLToAttachment(String URL) {

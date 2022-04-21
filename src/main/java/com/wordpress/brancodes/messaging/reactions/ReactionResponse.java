@@ -4,8 +4,8 @@ import net.dv8tion.jda.api.requests.RestAction;
 
 public class ReactionResponse {
 
-	public static ReactionResponse SUCCESS = new ReactionResponse(true);
-	public static ReactionResponse FAILURE = new ReactionResponse(false);
+	public static final ReactionResponse SUCCESS = new ReactionResponse(true);
+	public static final ReactionResponse FAILURE = new ReactionResponse(false);
 
 	private final boolean status;
 	private final String logResponse;
@@ -38,7 +38,7 @@ public class ReactionResponse {
 		return logResponse;
 	}
 
-	public ReactionResponse onFailureReply(RestAction response) {
+	public ReactionResponse onFailureReply(RestAction<?> response) {
 		this.response = response;
 		return this;
 	}

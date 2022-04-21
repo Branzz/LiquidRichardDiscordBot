@@ -5,19 +5,19 @@ import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.ChatScheduler;
 import com.wordpress.brancodes.messaging.chats.Chats;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.templates.TemplateChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
@@ -86,17 +86,28 @@ public class LiquidRichardBot {
 	// 	guildChatSchedulers.put(guildID, new ChatScheduler(new Chats(guildID)));
 	// }
 
-	private static final Set<Long> enabledGuilds = Set.of(910004207120183326L);
+	private static final Map<Long, Long> guildMainChannels = Map.of(910004207120183326L, 938608631086190642L); // <Guild, TextChannel> ?
+
 	public static TextChannel autodeleteLog;
 
 	public void cacheDependantInit() {
 		guildChatSchedulers =
 				jda.getGuildCache()
-				   .applyStream(guilds -> guilds.filter(guild -> enabledGuilds.contains(guild.getIdLong()))
-				   							    .collect(toMap(Guild::getIdLong, guild -> new ChatScheduler(new Chats(guild.getSystemChannel())))));
+				   .applyStream(guilds -> guilds.filter(guild -> guildMainChannels.containsKey(guild.getIdLong()))
+				   							    .collect(toMap(Guild::getIdLong, guild -> new ChatScheduler(new Chats(getTextChannel(guildMainChannels.get(guild.getIdLong())))))));
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+
+		// final Guild guild = jda.getGuildById(910004207120183326L);
+		// guild.getRoles().stream().filter(r -> r.getIdLong() == 942015026871533578L).findAny().ifPresent(r -> {
+		// 	guild.getChannels().stream().filter(c -> c.getName().equals("Elite Edging Session")).findAny().ifPresent(c -> {
+		// 		c.getPermissionContainer().createPermissionOverride(r).queue(s -> {
+		// 			System.out.println(s.getMember().getUser().getName());
+		// 			s.getManager().setAllow(Permission.VIEW_CHANNEL, Permission.VOICE_SPEAK).queue();
+		// 		});
+		// 	});
+		// });
 
 		/* send starboard embed messages to test channel */
 
@@ -141,6 +152,10 @@ public class LiquidRichardBot {
 
 		// setGuildMainChannel(722001554374131713L, jda.getTextChannelById(823025247883755531L));
 		//setGuildMainChannel(873658002710888448L, jda.getTextChannelById(873658293493592074L));
+	}
+
+	public TextChannel getTextChannel(long id) {
+		return jda.getTextChannelById(id);
 	}
 
 	private void setConsole() {

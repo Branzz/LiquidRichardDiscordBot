@@ -11,27 +11,25 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import javax.annotation.RegEx;
 
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-
 import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
 
 public class Command extends Reaction {
 
 	protected String description;
 	protected boolean deniable;
+	protected boolean chainable;
 
-	protected Command(String name, Matcher matcher, boolean deactivated,
-					  UserCategory userCategory, ReactionChannelType channelCategory,
-					  String description, boolean deniable,
-					  Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-		super(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
-		this.description = description;
-		this.deniable = deniable;
-	}
+	protected Command() { }
+
+	// protected Command(String name, Matcher matcher, boolean deactivated,
+	// 				  UserCategory userCategory, ReactionChannelType channelCategory,
+	// 				  Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse,
+	// 				  String description, boolean deniable, boolean chainable) {
+	// 	super(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
+	// 	this.description = description;
+	// 	this.deniable = deniable;
+	// 	this.chainable = chainable;
+	// }
 
 	@Override
 	public ReactionResponse execute(Message message) {
@@ -83,68 +81,52 @@ public class Command extends Reaction {
 		return embedBuilder.build();
 	}
 
-	public static class Builder extends Reaction.Builder {
-		protected String description = null;
-		protected boolean deniable = false;
+	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Reaction.Builder<T, B> {
 
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);
 		}
 
-		public Builder helpPanel(String description) {
-			this.description = description;
-			return this;
+		public B helpPanel(String description) {
+			object.description = description;
+			return thisObject;
 		}
 
-		public Builder deniable() {
-			this.deniable = true;
-			return this;
+		public B deniable() {
+			object.deniable = true;
+			return thisObject;
 		}
 
-		public Builder deactivated() {
-			super.deactivated();
-			return this;
+		public B andChainable() {
+			object.chainable = true;
+			return thisObject;
 		}
 
-		public Builder execute(Consumer<Message> executeResponse) {
-			super.execute(executeResponse);
-			return this;
-		}
+	}
 
-		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
-			super.execute(executeMatcherResponse);
-			return this;
-		}
+	public static final class CommandBuilder extends Command.Builder<Command, CommandBuilder> {
 
-		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
-			super.executeStatus(executeResponse);
-			return this;
-		}
-
-		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
-			super.executeStatus(executeMatcherResponse);
-			return this;
-		}
-
-		public Builder executeResponse(Function<Message, ReactionResponse> executeResponse) {
-			super.executeResponse(executeResponse);
-			return this;
-		}
-
-		public Builder executeResponse(BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-			super.executeResponse(executeMatcherResponse);
-			return this;
+		public CommandBuilder(final String name, final String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {
+			super(name, regex, userCategory, channelCategory);
 		}
 
 		public Command build() {
-			if (executeResponse == null && executeMatcherResponse == null)
-				throw new IllegalArgumentException("Must define execute");
-			final Command command = new Command(name, matcher, deactivated, userCategory, channelCategory,
-												description, deniable, executeResponse, executeMatcherResponse);
+			// final Command command = new Command(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse, description, deniable, chainable);
 //			Command command = new Command(description, deniable, deactivated);
-			command.description = description;
-			command.deniable = deniable;
-			return command;
+
+			// command.description = description;
+			// command.deniable = deniable;
+			return object;
+		}
+
+		@Override
+		protected Command createObject() {
+			return new Command();
+		}
+
+		@Override
+		protected CommandBuilder thisObject() {
+			return this;
 		}
 
 	}

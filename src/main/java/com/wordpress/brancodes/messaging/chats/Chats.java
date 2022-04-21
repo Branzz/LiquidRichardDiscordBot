@@ -3,6 +3,7 @@ package com.wordpress.brancodes.messaging.chats;
 import com.wordpress.brancodes.util.NumberToText;
 import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,21 +44,8 @@ public class Chats {
 				// 	mainChannel.sendMessage("@everyone").queue();
 				// 	mainChannel.getIterableHistory().stream().findFirst().get().delete().queue();
 				// }, 43_200_000L)
-
 				new VariatedChat(() -> {
-					Date current = new Date();
-					int days = angelitteBirthday.getDate() - current.getDate();
-					int months = angelitteBirthday.getMonth() - current.getMonth();
-					if (days < 0) {
-						days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
-						months--;
-					}
-					mainChannel.sendMessage((months != 0 ? CaseUtil.properCase(NumberToText.numberToString(months))
-														   + " Month" + (months != 1 ? "s" : "") : "")
-											+ (days != 0 ? (months != 0 ? " And " : "")
-														   + CaseUtil.properCase(NumberToText.numberToString(days))
-														   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is.")
-							   .queue(message -> {
+					getBdayMessage(mainChannel).queue(message -> {
 									message.addReaction("U+1F449U+1F3FF").queue();
 									message.addReaction("U+1F44CU+1F3FF").queue();
 							   }
@@ -69,6 +57,21 @@ public class Chats {
 
 	public List<Chat> getChats() {
 		return chats;
+	}
+
+	public static MessageAction getBdayMessage(TextChannel channel) {
+		Date current = new Date();
+		int days = angelitteBirthday.getDate() - current.getDate();
+		int months = angelitteBirthday.getMonth() - current.getMonth();
+		if (days < 0) {
+			days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
+			months--;
+		}
+		return channel.sendMessage((months != 0 ? CaseUtil.properCase(NumberToText.numberToString(months))
+											   + " Month" + (months != 1 ? "s" : "") : "")
+								+ (days != 0 ? (months != 0 ? " And " : "")
+											   + CaseUtil.properCase(NumberToText.numberToString(days))
+											   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is 18.");
 	}
 
 }

@@ -15,43 +15,37 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Reaction { // weird encapsulation between this and command; Commands.java -> Reactions.java ?
+public class Reaction {
 
-	protected final String name;
-	protected final Matcher matcher;
+	protected String name;
+	protected Matcher matcher;
 	protected boolean deactivated;
-	protected final UserCategory userCategory;
-	protected final ReactionChannelType channelCategory;
-	protected final Function<Message, ReactionResponse> executeResponse;
-	protected final BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
+	protected UserCategory userCategory;
+	protected ReactionChannelType channelCategory;
+	protected Function<Message, ReactionResponse> executeResponse;
+	protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
-	private Reaction() {
-		name = null;
-		matcher = null;
-		deactivated = true;
-		userCategory = null;
-		channelCategory = null;
-		executeResponse = null;
-		executeMatcherResponse = null;
-	}
+	protected Reaction() { }
 
-	protected Reaction(String name, Matcher matcher, boolean deactivated, UserCategory userCategory, ReactionChannelType channelCategory,
-					   Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-		if (name.length() > 16)
-			throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
-		this.name = name;
-		this.matcher = matcher;
-		this.deactivated = deactivated;
-		this.userCategory = userCategory;
-		this.channelCategory = channelCategory;
-		if (executeResponse == null) {
-			this.executeResponse = null;
-			this.executeMatcherResponse = executeMatcherResponse;
-		} else {
-			this.executeResponse = executeResponse;
-			this.executeMatcherResponse = null;
-		}
-	}
+	// protected Reaction(String name, Matcher matcher, boolean deactivated, UserCategory userCategory, ReactionChannelType channelCategory,
+	// 				   Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
+	// 	if (executeResponse == null && executeMatcherResponse == null)
+	// 		throw new IllegalArgumentException("Must define execute");
+	// 	if (name.length() > 16)
+	// 		throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
+	// 	this.name = name;
+	// 	this.matcher = matcher;
+	// 	this.deactivated = deactivated;
+	// 	this.userCategory = userCategory;
+	// 	this.channelCategory = channelCategory;
+	// 	if (executeResponse == null) {
+	// 		this.executeResponse = null;
+	// 		this.executeMatcherResponse = executeMatcherResponse;
+	// 	} else {
+	// 		this.executeResponse = executeResponse;
+	// 		this.executeMatcherResponse = null;
+	// 	}
+	// }
 
 	public ReactionResponse execute(final Message message) {
 		return execute(message, message.getContentRaw());
@@ -145,67 +139,89 @@ public class Reaction { // weird encapsulation between this and command; Command
 		return getMessageEmbed().build();
 	}
 
-	public static class Builder {
-		protected Matcher matcher;
-		protected String name;
-		protected boolean deactivated = false;
-		protected UserCategory userCategory;
-		protected ReactionChannelType channelCategory;
-		protected Function<Message, ReactionResponse> executeResponse;
-		protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
+	public static abstract class Builder<T extends Reaction, B extends Builder<T, B>> extends AbstractBuilder<T, B> {
+		// protected Matcher matcher;
+		// protected String name;
+		// protected boolean deactivated = false;
+		// protected UserCategory userCategory;
+		// protected ReactionChannelType channelCategory;
+		// protected Function<Message, ReactionResponse> executeResponse;
+		// protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			this.matcher = getMatcher(regex);
-			this.name = name;
-			this.userCategory = userCategory;
-			this.channelCategory = channelCategory;
+			object.matcher = getMatcher(regex);
+			object.name = name;
+			object.userCategory = userCategory;
+			object.channelCategory = channelCategory;
 		}
 
-		public Builder deactivated() {
-			this.deactivated = true;
-			return this;
+		public B deactivated() {
+			object.deactivated = true;
+			return thisObject;
 		}
 
-		public Builder execute(Consumer<Message> executeResponse) {
-			this.executeResponse = m -> {
+		public B execute(Consumer<Message> executeResponse) {
+			object.executeResponse = m -> {
 				executeResponse.accept(m);
 				return ReactionResponse.SUCCESS;
 			};
-			return this;
+			return thisObject;
 		}
 
-		public Builder execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
-			this.executeMatcherResponse = (m, r) -> {
+		public B execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
+			object.executeMatcherResponse = (m, r) -> {
 				executeMatcherResponse.accept(m, r);
 				return ReactionResponse.SUCCESS;
 			};
-			return this;
+			return thisObject;
 		}
 
-		public Builder executeStatus(Function<Message, Boolean> executeResponse) {
-			this.executeResponse = message -> new ReactionResponse(executeResponse.apply(message));
-			return this;
+		public B executeStatus(Function<Message, Boolean> executeResponse) {
+			object.executeResponse = message -> new ReactionResponse(executeResponse.apply(message));
+			return thisObject;
 		}
 
-		public Builder executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
+		public B executeStatus(BiFunction<Message, Matcher, Boolean> executeMatcherResponse) {
 			executeResponse((message, matcher) -> new ReactionResponse(executeMatcherResponse.apply(message, matcher)));
-			return this;
+			return thisObject;
 		}
 
-		public Builder executeResponse(Function<Message, ReactionResponse> executeResponse) {
-			this.executeResponse = executeResponse;
-			return this;
+		public B executeResponse(Function<Message, ReactionResponse> executeResponse) {
+			object.executeResponse = executeResponse;
+			return thisObject;
 		}
 
-		public Builder executeResponse(BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-			this.executeMatcherResponse = executeMatcherResponse;
-			return this;
+		public B executeResponse(BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
+			object.executeMatcherResponse = executeMatcherResponse;
+			return thisObject;
+		}
+
+	}
+
+	public static final class ReactionBuilder extends Builder<Reaction, ReactionBuilder> {
+
+		public ReactionBuilder(final String name, final String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {
+			super(name, regex, userCategory, channelCategory);
 		}
 
 		public Reaction build() {
-			if (executeResponse == null && executeMatcherResponse == null)
+			if (object.executeResponse == null && object.executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
-			return new Reaction(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
+			if (object.executeResponse != null && object.executeMatcherResponse != null)
+				throw new IllegalArgumentException("Must define execute only once");
+			if (object.name.length() > 16)
+				throw new InvalidParameterException("name \"" + object.name + "\" must be 16 characters or less");
+			return object;
+		}
+
+		@Override
+		protected Reaction createObject() {
+			return new Reaction();
+		}
+
+		@Override
+		protected ReactionBuilder thisObject() {
+			return this;
 		}
 
 	}
