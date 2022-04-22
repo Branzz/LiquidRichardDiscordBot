@@ -150,14 +150,12 @@ public class Listener extends ListenerAdapter {
 		final String messageContent = MorseUtil.isMorse(contentDisplay)
 							  ?	CaseUtil.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
 							  : message.getContentRaw();
+		// .forEach(r -> System.out.println(r.getKey().getName()));
 		Reactions.getReactions(ReactionChannelType.of(channelType), userCategory)
-				.stream()
-				.filter(reaction -> !reaction.isDeactivated())
-				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
-				.sorted(Comparator.comparing(r -> !r.getValue().status()))
-				// .forEach(r -> System.out.println(r.getKey().getName()));
-				.findFirst() // method 3
-				// .ifPresent(r -> System.out.println(r.getKey().getName()));
+				 .stream()
+				 .filter(reaction -> !reaction.isDeactivated())
+				 .map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
+				 .min(Comparator.comparing(r -> !r.getValue().status())) // method 3
 				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
 
 	}

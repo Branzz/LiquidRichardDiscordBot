@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 public class Reaction {
 
-	protected String name;
+	protected @RegEx String name;
 	protected Matcher matcher;
 	protected boolean deactivated;
 	protected UserCategory userCategory;
@@ -26,26 +26,6 @@ public class Reaction {
 	protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
 	protected Reaction() { }
-
-	// protected Reaction(String name, Matcher matcher, boolean deactivated, UserCategory userCategory, ReactionChannelType channelCategory,
-	// 				   Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-	// 	if (executeResponse == null && executeMatcherResponse == null)
-	// 		throw new IllegalArgumentException("Must define execute");
-	// 	if (name.length() > 16)
-	// 		throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
-	// 	this.name = name;
-	// 	this.matcher = matcher;
-	// 	this.deactivated = deactivated;
-	// 	this.userCategory = userCategory;
-	// 	this.channelCategory = channelCategory;
-	// 	if (executeResponse == null) {
-	// 		this.executeResponse = null;
-	// 		this.executeMatcherResponse = executeMatcherResponse;
-	// 	} else {
-	// 		this.executeResponse = executeResponse;
-	// 		this.executeMatcherResponse = null;
-	// 	}
-	// }
 
 	public ReactionResponse execute(final Message message) {
 		return execute(message, message.getContentRaw());
@@ -64,18 +44,6 @@ public class Reaction {
 		else
 			return executeMatcherResponse.apply(message, matcher);
 	}
-
-	// protected boolean matchesCommand(final String message) {
-	// 	return matcher.reset(message).matches();
-	// }
-
-	// public boolean executeIfMatches(final Message message) {
-	// 	if (matchesCommand(message.getContentRaw())) {
-	// 		execute(message);
-	// 		return true;
-	// 	}
-	// 	return false;
-	// }
 
 	public static Matcher getMatcher(@RegEx String regex, String input) {
 		return Pattern.compile(regex, Pattern.UNICODE_CHARACTER_CLASS).matcher(input);
@@ -140,13 +108,6 @@ public class Reaction {
 	}
 
 	public static abstract class Builder<T extends Reaction, B extends Builder<T, B>> extends AbstractBuilder<T, B> {
-		// protected Matcher matcher;
-		// protected String name;
-		// protected boolean deactivated = false;
-		// protected UserCategory userCategory;
-		// protected ReactionChannelType channelCategory;
-		// protected Function<Message, ReactionResponse> executeResponse;
-		// protected BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			object.matcher = getMatcher(regex);
@@ -207,8 +168,8 @@ public class Reaction {
 		public Reaction build() {
 			if (object.executeResponse == null && object.executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
-			if (object.executeResponse != null && object.executeMatcherResponse != null)
-				throw new IllegalArgumentException("Must define execute only once");
+			// if (object.executeResponse != null && object.executeMatcherResponse != null)
+			// 	throw new IllegalArgumentException("Must define execute only once");
 			if (object.name.length() > 16)
 				throw new InvalidParameterException("name \"" + object.name + "\" must be 16 characters or less");
 			return object;

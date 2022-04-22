@@ -10,10 +10,6 @@ public class CommandOption extends Command {
 	protected CommandOption() {
 	}
 
-	// protected CommandOption(final String name, final Matcher matcher, final boolean deactivated, final UserCategory userCategory, final ReactionChannelType channelCategory, final String description, final boolean deniable, final Function<Message, ReactionResponse> executeResponse, final BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-	// 	super(name, matcher, )
-	// }
-
 	public static abstract class Builder<T extends CommandOption, B extends Builder<T, B>> extends Command.Builder<T, B> {
 
 		public Builder(final String name, final String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {

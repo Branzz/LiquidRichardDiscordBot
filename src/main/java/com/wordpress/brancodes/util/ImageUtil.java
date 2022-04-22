@@ -23,6 +23,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+
+import static java.util.Optional.*;
+import static java.util.Optional.ofNullable;
 
 public class ImageUtil {
 
@@ -64,8 +68,11 @@ public class ImageUtil {
 	}
 
 	@NotNull
-	public static Optional<Attachment> getFirstImageEmbedOrSticker(Message message) {
-		return getFirstImage(message).or(() -> getFirstEmbedImage(message).or(() -> getFirstSticker(message)));
+	public static Optional<Attachment> getFirstAttachment(Message message) {
+		return getFirstImage(message)
+			.or(() -> getFirstEmbedImage(message))
+			.or(() -> getFirstSticker(message))
+			.or(() -> getFirstEmote(message));
 	}
 
 	@NotNull
@@ -105,11 +112,23 @@ public class ImageUtil {
 	}
 
 	public static Optional<Attachment> getFirstEmote(Message message) {
+		// Optional.ofNullable(message.getEmotes().get(0))
 		return message.getEmotes().stream().findFirst().map(emote -> URLToAttachment(emote.getImageUrl()));
 	}
 
+	private static final Matcher jumpMessageMatcher = Message.JUMP_URL_PATTERN.matcher("");
+
+	public static synchronized Optional<Attachment> getFirstMessageLink(Message message) {
+			return jumpMessageMatcher.reset(message.getContentRaw()).find() ?
+						  ofNullable(message.getJDA().getGuildById(jumpMessageMatcher.group("guild")))
+								.map(m -> m.getTextChannelById(jumpMessageMatcher.group("channel")))
+								.map(c -> c.retrieveMessageById(jumpMessageMatcher.group("message")).complete())
+								.flatMap(ImageUtil::getFirstAttachment)
+					  : Optional.empty();
+	}
+
 	@NotNull
-	public static Optional<Message.Attachment> getMentionedMemberPFP(final Message message) {
+	public static Optional<Message.Attachment> getMentionedMemberPFP(Message message) {
 		return message.getMentionedMembers()
 					  .stream()
 					  .filter(member -> !message.isFromGuild()
@@ -124,17 +143,21 @@ public class ImageUtil {
 		AtomicReference<Attachment> optionalAttachment = new AtomicReference<>();
 		try {
 			message.getChannel().getIterableHistory().takeUntilAsync(10, m ->
-				  Reactions.presentOrElseReturnStatus(getFirstImageEmbedOrSticker(m), optionalAttachment::set)).get();
+				  Reactions.presentOrElseReturnStatus(getFirstAttachment(m), optionalAttachment::set)).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
 		}
-		return Optional.of(optionalAttachment.get());
+		return of(optionalAttachment.get());
 	}
 
 	public static Attachment URLToAttachment(String URL) {
 		String name = URL.substring(URL.lastIndexOf('/') + 1);
 		return new Attachment(1L, URL, URL, name, null, "", 0, 100, 100, false, (JDAImpl) Main.getBot().getJDA());
+	}
+
+	public static <T> Optional<T> booleanToOptional(boolean exists, Optional<T> optional) {
+		return exists ? optional : Optional.empty();
 	}
 
 }

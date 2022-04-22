@@ -238,7 +238,7 @@ public class Reactions { // TODO convert into singleton (?)
 				}).build(),
 				new Command.CommandBuilder("Get Commands", "(^![Mm])|(" + getCommandRegex("(Get|Tell|Show|Give)\\s+(Me\\s+)?((Every|All)\\s+)?(The\\s+)?Commands") + ")", MOD, GUILD_AND_PRIVATE).execute(message -> {
 					Map<Boolean, String> deactivatedGroupReactions = reactions.stream()//.filter(r -> r instanceof Command)
-							.collect(groupingBy(Reaction::isDeactivated, Collectors.mapping(Reaction::getName, joining(", ", "", "."))));
+							.collect(groupingBy(Reaction::isDeactivated, mapping(Reaction::getName, joining(", ", "", "."))));
 					message.reply(truncate("All Commands: " + deactivatedGroupReactions.get(false) + "\nDeactivated:\n" + deactivatedGroupReactions.get(true))).queue();
 				}).build(),
 				new Command.CommandBuilder("Disable Command", "^![Dd][Cc]\\s+([\\W\\w]+)", MOD, GUILD).executeResponse((message, matcher) ->
@@ -374,7 +374,7 @@ public class Reactions { // TODO convert into singleton (?)
 
 				new ReactionBuilder("Convert Units", ("(?<!^[?.!][Mm]ute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)" //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 													  + "|(\\d+\\.?\\d*|\\.\\d+)\\s*([Kk][Gg][Ss]?([\\s]+|$)|[Kk][Ii][Ll][Oo]([SsGg\\s]|$)\\w*|[Ll][Bb][Ss]?([^\\w]|$)"
-													  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ff]([Ee][Ee])[Tt]([^\\w]+[\\w\\W]*|$)|[Ii][Nn]\\w*))"),
+													  + "|[Pp][Oo][Uu][Nn][Dd]\\w*|[Mm]([^\\w]+|$)|[Mm][Ee][Tt][Ee][Rr][Ss]?([^\\w]+|$)|[Cc][Mm][Ss]?([^\\w]+|$)|[Ff]([Ee][Ee])[Tt]([^\\w]+[\\w\\W]*|$)|[Ii][Nn][Cc.][Hh]\\w*))"),
 									//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 									DEFAULT, GUILD_AND_PRIVATE).executeResponse((message, matcher) -> {
 					if (message.getGuild().getIdLong() == 953143574453706792L)
@@ -424,7 +424,7 @@ public class Reactions { // TODO convert into singleton (?)
 							final List<VoiceChannel> voiceChannels = message.getGuild().getVoiceChannels();
 							if (voiceChannels.isEmpty()) {
 								final ChannelAction<VoiceChannel> vC = message.getGuild().createVoiceChannel("Celebration Time.");
-								message.getGuild().getCategories().stream().findFirst().ifPresent(vC::setParent);
+								message.getGuild().getCategories().stream().findFirst().ifPresent(c -> vC.setParent(c).queue()); // multiple queues??
 								vC.queue(channel -> {
 									if (message.getGuild().getSelfMember().hasPermission(channel, Permission.VOICE_CONNECT))
 										audioManager.openAudioConnection(channel);
@@ -445,22 +445,35 @@ public class Reactions { // TODO convert into singleton (?)
 					// audioManager.closeAudioConnection();
 				}).helpPanel("Celebrate The Princess's Birthday").deniable().build(),
 
-				new Command.CommandBuilder("Speech Bubble", "^[Ss][Pp][Ee][Ee][Cc][Hh]\\s*[Bb][Uu][Bb][Bb][Ll][Ee]",
+				new Command.CommandBuilder("Speech Bubble", "^([Ss][Pp][Ee][Ee][Cc][Hh]\\s*[Bb][Uu][Bb][Bb][Ll][Ee]|[Ss][Bb])",
 										   DEFAULT, GUILD_AND_PRIVATE).executeStatus((Message message) ->
-					message.getGuild().getIdLong() != 910004207120183326L || message.getChannel().getIdLong() == 910004207610904673L
+					(message.getGuild().getIdLong() != 910004207120183326L || message.getChannel().getIdLong() == 910004207610904673L)
 						&& presentOrElseReturnStatus(
 							getFirstImage(message) // will users ever be able to send embeds? ImageUtil.getFirstEmbed
 							.or(() -> getFirstSticker(message)
 							.or(() -> getFirstEmote(message)
-							.or(() -> Optional.ofNullable(message.getReferencedMessage()).flatMap(ImageUtil::getFirstImageEmbedOrSticker)
+							.or(() -> getFirstMessageLink(message)
+							.or(() -> Optional.ofNullable(message.getReferencedMessage()).flatMap(ImageUtil::getFirstAttachment)
 							.or(() -> getMentionedMemberPFP(message)
-							.or(() -> searchFirstAttachment(message)))))),
+							.or(() -> searchFirstAttachment(message))))))),
 						image -> sendSpeechBubbleImage(message, image))
 					).helpPanel("Add Speech Bubble To Image").build(),
 
 				new ReactionBuilder("Harita", "^[Hh]aritard$", DEFAULT, GUILD).execute(message -> {
 					message.getChannel().sendMessage("https://media.discordapp.net/attachments/722001554944819202/965120982480224296/Screenshot_20220415-020148_Chrome.png.jpg").queue();
 					message.delete().queue();
+				}).build(),
+
+				new ReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD).executeStatus(
+						message -> {
+					if (!message.getMember().getPermissions().contains(Permission.MESSAGE_EMBED_LINKS)) {
+						if (message.getGuild().getIdLong() == 907042440924528662L) {
+							message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here. <#907438672775901235>").queue();
+						}
+						return true;
+					} else {
+						return false;
+					}
 				}).build(),
 
 				new Command.CommandBuilder("Angie", "When Is The Best Discord Girl's Birthday[?]?", DEFAULT, GUILD).executeStatus(message ->

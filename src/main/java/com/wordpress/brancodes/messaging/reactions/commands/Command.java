@@ -21,16 +21,6 @@ public class Command extends Reaction {
 
 	protected Command() { }
 
-	// protected Command(String name, Matcher matcher, boolean deactivated,
-	// 				  UserCategory userCategory, ReactionChannelType channelCategory,
-	// 				  Function<Message, ReactionResponse> executeResponse, BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse,
-	// 				  String description, boolean deniable, boolean chainable) {
-	// 	super(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse);
-	// 	this.description = description;
-	// 	this.deniable = deniable;
-	// 	this.chainable = chainable;
-	// }
-
 	@Override
 	public ReactionResponse execute(Message message) {
 		if (deactivated)
@@ -40,7 +30,6 @@ public class Command extends Reaction {
 
 	public ReactionResponse execute(Message message, String match) {
 		if (matcher.reset(match).results().findAny().isPresent()) {
-		// if (matcher.reset(match).matches()) {
 			if (deniable && deny(message))
 				return new ReactionResponse(false);
 			else {
@@ -106,16 +95,11 @@ public class Command extends Reaction {
 
 	public static final class CommandBuilder extends Command.Builder<Command, CommandBuilder> {
 
-		public CommandBuilder(final String name, final String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {
+		public CommandBuilder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);
 		}
 
 		public Command build() {
-			// final Command command = new Command(name, matcher, deactivated, userCategory, channelCategory, executeResponse, executeMatcherResponse, description, deniable, chainable);
-//			Command command = new Command(description, deniable, deactivated);
-
-			// command.description = description;
-			// command.deniable = deniable;
 			return object;
 		}
 
