@@ -1,6 +1,9 @@
 package com.wordpress.brancodes.messaging.reactions.commands.custom;
 
 import com.wordpress.brancodes.main.Main;
+import com.wordpress.brancodes.messaging.reactions.Reaction;
+import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
+import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.ClassType.ClassTypeInstance;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.ClassType.Field;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.ClassType.Method;
@@ -11,6 +14,7 @@ import net.dv8tion.jda.api.entities.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.util.Streamable;
 
+import javax.annotation.RegEx;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -18,16 +22,49 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 //@SuppressWarnings("ALL")
-public class CustomCommand {
+
+public class CustomCommand extends Command {
+
+	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Command.Builder<T, B> {
+
+		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
+			super(name, regex, userCategory, channelCategory);
+		}
+
+	}
+
+	public static final class CustomCommandBuilder extends CustomCommand.Builder<CustomCommand, CustomCommandBuilder> {
+
+		public CustomCommandBuilder(Message message, String name, String event, String text) {
+			super(name, ".+", UserCategory.DEFAULT, ReactionChannelType.GUILD);
+			object.message = message;
+			// CustomCommandCompiler
+			executeStatus(message1 -> {
+				return true;
+			});
+		}
+
+		public CustomCommand build() {
+			return object;
+		}
+
+		@Override
+		protected CustomCommand createObject() {
+			return new CustomCommand();
+		}
+
+		@Override
+		protected CustomCommandBuilder thisObject() {
+			return this;
+		}
+
+	}
 
 	Message message;
 
-	public CustomCommand(Message message, Matcher matcher, String input) {
-		this.message = message;
-	}
+	protected CustomCommand() { }
 
-	public CustomCommand(final String regex, final String name, final UserCategory category,
-						 BiFunction<Message, Matcher, Boolean> executer) {
+	public CustomCommand(String name, UserCategory category, BiFunction<Message, Matcher, Boolean> executer) {
 //		super(regex, name, category, channelCategory);
 		executer = (message, matcher) -> {
 			final Type<Message>.Instance request = getType("message").create(message);

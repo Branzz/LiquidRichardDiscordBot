@@ -1,5 +1,7 @@
 package com.wordpress.brancodes.messaging.chats;
 
+import com.wordpress.brancodes.main.Main;
+import net.dv8tion.jda.api.entities.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +45,8 @@ public class VariatedChat extends PeriodicChat {
 	}
 
 	@Override
-	public void chat() {
-		super.chat();
+	public void chat(Channel channel) {
+		super.chat(channel);
 		resetVariance();
 	}
 
@@ -53,11 +55,11 @@ public class VariatedChat extends PeriodicChat {
 	}
 
 	@Override
-	public void schedule(ScheduledExecutorService scheduler) {
+	public void schedule(ScheduledExecutorService scheduler, long guildID) {
 		scheduler.schedule(new Runnable() {
 			@Override
 			public void run() {
-				chat();
+				chat(Main.getBot().getMainChannel(guildID));
 				scheduler.schedule(this, getNextDelay(), TimeUnit.MILLISECONDS);
 			}
 		}, getCustomDelay(), TimeUnit.MILLISECONDS);

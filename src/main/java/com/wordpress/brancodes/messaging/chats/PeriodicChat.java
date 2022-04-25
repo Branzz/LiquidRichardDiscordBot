@@ -1,5 +1,8 @@
 package com.wordpress.brancodes.messaging.chats;
 
+import com.wordpress.brancodes.bot.LiquidRichardBot;
+import com.wordpress.brancodes.main.Main;
+
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -31,8 +34,8 @@ public class PeriodicChat extends Chat {
 	}
 
 	@Override
-	public void schedule(ScheduledExecutorService scheduler) {
-		scheduler.scheduleWithFixedDelay(this::chat, (long) (random.nextDouble() * getPeriod()), getPeriod(), TimeUnit.MILLISECONDS);
+	public void schedule(ScheduledExecutorService scheduler, long guildID) {
+		scheduler.scheduleWithFixedDelay(() -> chat(Main.getBot().getMainChannel(guildID)), (long) (random.nextDouble() * getPeriod()), getPeriod(), TimeUnit.MILLISECONDS);
 	}
 
 }

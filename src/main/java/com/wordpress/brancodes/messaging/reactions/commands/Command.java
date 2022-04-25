@@ -21,22 +21,16 @@ public class Command extends Reaction {
 
 	protected Command() { }
 
-	@Override
-	public ReactionResponse execute(Message message) {
-		if (deactivated)
-			return new ReactionResponse(false);
-		return execute(message, message.getContentRaw());
-	}
-
 	public ReactionResponse execute(Message message, String match) {
-		if (matcher.reset(match).results().findAny().isPresent()) {
+		if (matches(match)) {
 			if (deniable && deny(message))
-				return new ReactionResponse(false);
-			else {
-				return accept(message);
-			}
+				return ReactionResponse.FAILURE;
+			ReactionResponse reactionResponse = accept(message);
+			if (reactionResponse.status())
+				addCooldowns(message);
+			return reactionResponse;
 		}
-		return new ReactionResponse(false);
+		return ReactionResponse.FAILURE;
 	}
 
 	private static final @RegEx String aliasesRegexPart = (String) Config.get("aliasesRegex");

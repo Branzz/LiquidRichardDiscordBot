@@ -44,8 +44,8 @@ public class Chats {
 				// 	mainChannel.sendMessage("@everyone").queue();
 				// 	mainChannel.getIterableHistory().stream().findFirst().get().delete().queue();
 				// }, 43_200_000L)
-				new VariatedChat(() -> {
-					getBdayMessage(mainChannel).queue(message -> {
+				new VariatedChat(channel -> {
+					getBdayMessage((TextChannel) channel).queue(message -> {
 									message.addReaction("U+1F449U+1F3FF").queue();
 									message.addReaction("U+1F44CU+1F3FF").queue();
 							   }

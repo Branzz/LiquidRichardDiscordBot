@@ -9,10 +9,9 @@ import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.entities.templates.TemplateChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,9 @@ import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Random;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -47,8 +48,8 @@ public class LiquidRichardBot {
 				GatewayIntent.GUILD_MESSAGE_REACTIONS,
 				GatewayIntent.DIRECT_MESSAGE_REACTIONS,
 				GatewayIntent.GUILD_EMOJIS,
-				GatewayIntent.GUILD_VOICE_STATES
-				// GatewayIntent.GUILD_MEMBERS,
+				GatewayIntent.GUILD_VOICE_STATES,
+				GatewayIntent.GUILD_MEMBERS
 				// GatewayIntent.GUILD_PRESENCES
 		)
 				  .disableCache(EnumSet.of(
@@ -58,6 +59,7 @@ public class LiquidRichardBot {
 				  		CacheFlag.VOICE_STATE,
 						CacheFlag.EMOTE
 				  ))
+				  .setChunkingFilter(ChunkingFilter.include(907042440924528662L, 910004207120183326L))
 				  .setStatus(OnlineStatus.ONLINE)
 				  .addEventListeners(
 				  		// new CommandClientBuilder()
@@ -82,26 +84,35 @@ public class LiquidRichardBot {
 		denyChance = .2;
 	}
 
+
 	// public void addChats(final long guildID) {
 	// 	guildChatSchedulers.put(guildID, new ChatScheduler(new Chats(guildID)));
 	// }
 
-	private static final Map<Long, Long> guildMainChannels = Map.of(910004207120183326L, 938608631086190642L); // <Guild, TextChannel> ?
+	private static final Map<Long, Long> guildMainChannels = Map.of(910004207120183326L, 966044757744824360L); // <Guild, TextChannel> ?
 
 	public static TextChannel autodeleteLog;
 
+	public Channel getMainChannel(final long guildID) {
+		return jda.getTextChannelById(guildMainChannels.get(guildID));
+	}
+
 	public void cacheDependantInit() {
+		// jda.getGuilds().forEach(guild -> guild.pruneMemberCache());
 		guildChatSchedulers =
 				jda.getGuildCache()
 				   .applyStream(guilds -> guilds.filter(guild -> guildMainChannels.containsKey(guild.getIdLong()))
-				   							    .collect(toMap(Guild::getIdLong, guild -> new ChatScheduler(new Chats(getTextChannel(guildMainChannels.get(guild.getIdLong())))))));
+				   							    .collect(toMap(Guild::getIdLong, guild -> new ChatScheduler(
+				   							    		new Chats(jda.getTextChannelById(guildMainChannels.get(guild.getIdLong()))), guild.getIdLong()))));
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
-	}
-
-	public TextChannel getTextChannel(long id) {
-		return jda.getTextChannelById(id);
+		// jda.getGuildById(910004207120183326L).getTextChannelById(938608631086190642L).getIterableHistory().stream()
+		//    .filter(m -> !(m instanceof SystemMessage) && m.getAuthor().getIdLong() == 849711011456221285L)
+		//    // .peek(m -> System.out.println("checking " + m.getContentRaw()))
+		//    .map(Message::getContentRaw)
+		//    .filter(t -> Arrays.stream(t.split("\\s+")).anyMatch(word -> word.length() >= 2 && Character.isUpperCase(word.charAt(0)) && Character.isUpperCase(word.charAt(1))))
+		//    .forEachOrdered(System.out::println);
 	}
 
 	private void setConsole() {
@@ -116,7 +127,7 @@ public class LiquidRichardBot {
 	}
 
 	public void addChats(final long guildID, final TextChannel channel) {
-		guildChatSchedulers.put(guildID, new ChatScheduler(new Chats(channel)));
+		guildChatSchedulers.put(guildID, new ChatScheduler(new Chats(channel), guildID));
 	}
 
 	public void removeChats(final long guildID) {

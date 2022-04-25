@@ -11,9 +11,7 @@ import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageActivity;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -31,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.AbstractMap;
 import java.util.Comparator;
+import java.util.List;
 
 import static java.util.stream.Collectors.joining;
 
@@ -38,7 +37,6 @@ public class Listener extends ListenerAdapter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Listener.class);
 	private boolean pause = false;
-
 
 	@Override
 	public void onGuildVoiceLeave(@NotNull final GuildVoiceLeaveEvent event) {
@@ -53,7 +51,7 @@ public class Listener extends ListenerAdapter {
 				@NotNull @Override public JDA getJDA() { return event.getJDA(); }
 				@Override protected void unsupported() { }
 				@Nullable @Override public MessageActivity getActivity() { return null; }
-				@Override public long getIdLong() { return 0; }
+				@Override public long getIdLong() { return 0L; }
 			});
 		}
 	}
@@ -73,7 +71,6 @@ public class Listener extends ListenerAdapter {
 		Config.createJDADependantProperties(event.getJDA());
 		Main.getBot().cacheDependantInit();
 	}
-
 
 	@Override
 	public void onGuildJoin(@NotNull final GuildJoinEvent event) {
@@ -98,20 +95,17 @@ public class Listener extends ListenerAdapter {
 	@Override
 	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
 		super.onGuildMemberJoin(event);
-//		if (event.getGuild().getIdLong() == 953143574453706792L)
-//			event.getMember().modifyNickname("Tommy.").queue();
-//		if (event.getGuild().getIdLong() == 907042440924528662L) {
-//			event.getJDA().getTextChannelById(907111693446950912L).sendMessage("Hello " + event.getMember().getAsMention() + " Due To Recent Developments It Is Of The Utmost Importance That All Of Our Members Are Of Heterosexual Nature. We Can And Will Not Allow Any Member Of The LGBT Community Here In Fact Our Server Shuns Their Sodomitic Lifestyle. To Assure Our Members Conform To Said Ideals We Require Proof. I Would Kindly Ask You To Send A Senior Moderator A Picture Of Your Butthole. We Assure That The Pictures Will Be Handled With Utmost Privacy.");
-//		.queue);
-// }
+		final User user = event.getMember().getUser();
+		if (event.getJDA().getGuildById(907042440924528662L).getMember(user) != null
+		 && event.getJDA().getGuildById(910004207120183326L).getMember(user) != null) {
+			event.getMember().ban(0).queue();
+			LOGGER.info("found crossover user:" + event.getMember().getUser().getName() + " " + event.getMember().getIdLong());
+		}
 	}
 
 	@Override
 	public void onMessageReceived(@NotNull final MessageReceivedEvent event) {
-		if (event.isFromType(ChannelType.PRIVATE)) {
-			/*
-			 * a private user can't be a mod, as that is guild dependant.
-			 */
+		if (event.isFromType(ChannelType.PRIVATE)) { // a private user can't be a mod, as that is guild dependant.
 			///DataBase.respondToBotPrivate()
 			if (event.getAuthor().equals(Config.get("ownerUser")) && event.getMessage().getContentRaw().equals("!p"))
 				pause ^= true; // overrides every other command

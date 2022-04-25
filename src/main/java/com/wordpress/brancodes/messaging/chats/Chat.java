@@ -1,5 +1,7 @@
 package com.wordpress.brancodes.messaging.chats;
 
+import net.dv8tion.jda.api.entities.Channel;
+
 import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class Chat {
@@ -19,13 +21,13 @@ public abstract class Chat {
 
 	@FunctionalInterface
 	protected interface ExecuteChat {
-		void execute();
+		void execute(Channel channel);
 	}
 
-	public void chat() {
-		chat.execute();
+	public void chat(Channel channel) {
+		chat.execute(channel);
 	}
 
-	public abstract void schedule(final ScheduledExecutorService scheduler);
+	public abstract void schedule(final ScheduledExecutorService scheduler, long guildID);
 
 }
