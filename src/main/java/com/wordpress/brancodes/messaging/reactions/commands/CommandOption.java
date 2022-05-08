@@ -19,25 +19,12 @@ public class CommandOption extends Command {
 	}
 
 	public static final class CommandOptionBuilder extends CommandOption.Builder<CommandOption, CommandOptionBuilder> {
-
 		public CommandOptionBuilder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);
 		}
-
-		@Override
-		protected CommandOption createObject() {
-			return new CommandOption();
-		}
-
-		@Override
-		protected CommandOptionBuilder thisObject() {
-			return this;
-		}
-
-		public CommandOption build() {
-			return object;
-		}
-
+		@Override public CommandOption build() { return object; }
+		@Override protected CommandOption createObject() { return new CommandOption(); }
+		@Override protected CommandOptionBuilder thisObject() { return this; }
 	}
 
 }

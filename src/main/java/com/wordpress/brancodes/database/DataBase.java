@@ -59,9 +59,12 @@ public class DataBase {
 	 * Owner set with command: In server, "p, Look. Listen To <@ID>."
 	 */
 	public static Data<Boolean> userIsMod(final Long userID, final Long guildID) {
-		if (guildID != null && userID != null)
-			return new Data<>(guildID == 907042440924528662L && (userID == 928336417514479646L || userID == 936433911486087208L));
-		return new Data<>(false);
+		return new Data<>(
+			(guildID != null && userID != null)
+			&& (guildID == 907042440924528662L
+				&& (userID == 956135678893252628L || userID == 928336417514479646L || userID == 936433911486087208L))
+		);
+		// return new Data<>(false);
 		// if (guildID != null && userID != null)
 		// 	try (PoolConnection.PreparedStatementQuery preparedStatementQuery =
 		// 			 new PoolConnection.PreparedStatementQuery("SELECT * FROM mods WHERE users.id = ? AND mods.guild_id = ?")) {

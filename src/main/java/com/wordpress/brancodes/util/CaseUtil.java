@@ -73,6 +73,22 @@ public final class CaseUtil {
 		return new StringBuilder(2 + name.length()).append(':').append(name).append(":").toString();
 	}
 
+	/**
+	 * SimpleClassName -> Simple Class Name
+	 */
+	public static String addSpacesToProper(String string) {
+		final char[] chars = string.toCharArray();
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append(chars[0]);
+		for (int i = 1; i < string.length(); i++) {
+			if (Character.isLetter(chars[i]) && Character.isUpperCase(chars[i])
+				&& !Character.isWhitespace(chars[i - 1])) {
+				stringBuilder.append(' ');
+			}
+			stringBuilder.append(chars[i]);
+		}
+		return stringBuilder.toString();
+	}
 	// @FunctionalInterface
 	// public interface BotAction <T> {
 	// 	RestAction<T> botAct(BotUnit bot);

@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.messaging.reactions;
+package com.wordpress.brancodes.messaging.cooldown;
 
 public class Cooldown {
 

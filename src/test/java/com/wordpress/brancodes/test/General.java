@@ -1,5 +1,7 @@
 package com.wordpress.brancodes.test;
 
+import com.wordpress.brancodes.messaging.reactions.Reaction;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 
 import java.util.Arrays;
@@ -14,15 +16,26 @@ public class General {
 
 	public static void main(String[] args) {
 
-		UserCategory[] userCategories = UserCategory.values();
-		for (UserCategory userCategory1 : userCategories) {
-			for (UserCategory userCategory2 : userCategories) {
-				System.out.println(userCategory1 + "\t|\t"
-						+ userCategory2+ ": " +
-						userCategory1.compareTo(userCategory2) + " " +
-						userCategory1.inRange(userCategory2));
-			}
-		}
+		// final String abc = Pattern.compile("\\\\u([\\da-fA-F]{4})")
+		// 						  .matcher(Commands.censorGeneRegex("coon"))
+		// 						  .replaceAll(m -> String.valueOf((char) Integer.parseInt(m.group(1), 16)));
+		// System.out.println(abc.length() + " " + abc);
+		// System.out.println(Commands.censoredWordsGeneRegex);
+		// for (int i = 0; i < 20; i++) {
+		// 	System.out.println(new Generex(abc).random());
+		// }
+
+		// hiddenText();
+
+		// UserCategory[] userCategories = UserCategory.values();
+		// for (UserCategory userCategory1 : userCategories) {
+		// 	for (UserCategory userCategory2 : userCategories) {
+		// 		System.out.println(userCategory1 + "\t|\t"
+		// 				+ userCategory2+ ": " +
+		// 				userCategory1.compareTo(userCategory2) + " " +
+		// 				userCategory1.inRange(userCategory2));
+		// 	}
+		// }
 		// String[] str = { "", "", "" };
 		// for (int i = 0; i < 100; i++)  {
 		// 	str[0] += String.valueOf(i % 3 == 0 ? 1 : 0);
@@ -166,4 +179,22 @@ public class General {
 	public static <T> void explanationOfOrChain(Stream<Optional<T>> optionalGetters) {
 		optionalGetters.reduce((a, b) -> a.or(() -> b)).get();
 	}
+
+	public static String fixCaseSensitive(String regex) {
+		StringBuilder sB = new StringBuilder();
+		final char[] chars = regex.toCharArray();
+		for (int i = 0; i < chars.length - 4; i++) {
+			if (chars[i] == '[' && chars[i + 3] == ']'
+				&& Character.toLowerCase(chars[i + 1]) == chars[i + 2]) {
+				sB.append(chars[i + 2]);
+				i += 3;
+			} else {
+				sB.append(chars[i]);
+				if (chars[i] == '\\')
+					sB.append(chars[i]);
+			}
+		}
+		return sB.toString();
+	}
+
 }

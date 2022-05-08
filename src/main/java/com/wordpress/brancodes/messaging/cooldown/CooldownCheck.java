@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.messaging.reactions;
+package com.wordpress.brancodes.messaging.cooldown;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;

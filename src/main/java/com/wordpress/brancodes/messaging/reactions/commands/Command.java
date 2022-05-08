@@ -3,6 +3,7 @@ package com.wordpress.brancodes.messaging.reactions.commands;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -55,6 +56,10 @@ public class Command extends Reaction {
 		return description;
 	}
 
+	public boolean chainable() {
+		return chainable;
+	}
+
 	public MessageEmbed toFullString() {
 		final EmbedBuilder embedBuilder = getMessageEmbed();
 		if (description != null)
@@ -88,25 +93,12 @@ public class Command extends Reaction {
 	}
 
 	public static final class CommandBuilder extends Command.Builder<Command, CommandBuilder> {
-
 		public CommandBuilder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);
 		}
-
-		public Command build() {
-			return object;
-		}
-
-		@Override
-		protected Command createObject() {
-			return new Command();
-		}
-
-		@Override
-		protected CommandBuilder thisObject() {
-			return this;
-		}
-
+		@Override public Command build() { super.build(); return object; }
+		@Override protected Command createObject() { return new Command(); }
+		@Override protected CommandBuilder thisObject() { return this; }
 	}
 
 }

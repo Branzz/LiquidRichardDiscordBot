@@ -1,7 +1,9 @@
-package com.wordpress.brancodes.messaging.reactions;
+package com.wordpress.brancodes.messaging.cooldown;
 
+import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.entities.Message;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -62,6 +64,12 @@ public class CooldownPool<T> {
 		int result = (int) (cooldown ^ (cooldown >>> 32));
 		result = 31 * result + type.getName().hashCode();
 		return result;
+	}
+
+	@Override
+	public String toString() {
+		return ((cooldown < 1000) ? (new BigDecimal(cooldown).movePointLeft(3).stripTrailingZeros().toString()) : (cooldown / 1000))
+			   + " Seconds For " + CaseUtil.addSpacesToProper(type.getSimpleName()) + "s";
 	}
 
 }

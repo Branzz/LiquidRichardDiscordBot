@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
@@ -20,7 +21,7 @@ public class Reaction {
 
 	protected @RegEx String name;
 	Matcher matcher;
-	boolean deactivated;
+	boolean deactivated; // TODO remove from master reactions map to keep map tree style consistent (?)
 	UserCategory userCategory;
 	ReactionChannelType channelCategory;
 	Function<Message, ReactionResponse> executeResponse;
@@ -29,7 +30,7 @@ public class Reaction {
 
 	protected Reaction() { }
 
-	protected final boolean matches(String match) {
+	public final boolean matches(String match) {
 		return matcher.reset(match).results().findAny().isPresent();
 	}
 
@@ -109,11 +110,14 @@ public class Reaction {
 	 * </pre>
 	 */
 	protected EmbedBuilder getMessageEmbed() {
-		return new EmbedBuilder().setTitle(name)
-						.setColor(Color.ORANGE)
-						.addField("RegEx", matcher.pattern().toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\\*", "\\\\*"), true)
-						.addField("User", userCategory.toString(), true)
-						.addField("Location", channelCategory.toString(), true);
+		final EmbedBuilder embedBuilder =
+				new EmbedBuilder().setTitle(name)
+								  .setColor(Color.YELLOW)
+								  .addField("RegEx", matcher.pattern().toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\\*", "\\\\*"), true)
+								  .addField("User", userCategory.toString(), true)
+								  .addField("Location", channelCategory.toString(), true);
+		cooldownPools.forEach(pool -> embedBuilder.addField("Cooldown", pool.toString(), false));
+		return embedBuilder;
 	}
 
 	public MessageEmbed toFullString() {
@@ -121,7 +125,15 @@ public class Reaction {
 	}
 
 	public static Matcher getMatcher(@RegEx String regex, String input) {
-		return Pattern.compile(regex, Pattern.UNICODE_CHARACTER_CLASS).matcher(input);
+		return getMatcherFlags(regex, input, Pattern.UNICODE_CHARACTER_CLASS);
+	}
+
+	public static Matcher getMatcherFlags(@RegEx String regex, String input, int flags) {
+		return Pattern.compile(regex, flags).matcher(input);
+	}
+
+	public static Matcher getMatcherCaseInsensitive(@RegEx String regex) {
+		return getMatcherFlags(regex, "", Pattern.UNICODE_CHARACTER_CLASS | Pattern.CASE_INSENSITIVE);
 	}
 
 	public static Matcher getMatcher(@RegEx String regex) {
@@ -130,12 +142,22 @@ public class Reaction {
 
 	public static abstract class Builder<T extends Reaction, B extends Builder<T, B>> extends AbstractBuilder<T, B> {
 
+		protected final @RegEx String regex;
+		protected boolean caseInsensitive = false;
+
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			object.matcher = getMatcher(regex);
+			if (name.length() > 16)
+				throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
+			this.regex = regex;
 			object.name = name;
 			object.userCategory = userCategory;
 			object.channelCategory = channelCategory;
 			object.cooldownPools = new LinkedHashSet<>();
+		}
+
+		public B caseInsensitive() {
+			caseInsensitive = true;
+			return thisObject;
 		}
 
 		public B deactivated() {
@@ -180,24 +202,28 @@ public class Reaction {
 		}
 
 		public B addGuildCooldown(long duration) {
-			return addCooldownUtil(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
+			return addCooldown(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
 		}
 
 		public B addChannelCooldown(long duration) {
-			return addCooldownUtil(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, Message::getTextChannel, TextChannel.class));
+			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, Message::getTextChannel, TextChannel.class));
 		}
 
 		public B addMemberCooldown(long duration) {
-			return addCooldownUtil(ChannelType.TEXT, "Guild member", new CooldownPool<>(duration, Message::getMember, Member.class));
+			return addCooldown(ChannelType.TEXT, "Guild member", new CooldownPool<>(duration, Message::getMember, Member.class));
 		}
 
 		public B addDMCooldown(long duration) {
-			return addCooldownUtil(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, Message::getPrivateChannel, PrivateChannel.class));
+			return addCooldown(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, Message::getPrivateChannel, PrivateChannel.class));
 		}
 
-		private B addCooldownUtil(ChannelType location, String name, CooldownPool cooldownPool) {
-			if (!object.channelCategory.inRange(location))
-				throw new InvalidParameterException(name + "cooldowns can't be used in " + object.channelCategory);
+		private B addCooldown(ChannelType intendedLocation, String locationName, CooldownPool cooldownPool) {
+			if (!object.channelCategory.inRange(intendedLocation))
+				throw new InvalidParameterException(locationName + "cooldowns can't be used in " + object.channelCategory);
+			return addCooldown(cooldownPool);
+		}
+
+		private B addCooldown(CooldownPool cooldownPool) {
 			object.cooldownPools.add(cooldownPool);
 			return thisObject;
 		}
@@ -210,6 +236,14 @@ public class Reaction {
 			return thisObject;
 		}
 
+		@Override
+		public T build() {
+			if (object.executeResponse == null && object.executeMatcherResponse == null)
+				throw new IllegalArgumentException("Must define execute");
+			object.matcher = caseInsensitive ? getMatcherCaseInsensitive(regex) : getMatcher(regex);
+			return object;
+		}
+
 	}
 
 	public static final class ReactionBuilder extends Builder<Reaction, ReactionBuilder> {
@@ -218,25 +252,15 @@ public class Reaction {
 			super(name, regex, userCategory, channelCategory);
 		}
 
+		@Override
 		public Reaction build() {
-			if (object.executeResponse == null && object.executeMatcherResponse == null)
-				throw new IllegalArgumentException("Must define execute");
+			super.build();
 			// if (object.executeResponse != null && object.executeMatcherResponse != null)
 			// 	throw new IllegalArgumentException("Must define execute only once");
-			if (object.name.length() > 16)
-				throw new InvalidParameterException("name \"" + object.name + "\" must be 16 characters or less");
 			return object;
 		}
-
-		@Override
-		protected Reaction createObject() {
-			return new Reaction();
-		}
-
-		@Override
-		protected ReactionBuilder thisObject() {
-			return this;
-		}
+		@Override protected Reaction createObject() { return new Reaction(); }
+		@Override protected ReactionBuilder thisObject() { return this; }
 
 	}
 

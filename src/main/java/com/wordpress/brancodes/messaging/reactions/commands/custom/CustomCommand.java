@@ -26,15 +26,12 @@ import java.util.stream.Collectors;
 public class CustomCommand extends Command {
 
 	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Command.Builder<T, B> {
-
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);
 		}
-
 	}
 
 	public static final class CustomCommandBuilder extends CustomCommand.Builder<CustomCommand, CustomCommandBuilder> {
-
 		public CustomCommandBuilder(Message message, String name, String event, String text) {
 			super(name, ".+", UserCategory.DEFAULT, ReactionChannelType.GUILD);
 			object.message = message;
@@ -43,21 +40,9 @@ public class CustomCommand extends Command {
 				return true;
 			});
 		}
-
-		public CustomCommand build() {
-			return object;
-		}
-
-		@Override
-		protected CustomCommand createObject() {
-			return new CustomCommand();
-		}
-
-		@Override
-		protected CustomCommandBuilder thisObject() {
-			return this;
-		}
-
+		@Override public CustomCommand build() { return object; }
+		@Override protected CustomCommand createObject() { return new CustomCommand(); }
+		@Override protected CustomCommandBuilder thisObject() { return this; }
 	}
 
 	Message message;
