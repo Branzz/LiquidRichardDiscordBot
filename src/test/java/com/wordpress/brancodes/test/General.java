@@ -1,7 +1,5 @@
 package com.wordpress.brancodes.test;
 
-import com.wordpress.brancodes.messaging.reactions.Reaction;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 
 import java.util.Arrays;
@@ -36,6 +34,18 @@ public class General {
 		// 				userCategory1.inRange(userCategory2));
 		// 	}
 		// }
+		spaces("harita").forEach(System.out::println);
+
+//		UserCategory[] userCategories = UserCategory.values();
+//		for (UserCategory userCategory1 : userCategories) {
+//			for (UserCategory userCategory2 : userCategories) {
+//				System.out.println(userCategory1 + "\t|\t"
+//						+ userCategory2+ ": " +
+//						userCategory1.compareTo(userCategory2) + " " +
+//						userCategory1.inRange(userCategory2));
+//			}
+//		}
+
 		// String[] str = { "", "", "" };
 		// for (int i = 0; i < 100; i++)  {
 		// 	str[0] += String.valueOf(i % 3 == 0 ? 1 : 0);
@@ -198,3 +208,18 @@ public class General {
 	}
 
 }
+
+	public static List<String> spaces(String word) {
+		List<String> spaces = new ArrayList<>();
+		spaces.add(String.valueOf(word.charAt(0)));
+		for (char c : word.substring(1).toCharArray()) {
+			List<String> nextSpace = new ArrayList<>();
+			spaces.forEach(w -> nextSpace.add(w + c));
+			spaces.forEach(w -> nextSpace.add(w + " " + c));
+			spaces = nextSpace;
+		}
+		return spaces;
+	}
+
+}
+

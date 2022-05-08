@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -818,6 +820,24 @@ public class Reactions { // TODO convert into singleton (?)
 			channel.sendMessageEmbeds(reply).queue();
 		else
 			logMissingChannelPermissions(channel);
+	}
+
+	private static final Matcher IDMatcher = Pattern.compile("[\\d]{18,21}").matcher("");
+
+	/**
+	 * @param tag the name of a server, channel, category, message, role, user, or emoji
+	 * @param <T>
+	 * @return
+	 */
+	public static <T extends ISnowflake> T tryGet(String tag, Function<String, T> getByID, RestAction<T> retrieveByID,
+												  Function<String, T> getByName) {
+		if (IDMatcher.reset(tag).matches()) {
+			return Optional.ofNullable(getByID.apply(tag))
+					.or(() -> Optional.ofNullable(retrieveByID.complete()))
+					.orElse(getByName.apply(tag));
+		} else {
+			return getByName.apply(tag);
+		}
 	}
 
 	private static Member getMember(Message message) {
