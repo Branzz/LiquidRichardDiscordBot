@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.AbstractMap;
 import java.util.Comparator;
-import java.util.List;
 
 import static java.util.stream.Collectors.joining;
 
@@ -146,12 +145,55 @@ public class Listener extends ListenerAdapter {
 							  : message.getContentRaw();
 		// .forEach(r -> System.out.println(r.getKey().getName()));
 		Reactions.getReactions(ReactionChannelType.of(channelType), userCategory)
-				 .stream()
-				 .filter(reaction -> !reaction.isDeactivated())
-				 .map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
-				 .min(Comparator.comparing(r -> !r.getValue().status())) // method 3
+				.stream()
+//				.peek(System.out::println)
+				.filter(reaction -> !reaction.isDeactivated())
+				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
+//				.filter(response -> response.getValue().status()).findFirst() // method 1
+				.min(Comparator.comparing(r -> r.getValue().status())) // method 3
 				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
 
+//		Map<Boolean, List<Pair<Command, ReactionResponse>>> byChainableSuccess =
+//		Map<Boolean, List<Reaction>> byChainable =
+//			Reactions.getReactions(ReactionChannelType.of(channelType), userCategory)
+//				.stream()
+//				.filter(reaction -> !reaction.isDeactivated())
+//				.collect(Collectors.groupingBy(reaction -> reaction instanceof Command && reaction.getName().equals("and chainable"),
+//						Collectors.));
+//		Map<Boolean, List<Pair<Reaction, ReactionResponse>>> chainableResponses = byChainable.get(true)
+//				.stream()
+////				.map(reaction -> ((Command) reaction))
+//				.map(command -> Pair.of(command, command.execute(message, messageContent)))
+//				.collect(Collectors.groupingBy(e -> e.getRight().status()));
+//		List<Pair<Reaction, ReactionResponse>> successes = chainableResponses.get(true);
+//		if (successes.size() >= 2) {
+//			// TODO execute On success
+//		} else {
+//			Stream.concat(byChainable.get(false)
+//									 .stream()
+//									 .map(reaction -> Pair.of(reaction, reaction.execute(message, messageContent))),
+//						  chainableResponses.get(false)
+//								  	 .stream())
+//					.min(Comparator.comparing(r -> r.getRight().status())) // method 3
+//					.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getLeft(), reactionAndResponse.getRight()));
+//		}
+		// method 2
+
+//		List<SimpleEntry<Reaction, ReactionResponse>> reactions = Reactions.commandsByCategoryChannel
+//				.get(ReactionChannelType.of(channelType))
+//				.get(userCategory)
+//				.stream()
+////				.peek(System.out::println)
+//				.filter(reaction -> !reaction.isDeactivated())
+//				.map(reaction -> new SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
+//				.filter(response -> response.getValue().status())
+//				.collect(Collectors.toList());
+//		Optional<SimpleEntry<Reaction, ReactionResponse>> firstSuccess = reactions.stream().filter(reaction -> reaction.getValue().status()).findFirst();
+//		if (firstSuccess.isPresent()) {
+//			logReactionResponse(message, firstSuccess.get().getKey(), firstSuccess.get().getValue());
+//		} else {
+//			reactions.stream().findFirst().ifPresent(reaction -> logReactionResponse(message, reaction.getKey(), reaction.getValue()));
+//		}
 	}
 
 	static void logReactionResponse(Message message, Reaction reaction, ReactionResponse response) {

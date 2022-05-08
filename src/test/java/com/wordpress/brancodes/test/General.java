@@ -1,8 +1,8 @@
 package com.wordpress.brancodes.test;
 
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -14,15 +14,18 @@ public class General {
 
 	public static void main(String[] args) {
 
-		UserCategory[] userCategories = UserCategory.values();
-		for (UserCategory userCategory1 : userCategories) {
-			for (UserCategory userCategory2 : userCategories) {
-				System.out.println(userCategory1 + "\t|\t"
-						+ userCategory2+ ": " +
-						userCategory1.compareTo(userCategory2) + " " +
-						userCategory1.inRange(userCategory2));
-			}
-		}
+		spaces("harita").forEach(System.out::println);
+
+//		UserCategory[] userCategories = UserCategory.values();
+//		for (UserCategory userCategory1 : userCategories) {
+//			for (UserCategory userCategory2 : userCategories) {
+//				System.out.println(userCategory1 + "\t|\t"
+//						+ userCategory2+ ": " +
+//						userCategory1.compareTo(userCategory2) + " " +
+//						userCategory1.inRange(userCategory2));
+//			}
+//		}
+
 		// String[] str = { "", "", "" };
 		// for (int i = 0; i < 100; i++)  {
 		// 	str[0] += String.valueOf(i % 3 == 0 ? 1 : 0);
@@ -45,20 +48,20 @@ public class General {
 		// System.out.println(lowestIndexOf(new int[] {-5, 0, 3, 3, 5, 9, 9, 9, 9, 15}, 5));
 		// System.out.println(lowestIndexOf(new int[] {9, 15, 9, 5, 3, 9, 0, 3, -5, 9}, 5));
 
-		// final Date angelitteBirthday = new Date(122, Calendar.JULY, 16);
-		//
-		// Date current = new Date();
-		// int days = angelitteBirthday.getDate() - current.getDate();
-		// int months = angelitteBirthday.getMonth() - current.getMonth();
-		// if (days < 0) {
-		// 	days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
-		// 	months--;
-		// }
-		// System.out.println((months != 0 ? Util.properCase(NumberToText.numberToString(months))
-		// 								  + " Month" + (months != 1 ? "s" : "") : "")
-		// 						+ (days != 0 ? (months != 0 ? " And " : "")
-		// 									   + Util.properCase(NumberToText.numberToString(days))
-		// 									   + " Day" + (days != 1 ? "s" : "") : "") + " Until.");
+//		 final Date angelitteBirthday = new Date(122, Calendar.JULY, 16);
+//
+//		 Date current = new Date();
+//		 int days = angelitteBirthday.getDate() - current.getDate();
+//		 int months = angelitteBirthday.getMonth() - current.getMonth();
+//		 if (days < 0) {
+//		 	days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
+//		 	months--;
+//		 }
+//		 System.out.println((months != 0 ? CaseUtil.properCase(NumberToText.numberToString(months))
+//		 								  + " Month" + (months != 1 ? "s" : "") : "")
+//		 						+ (days != 0 ? (months != 0 ? " And " : "")
+//		 									   + CaseUtil.properCase(NumberToText.numberToString(days))
+//		 									   + " Day" + (days != 1 ? "s" : "") : "") + " Until.");
 
 		// Map<Character, String> homoglyphs = new HashMap<>();
 		// try {
@@ -166,4 +169,18 @@ public class General {
 	public static <T> void explanationOfOrChain(Stream<Optional<T>> optionalGetters) {
 		optionalGetters.reduce((a, b) -> a.or(() -> b)).get();
 	}
+
+	public static List<String> spaces(String word) {
+		List<String> spaces = new ArrayList<>();
+		spaces.add(String.valueOf(word.charAt(0)));
+		for (char c : word.substring(1).toCharArray()) {
+			List<String> nextSpace = new ArrayList<>();
+			spaces.forEach(w -> nextSpace.add(w + c));
+			spaces.forEach(w -> nextSpace.add(w + " " + c));
+			spaces = nextSpace;
+		}
+		return spaces;
+	}
+
 }
+

@@ -1,6 +1,8 @@
 usage: ```Make Command:?[\s`]*([\w\W])[\s`]*+```
 
-dynamically weakly typed, call/get with period (js), delimit statements with newline/tabs (python) OR curly brackets (C)
+dynamically weakly typed, call/get with period
+delimit statements with newline/tabs (python) (WIP) OR curly brackets (C)
+remaining expression is returned (Scala)
 
 layout style: `return_type name(arg_type)`
 * types
@@ -50,7 +52,7 @@ layout style: `return_type name(arg_type)`
   * `send(channel.id, str)`
 * public vars
   * `message request`
-@param input must specify the regex / periodic, name, channel, and code
+@param input must specify the regex / periodic, name, event, and code
 no regex input: just split by spaces
 
 examples:
@@ -66,4 +68,7 @@ else failure
 ```js
 if request.user == pigGuy22
     request.message.addReaction(pig)
+```
+```js
+
 ```
