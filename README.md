@@ -30,26 +30,34 @@ When worked on: March 2021 - April 2021, March 2022
   * Periodic messages
 * Database
 
-### Example usage
+## Example usage
 
 To add a command that just says "Hi." back to someone when they say "Hi",
-you would add this to the list of all commands in Commands.java:
+you would call addCommand in [Reactions.java](src/main/java/com/wordpress/brancodes/messaging/reactions/Reactions.java):
 ```java
-new Command.Builder("Hello",            // unique name
-                    "[Hh][Ii]\\s",      // regex to activate it
-                    DEFAULT,            // who can use it (anybody can here)
+new CommandBuilder("Hello",             // unique name
+                    "^hi\\s",            // regex to activate it
+                    DEFAULT,            // who can use it (here, anybody can)
                     GUILD_AND_PRIVATE)  // where it can be used
        .execute(message -> reply(message, "Hi.")) // the response code
        .helpPanel("Make A Greeting")    // add to help panel with description
        .deniable()                      // randomly choose to ignore their greeting
        .deactivated()                   // command is not on by default
+       .caseInsensitive()               // match [Hh][Ii]
        .build()
 ```
 
 To add a periodic message that says "Good morning" every day plus or minus an hour,
 you would add this to the list of Chats in Chats.java:
+
 ```java
 new VariatedChat(() -> mainChannel.sendMessage("Good morning").queue(),
-86_400_000L,  // the period (milliseconds in a day)
- 3_600_000L), // variance (milliseconds in an hour)
+    86_400_000L,  // the period (milliseconds in a day)
+     3_600_000L), // variance (milliseconds in an hour)
 ```
+
+### [Custom Commands (WIP)](src/main/java/com/wordpress/brancodes/messaging/reactions/commands/custom/custom_command.md)
+
+Comes with a custom script that users can use to create commands or execute once
+
+

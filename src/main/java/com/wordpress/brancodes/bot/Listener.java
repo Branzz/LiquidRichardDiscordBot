@@ -178,9 +178,10 @@ public class Listener extends ListenerAdapter {
 //				.peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())
 				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
-//				.filter(response -> response.getValue().status()).findFirst() // method 1
-				.min(Comparator.comparing(r -> r.getValue().status())) // method 3
+				.filter(response -> response.getValue().status()).findFirst() // method 1
+				// .min(Comparator.comparing(r -> r.getValue().status())) // method 3
 				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
+
 				 // .stream()
 				 // .sorted(comparing(Listener::chainable))
 				 // // .peek(x -> System.out.println("SrtByChn: " + x.getName()))

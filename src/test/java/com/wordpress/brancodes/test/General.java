@@ -1,8 +1,12 @@
 package com.wordpress.brancodes.test;
 
+import com.wordpress.brancodes.messaging.reactions.Reaction;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -206,8 +210,6 @@ public class General {
 		}
 		return sB.toString();
 	}
-
-}
 
 	public static List<String> spaces(String word) {
 		List<String> spaces = new ArrayList<>();

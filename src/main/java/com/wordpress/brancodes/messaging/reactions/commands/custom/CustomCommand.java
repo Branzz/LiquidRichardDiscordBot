@@ -2,10 +2,6 @@ package com.wordpress.brancodes.messaging.reactions.commands.custom;
 
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.commands.Command;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.ClassType.ClassTypeInstance;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.ClassType.Field;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.ClassType.Method;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand.Type.Instance;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.InterfaceType;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.ClassType;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
