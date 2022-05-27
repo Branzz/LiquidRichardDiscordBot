@@ -8,6 +8,8 @@
   * more methods
   * compiler
 
+* multi message command
+
 * expressions
   * trig functions
   * a searcher agent for simplification

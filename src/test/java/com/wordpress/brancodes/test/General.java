@@ -18,6 +18,31 @@ public class General {
 
 	public static void main(String[] args) {
 
+		// for (Reaction reaction : Reactions.reactions) {
+		// 	String regex = reaction.getRegex();
+		// 	StringBuilder sB = new StringBuilder();
+		// 	boolean changed = false;
+		// 	final char[] chars = regex.toCharArray();
+		// 	for (int i = 0; i < chars.length - 4; i++) {
+		// 		if (chars[i] == '[' && chars[i + 3] == ']'
+		// 			&& Character.toLowerCase(chars[i + 1]) == chars[i + 2]) {
+		// 			sB.append(chars[i + 2]);
+		// 			i += 3;
+		// 			changed = true;
+		// 		} else {
+		// 			sB.append(chars[i]);
+		// 			if (chars[i] == '\\')
+		// 				sB.append(chars[i]);
+		// 		}
+		// 	}
+		// 	if (changed) {
+		// 		String s = regex + "\n\t" + sB;
+		// 		System.out.println(s);
+		// 	}
+		// }
+
+		// System.out.println(String.valueOf((char) Integer.parseInt("0061", 16)));
+
 		// final String abc = Pattern.compile("\\\\u([\\da-fA-F]{4})")
 		// 						  .matcher(Commands.censorGeneRegex("coon"))
 		// 						  .replaceAll(m -> String.valueOf((char) Integer.parseInt(m.group(1), 16)));
@@ -38,7 +63,8 @@ public class General {
 		// 				userCategory1.inRange(userCategory2));
 		// 	}
 		// }
-		spaces("harita").forEach(System.out::println);
+
+		// spaces("harita").forEach(System.out::println);
 
 //		UserCategory[] userCategories = UserCategory.values();
 //		for (UserCategory userCategory1 : userCategories) {

@@ -1,13 +1,17 @@
 package com.wordpress.brancodes.messaging.reactions.commands.custom;
 
-import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
-import com.wordpress.brancodes.messaging.reactions.commands.Command;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.InterfaceType;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.tokens.tree.TokenTreeNode;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.types.*;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.types.Void;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.types.Type.Instance;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.ClassType;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.ClassType.ClassTypeInstance;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.Field;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.Method;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
-import jdk.jfr.Event;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
@@ -29,18 +33,10 @@ import net.dv8tion.jda.api.events.user.update.UserUpdateDiscriminatorEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
 import org.springframework.data.util.Streamable;
 
-import javax.annotation.RegEx;
 import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.*;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.Void;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.Type.Instance;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.ClassType;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.ClassType.ClassTypeInstance;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.Field;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.Method;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -50,31 +46,41 @@ import static com.wordpress.brancodes.messaging.reactions.commands.custom.tokens
 
 //@SuppressWarnings("ALL")
 
-public class CustomCommand extends Command {
+public class CustomCommand {
 
-	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Command.Builder<T, B> {
-		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			super(name, regex, userCategory, channelCategory);
-		}
+	// public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Command.Builder<T, B> {
+	// 	public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
+	// 		super(name, regex, userCategory, channelCategory);
+	// 	}
+	// }
+	//
+	// public static final class CustomCommandBuilder extends CustomCommand.Builder<CustomCommand, CustomCommandBuilder> {
+	// 	public CustomCommandBuilder(Message message, String name, String event, String text) {
+	// 		super(name, ".+", UserCategory.DEFAULT, ReactionChannelType.GUILD);
+	// 		object.message = message;
+	// 		// CustomCommandCompiler
+	// 		executeStatus(message1 -> {
+	// 			return true;
+	// 		});
+	// 	}
+	// 	@Override public CustomCommand build() { return object; }
+	// 	@Override protected CustomCommand createObject() { return new CustomCommand(); }
+	// 	@Override protected CustomCommandBuilder thisObject() { return this; }
+	// }
+
+	public static boolean create(Guild guild, String name, String event, String text) {
+		final ClassType<?> eventType = events.get(event);
+		if (eventType == null)
+			throw new InvalidCustomCommandException();
+		CustomCommandListener.put(name, guild.getIdLong(), name, new CustomCommand(guild, CustomCommandCompiler.compile(text, event)));
+		return true;
 	}
 
-	public static final class CustomCommandBuilder extends CustomCommand.Builder<CustomCommand, CustomCommandBuilder> {
-		public CustomCommandBuilder(Message message, String name, String event, String text) {
-			super(name, ".+", UserCategory.DEFAULT, ReactionChannelType.GUILD);
-			object.message = message;
-			// CustomCommandCompiler
-			executeStatus(message1 -> {
-				return true;
-			});
-		}
-		@Override public CustomCommand build() { return object; }
-		@Override protected CustomCommand createObject() { return new CustomCommand(); }
-		@Override protected CustomCommandBuilder thisObject() { return this; }
+	protected CustomCommand(Guild guild, TokenTreeNode runnable) {
+		this.guild = guild;
 	}
 
-	Message message;
-
-	protected CustomCommand() { }
+	Guild guild;
 
 	public CustomCommand(String name, UserCategory category, BiFunction<Message, Matcher, Boolean> executer) {
 //		super(regex, name, category, channelCategory);
@@ -98,7 +104,7 @@ public class CustomCommand extends Command {
 	}
 
 	Member getAuthor(User user) {
-		return message.getGuild().getMember(user);
+		return guild.getMember(user);
 	}
 
 	static Void VOID = Void.getInstance();
@@ -243,7 +249,12 @@ public class CustomCommand extends Command {
 			   new ClassType<GuildBanEvent>("guildBan").extend("genericGuild"),
 			   new ClassType<GuildUnbanEvent>("guildUnban").extend("genericGuild")
 	));
-//	static class JointType<T> extends Type<T> {
+
+	public void execute(Event event) {
+
+	}
+
+	//	static class JointType<T> extends Type<T> {
 //
 //		public JointType(String name) {
 //			super(name);

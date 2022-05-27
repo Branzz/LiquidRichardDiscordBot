@@ -10,6 +10,8 @@ import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.commands.Command.CommandBuilder;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandCompileErrorException;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandException;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.InvalidCustomCommandException;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
@@ -290,7 +292,7 @@ public class Reactions { // TODO convert into singleton (?)
 			});
 		}).build(),
 
-		new CommandBuilder("Nick All", "Nick\\s+\"([\\w]{2,32})\"\\s[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
+		new CommandBuilder("Nick All", "^Nick\\s+\"([\\w]{2,32})\"\\s[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
 			message.getMentionedMembers().forEach(member -> { // TODO bad return status... needs to wait for queue?
 				try {
 					member.modifyNickname(matcher.group(1)).queue();
@@ -301,7 +303,7 @@ public class Reactions { // TODO convert into singleton (?)
 			return true;
 		}).build(),
 
-		new CommandBuilder("Kick All", "Kick[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
+		new CommandBuilder("Kick All", "^Kick[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
 			message.getMentionedMembers().forEach(member -> { // TODO bad return status... needs to wait for queue? (if found nobody?)
 				try {
 					member.kick().queue();
@@ -334,8 +336,8 @@ public class Reactions { // TODO convert into singleton (?)
 			String name = matcher.group(7);
 			String text = matcher.group(9);
 			try {
-				addCommand(new CustomCommand.CustomCommandBuilder(message, name, event, text).build());
-			} catch (CustomCommandCompileErrorException e) {
+				CustomCommand.create(message.getGuild(), name, event, text);
+			} catch (CustomCommandCompileErrorException | InvalidCustomCommandException e) {
 				return false;
 			}
 			return true;
@@ -624,7 +626,7 @@ public class Reactions { // TODO convert into singleton (?)
 				} else
 					reply(message, "Not Here To Answer Questions.");
 			// }
-		}).addGuildCooldown(10_000_000L).build()
+		}).addGuildCooldown(10_000_000L).deactivated().build()
 	  );
 	}
 
