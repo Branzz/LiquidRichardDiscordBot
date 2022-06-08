@@ -14,9 +14,9 @@ import static com.wordpress.brancodes.messaging.reactions.Unit.BaseUnitType.MASS
 
 enum Unit {
 	KG(MASS, n -> applyScale(n, 2.2046226218487) + " lbs", n -> n, n -> n),
-	LBS(MASS, n -> applyScale(n, 0.45359237) + " kgs", n -> applyScale(n, 0.45359237), n -> applyScale(n, 1 / 0.45359237)), // not actually mass, gravitational force on earth
+	LB(MASS, n -> applyScale(n, 0.45359237) + " kgs", n -> applyScale(n, 0.45359237), n -> applyScale(n, 1 / 0.45359237)), // not actually mass, gravitational force on earth
 	M(LENGTH, n -> scaleWithInches(n, 3.2808398950131), n -> n, n -> n),
-	CM(LENGTH, n -> scaleWithInches(n, .0328083989501), n -> applyScale(n, 100), n -> applyScale(n, .01)),
+	CM(LENGTH, n -> scaleWithInches(n, .0328083989501), n -> applyScale(n, .01), n -> applyScale(n, 100)),
 	FT(LENGTH, n -> applyScale(n, 0.3048) + " m", n -> applyScale(n, 0.3048), n -> applyScale(n, 1 / 0.3048)),
 	IN(LENGTH, n -> applyScale(n, 2.54) + " cm", n -> applyScale(n, .0254), n -> applyScale(n, 1 / .0254));
 
@@ -52,7 +52,7 @@ enum Unit {
 	public static Unit of(String name) {
 		switch (name.charAt(0)) {
 			case 'K': case 'k': return KG;
-			case 'L': case 'l': case 'P': case 'p': return LBS;
+			case 'L': case 'l': case 'P': case 'p': return LB;
 			case 'M': case 'm': return M;
 			case 'C': case 'c': return CM;
 			case 'F': case 'f': return FT;
@@ -201,7 +201,7 @@ enum Unit {
 		return new BMI(matches);
 	}
 
-	public static class BMI { // very not synchronous
+	public static class BMI { // unstable non-synchronously
 		private final Iterable<MatchResult> matches;
 
 		private int heightCount = 0, weightCount = 0;
@@ -227,7 +227,7 @@ enum Unit {
 			couldCalculate = calculateBMI();
 		}
 
-		public boolean calculateBMI() {
+		public synchronized boolean calculateBMI() {
 			for (MatchResult match : matches) {
 				try {
 					if (match.group(3) != null) {
@@ -261,24 +261,32 @@ enum Unit {
 				return false;
 		}
 
-		private void setToPotential(MatchResult match, Unit toUnit) {
+		private synchronized void setToPotential(MatchResult match, Unit toUnit) {
 			potential = new BigDecimal(match.group(12));
 			potentialConverted = Unit.of(match.group(13)).convertToUnit(potential, toUnit);
 			setToPotential();
 		}
 
-		private void setToPotential() {
+		private synchronized void setToPotential() {
 			if (inRange()) {
 				if (isWeight) {
-					weight = potential;
-					convertedWeight = potentialConverted;
-					weightCount++;
+					setWeightToPotential();
 				} else {
-					height = potential;
-					convertedHeight = potentialConverted;
-					heightCount++;
+					setHeightToPotential();
 				}
 			}
+		}
+
+		private synchronized void setHeightToPotential() {
+			height = potential;
+			convertedHeight = potentialConverted;
+			heightCount++;
+		}
+
+		private synchronized void setWeightToPotential() {
+			weight = potential;
+			convertedWeight = potentialConverted;
+			weightCount++;
 		}
 
 		private boolean inRange() {
@@ -301,7 +309,7 @@ enum Unit {
 		}
 
 		@NotNull
-		private String getBMIString(double bmiDouble, String bmi) {
+		private static String getBMIString(double bmiDouble, String bmi) {
 			return bmi + " BMI (" + (bmiDouble < 18.5 ? "Underweight" : bmiDouble < 25 ? "Healthy" : bmiDouble < 30 ? "Overweight" : "Obese") + ')';
 		}
 

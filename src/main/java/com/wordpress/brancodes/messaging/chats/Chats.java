@@ -44,13 +44,13 @@ public class Chats {
 				// 	mainChannel.sendMessage("@everyone").queue();
 				// 	mainChannel.getIterableHistory().stream().findFirst().get().delete().queue();
 				// }, 43_200_000L)
-				new VariatedChat(channel -> {
-					getBdayMessage((TextChannel) channel).queue(message -> {
-									message.addReaction("U+1F449U+1F3FF").queue();
-									message.addReaction("U+1F44CU+1F3FF").queue();
-							   }
-					);
-				}, "Angelitte Countdown")
+				// new VariatedChat(channel -> {
+				// 	getBdayMessage((TextChannel) channel).queue(message -> {
+				// 					message.addReaction("U+1F449U+1F3FF").queue();
+				// 					message.addReaction("U+1F44CU+1F3FF").queue();
+				// 			   }
+				// 	);
+				// }, "Angelitte Countdown")
 
 		);
 	}
@@ -71,7 +71,7 @@ public class Chats {
 											   + " Month" + (months != 1 ? "s" : "") : "")
 								+ (days != 0 ? (months != 0 ? " And " : "")
 											   + CaseUtil.properCase(NumberToText.numberToString(days))
-											   + " Day" + (days != 1 ? "s" : "") : "") + " Until Angelitte Is 18.");
+											   + " Day" + (days != 1 ? "s" : "") : "") + " U");
 	}
 
 }

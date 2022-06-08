@@ -17,9 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
+import java.awt.*;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Random;
@@ -37,8 +39,10 @@ public class LiquidRichardBot {
 
 	private final JDA jda;
 	private Map<Long, ChatScheduler> guildChatSchedulers;
+	private final Listener listener;
 
 	public LiquidRichardBot() throws LoginException {
+		listener = new Listener();
 		jda =
 		JDABuilder.createDefault(
 				(String) Config.get("token"),
@@ -71,7 +75,7 @@ public class LiquidRichardBot {
 										// 				  new PingCommand(),
 										// 				  new ShutdownCommand())
 										// 	 .build(),
-									 new Listener()
+						listener
 				  )
 				  .setActivity(Activity.streaming("My Shitty Gameplay", "https://www.youtube.com/watch?v=rrS5HDSBm1Y"))
 				  .build();
@@ -89,7 +93,7 @@ public class LiquidRichardBot {
 	// 	guildChatSchedulers.put(guildID, new ChatScheduler(new Chats(guildID)));
 	// }
 
-	private static final Map<Long, Long> guildMainChannels = Map.of(910004207120183326L, 966044757744824360L); // <Guild, TextChannel> ?
+	private static final Map<Long, Long> guildMainChannels = Map.of(910004207120183326L, 910004207438954567L); // <Guild, TextChannel> ?
 
 	public static TextChannel autodeleteLog;
 
@@ -107,6 +111,12 @@ public class LiquidRichardBot {
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+
+		// new ColorChangingRole(981357094164889600L, 750L, Arrays.stream(new int[] { 0xF32D2D, 0xF55916, 0xFFD61F, 0x1CBD0D, 0x3D51FF, 0xB53DFF })
+		// 														.mapToObj(Color::new)
+		// 														.toArray(Color[]::new))
+		// 		.start();
+
 		// jda.getGuildById(910004207120183326L).getTextChannelById(938608631086190642L).getIterableHistory().stream()
 		//    .filter(m -> !(m instanceof SystemMessage) && m.getAuthor().getIdLong() == 849711011456221285L)
 		//    // .peek(m -> System.out.println("checking " + m.getContentRaw()))
@@ -139,7 +149,7 @@ public class LiquidRichardBot {
 	}
 
 	public static String getUserName(User user) {
-		return user.getName() + "#" + user.getDiscriminator();
+		return user == null ? "null " : user.getName() + "#" + user.getDiscriminator();
 	}
 
 	public JDA getJDA() {
@@ -183,6 +193,10 @@ public class LiquidRichardBot {
 			final User userByTag = jda.getUserByTag(tag, "0".repeat(4 - s.length()) + s);
 			System.out.println(tag + ": " + (userByTag != null ? userByTag.getId() : "Not found"));
 		}
+	}
+
+	public void pause() {
+		listener.pause();
 	}
 
 }

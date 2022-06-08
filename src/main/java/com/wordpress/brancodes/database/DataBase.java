@@ -62,8 +62,8 @@ public class DataBase {
 		return new Data<>(
 			(guildID != null && userID != null)
 			&& (guildID == 907042440924528662L
-				&& (userID == 956135678893252628L || userID == 928336417514479646L || userID == 936433911486087208L))
-		);
+				&& (userID == 956135678893252628L || userID == 928336417514479646L || userID == 936433911486087208L)),
+			guildID);
 		// return new Data<>(false);
 		// if (guildID != null && userID != null)
 		// 	try (PoolConnection.PreparedStatementQuery preparedStatementQuery =

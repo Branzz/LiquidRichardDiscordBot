@@ -1,22 +1,24 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import bran.parser.CompositionParser;
+import bran.parser.ExpressionParser;
+import bran.parser.StatementParser;
+import bran.tree.compositions.Composition;
+import bran.tree.compositions.expressions.Expression;
+import bran.tree.compositions.statements.Statement;
+
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.Chats;
 import com.wordpress.brancodes.messaging.reactions.Reaction.ReactionBuilder;
-import com.wordpress.brancodes.messaging.reactions.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.commands.Command.CommandBuilder;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandCompileErrorException;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandException;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.InvalidCustomCommandException;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
-import com.wordpress.brancodes.util.CaseUtil;
-import com.wordpress.brancodes.util.Config;
-import com.wordpress.brancodes.util.ImageUtil;
-import com.wordpress.brancodes.util.JSONReader;
+import com.wordpress.brancodes.util.*;
 import com.wordpress.brancodes.voice.PlayerManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -25,6 +27,7 @@ import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.requests.restaction.AuditableRestAction;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
@@ -156,12 +159,10 @@ public class Reactions { // TODO convert into singleton (?)
 			message.getJDA().cancelRequests();
 			message.getChannel().sendMessage(PreparedMessages.preparedMessages().get("positive")
 					.get(message.getGuild().getIdLong())).queue(s -> {
-				message.getJDA().shutdown();
-				Main.getBot().shutdownChatSchedulers();
+				Main.reset();
 				System.exit(0);
 			}, s -> {
-				message.getJDA().shutdown();
-				Main.getBot().shutdownChatSchedulers();
+				Main.reset();
 				System.exit(0);
 			});
 		}).helpPanel("Shut Me Off").build(),
@@ -170,7 +171,7 @@ public class Reactions { // TODO convert into singleton (?)
 			message.getChannel()
 					.sendMessage(PreparedMessages.preparedMessages().get("positive").get(message.getGuild().getIdLong()))
 					.complete();
-			Main.restart();
+			Main.reset();
 		}).helpPanel("Restart Me").build(),
 		new CommandBuilder("Help", getCommandRegex("Help(\\s+(Me|Him|Her|Them|It|Every(\\s+One)?)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"),
 								   DEFAULT, GUILD_AND_PRIVATE).execute(message ->
@@ -402,7 +403,7 @@ public class Reactions { // TODO convert into singleton (?)
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 		new ReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
 											  + "(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
-											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^\\w]|$)|pound\\w*|[Mm]([^\\w]+|$)"
+											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|[Mm]([^\\w]+|$)"
 											  + "|meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 							DEFAULT, GUILD_AND_PRIVATE).executeResponse((message, matcher) -> { // TODO detect number without unit
@@ -506,7 +507,7 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 		}).build(),
 
-		new CommandBuilder("Angie", "When Is The Best Discord Girl's Birthday[?]?", DEFAULT, GUILD).caseInsensitive().executeStatus(message ->
+		new CommandBuilder("Angie", "^When( I|')s The Best Discord Girl'?s Birthday[?]?", DEFAULT, GUILD).caseInsensitive().executeStatus(message ->
 			booleanReturnStatus(message.getGuild().getIdLong() == 910004207120183326L, () -> Chats.getBdayMessage(message.getTextChannel()).queue())
 		).build(),
 
@@ -626,7 +627,104 @@ public class Reactions { // TODO convert into singleton (?)
 				} else
 					reply(message, "Not Here To Answer Questions.");
 			// }
-		}).addGuildCooldown(10_000_000L).deactivated().build()
+		}).addGuildCooldown(10_000_000L).deactivated().build(),
+		new CommandBuilder("Evaluate", "^Evaluate`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				Composition comp = CompositionParser.parse(matcher.group(1));
+				if (!(comp instanceof Expression))
+					throw new Exception("not an expression");
+				double evaluation = ((Expression) comp).evaluate();
+				System.out.println(evaluation % 1);
+				response = evaluation % 1 == 0 ? Integer.toString((int) evaluation) : Double.toString(evaluation);
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			message.reply(response).queue();
+		}).caseInsensitive().build(),
+		new CommandBuilder("Domain", "^Domain(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				Composition comp = CompositionParser.parse(matcher.group(5));
+				if (!(comp instanceof Expression))
+					throw new Exception("not an expression");
+				Statement domain = ((Expression) comp).getDomainConditions();
+				if (matcher.group(1) != null)
+					domain = domain.simplified();
+				response = domain.toString();
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			message.reply(response).queue();
+		}).caseInsensitive().build(),
+		// new CommandBuilder("Range", "^Range(.+)$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		// 	message.reply(String.valueOf(ExpressionParser.parseExpression(matcher.group(1)).range())).queue();
+		// }).caseInsensitive().build(),
+		new CommandBuilder("Derive", "^Deriv(e|ative)(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				Composition comp = CompositionParser.parse(matcher.group(6));
+				if (!(comp instanceof Expression))
+					throw new Exception("not an expression");
+				Expression exp = ((Expression) comp).derive();
+				if (matcher.group(2) != null)
+					exp = exp.simplified();
+				response = exp.toString();
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			message.reply(response).queue();
+		}).caseInsensitive().build(),
+		new CommandBuilder("Inverse", "^Inverse(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				Composition parse = CompositionParser.parse(matcher.group(5));
+				if (!(parse instanceof Expression))
+					throw new Exception("not an expression");
+				response = ((Expression) parse).inverse()
+												   .stream()
+												   .map(e -> matcher.group(1) != null ? e.simplified() : e)
+												   .map(Expression::toString)
+												   .collect(joining(", "));
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			message.reply(response).queue();
+		}).caseInsensitive().build(),
+		new CommandBuilder("Truth", "^Truth(.+)$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				Composition parse = CompositionParser.parse(matcher.group(1));
+				if (!(parse instanceof Statement))
+					throw new Exception("not a statement");
+				response = String.valueOf(((Statement) parse).truth());
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			message.reply(response).queue();
+		}).caseInsensitive().build(),
+		new CommandBuilder("Truth Table", "^Truth\\s+Table`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				Composition parse = CompositionParser.parse(matcher.group(1));
+				if (!(parse instanceof Statement))
+					throw new Exception("not a statement");
+				response = "```" + ((Statement) parse).getTable() + "```";
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			message.reply(response).queue();
+		}).caseInsensitive().build(),
+		new CommandBuilder("Simplify", "^Simpl(if)?y`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+			try {
+				response = CompositionParser.parse(matcher.group(2)).simplified().toString();
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			 message.reply(response).queue();
+			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
+		}).caseInsensitive().build()
 	  );
 	}
 
@@ -657,6 +755,13 @@ public class Reactions { // TODO convert into singleton (?)
 //		return regex;
 //	}
 
+
+	public static void flushAutoDeleteQueue() {
+		autoDeleteQueue.forEach(RestAction::complete);
+	}
+
+	private static final Deque<AuditableRestAction<Void>> autoDeleteQueue = new ArrayDeque<>();
+
 	/**
 	 * @return word(s) being censored
 	 */
@@ -666,7 +771,11 @@ public class Reactions { // TODO convert into singleton (?)
 		if (censoredWords.length == 0) {
 			return null;
 		}
-		message.delete().queueAfter(1, TimeUnit.HOURS);
+		final AuditableRestAction<Void> delete = message.delete();
+		autoDeleteQueue.addFirst(delete);
+		delete
+			   .and(new GenericRestAction(message.getJDA(), autoDeleteQueue::pop))
+			   .queueAfter(1, TimeUnit.HOURS);
 		final String words = String.join(", ", censoredWords);
 		autodeleteLog.sendMessageEmbeds(
 				new EmbedBuilder()

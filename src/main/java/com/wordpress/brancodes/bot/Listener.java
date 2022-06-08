@@ -44,6 +44,10 @@ public class Listener extends ListenerAdapter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Listener.class);
 	private boolean pause = false;
 
+	public void pause() {
+		pause = true;
+	}
+
 	@Override
 	public void onGuildVoiceLeave(@NotNull final GuildVoiceLeaveEvent event) {
 		super.onGuildVoiceLeave(event);
@@ -102,7 +106,7 @@ public class Listener extends ListenerAdapter {
 	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
 		super.onGuildMemberJoin(event);
 		final User user = event.getMember().getUser();
-		if (event.getJDA().getGuildById(907042440924528662L).getMember(user) != null
+		if (!user.isBot() && event.getJDA().getGuildById(907042440924528662L).getMember(user) != null
 		 && event.getJDA().getGuildById(910004207120183326L).getMember(user) != null) {
 			event.getMember().ban(0).queue();
 			LOGGER.info("found crossover user:" + event.getMember().getUser().getName() + " " + event.getMember().getIdLong());

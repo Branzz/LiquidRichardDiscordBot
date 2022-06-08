@@ -91,11 +91,11 @@ public class PreparedMessages {
 		return getMessage(null, request);
 	}
 
-	public static String getMessage(final Long guildID, String request) {
+	public static String getMessage(Long guildID, String request) {
 		return preparedMessages.get(request).get(guildID);
 	}
 
-	public static MessageEmbed getEmbedMessage(final String request) {
+	public static MessageEmbed getEmbedMessage(String request) {
 		return embedMessages.get(request);
 	}
 
