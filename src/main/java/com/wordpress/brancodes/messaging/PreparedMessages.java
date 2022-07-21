@@ -49,7 +49,7 @@ public class PreparedMessages {
 				// embedBuilder.addField("\u2550\u2550\u2550\u2550\u2550 " + channelType.toString() + " Commands" + " \u2550\u2550\u2550\u2550\u2550", "", false);
 				Stream.of(UserCategory.values()).forEach(userCategory ->
 						addNonEmptyFieldTo(embedBuilder, userCategory.toString(),
-								Reactions.reactions
+								Reactions.messageReactions
 										.stream()
 										.filter(r -> !r.isDeactivated())
 										.filter(c -> c instanceof Command)

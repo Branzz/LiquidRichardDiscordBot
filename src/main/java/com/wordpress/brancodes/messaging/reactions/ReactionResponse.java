@@ -11,17 +11,17 @@ public class ReactionResponse {
 	private final String logResponse;
 	private RestAction response;
 
-	public ReactionResponse(Reaction forReaction, boolean status, String logResponse) {
+	public ReactionResponse(MessageReaction forReaction, boolean status, String logResponse) {
 		this.status = status;
 		this.logResponse = logResponse;
 	}
 
-	public ReactionResponse(Reaction forReaction, String logResponse) {
+	public ReactionResponse(MessageReaction forReaction, String logResponse) {
 		this.status = true;
 		this.logResponse = logResponse;
 	}
 
-	public ReactionResponse(Reaction forReaction, boolean status) {
+	public ReactionResponse(MessageReaction forReaction, boolean status) {
 		this.status = status;
 		this.logResponse = null;
 	}

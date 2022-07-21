@@ -1,5 +1,8 @@
 package com.wordpress.brancodes.messaging.reactions.commands.custom;
 
+import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
+import com.wordpress.brancodes.messaging.reactions.commands.Command;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.InvalidCustomCommandException;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.tokens.tree.TokenTreeNode;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.*;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.Void;
@@ -33,6 +36,7 @@ import net.dv8tion.jda.api.events.user.update.UserUpdateDiscriminatorEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
 import org.springframework.data.util.Streamable;
 
+import javax.annotation.RegEx;
 import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
@@ -46,27 +50,31 @@ import static com.wordpress.brancodes.messaging.reactions.commands.custom.tokens
 
 //@SuppressWarnings("ALL")
 
-public class CustomCommand {
+public class CustomCommand extends Command {
 
-	// public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Command.Builder<T, B> {
-	// 	public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-	// 		super(name, regex, userCategory, channelCategory);
-	// 	}
-	// }
-	//
-	// public static final class CustomCommandBuilder extends CustomCommand.Builder<CustomCommand, CustomCommandBuilder> {
-	// 	public CustomCommandBuilder(Message message, String name, String event, String text) {
-	// 		super(name, ".+", UserCategory.DEFAULT, ReactionChannelType.GUILD);
-	// 		object.message = message;
-	// 		// CustomCommandCompiler
-	// 		executeStatus(message1 -> {
-	// 			return true;
-	// 		});
-	// 	}
-	// 	@Override public CustomCommand build() { return object; }
-	// 	@Override protected CustomCommand createObject() { return new CustomCommand(); }
-	// 	@Override protected CustomCommandBuilder thisObject() { return this; }
-	// }
+	public CustomCommand() {
+
+	}
+
+	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Command.Builder<T, B> {
+	 	public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
+	 		super(name, regex, userCategory, channelCategory);
+	 	}
+	 }
+
+	 public static final class CustomCommandBuilder extends Builder<CustomCommand, CustomCommandBuilder> {
+	 	public CustomCommandBuilder(String name, @RegEx String regex, String description, UserCategory userCategory, ReactionChannelType channelCategory) {
+	 		super(name, ".+", UserCategory.DEFAULT, ReactionChannelType.GUILD);
+//	 		object.message = message;
+//	 		// CustomCommandCompiler
+//	 		executeStatus(message1 -> {
+//	 			return true;
+//	 		});
+	 	}
+	 	@Override public CustomCommand build() { return object; }
+	 	@Override protected CustomCommand createObject() { return new CustomCommand(); }
+	 	@Override protected CustomCommandBuilder thisObject() { return this; }
+	 }
 
 	public static boolean create(Guild guild, String name, String event, String text) {
 		final ClassType<?> eventType = events.get(event);

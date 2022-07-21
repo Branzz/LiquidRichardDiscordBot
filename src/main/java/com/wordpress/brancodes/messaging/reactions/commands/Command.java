@@ -1,9 +1,8 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
-import com.wordpress.brancodes.messaging.reactions.Reaction;
+import com.wordpress.brancodes.messaging.reactions.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -14,7 +13,7 @@ import javax.annotation.RegEx;
 
 import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
 
-public class Command extends Reaction {
+public class Command extends MessageReaction {
 
 	protected String description;
 	protected boolean deniable;
@@ -69,7 +68,7 @@ public class Command extends Reaction {
 		return embedBuilder.build();
 	}
 
-	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends Reaction.Builder<T, B> {
+	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends MessageReaction.Builder<T, B> {
 
 		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);

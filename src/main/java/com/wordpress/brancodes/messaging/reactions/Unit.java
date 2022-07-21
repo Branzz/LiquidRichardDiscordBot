@@ -97,47 +97,41 @@ enum Unit {
 		return BigDecimal.valueOf(Double.parseDouble(feet) + (Double.parseDouble(inches) / 12));
 	}
 
-	/**
-	 * @return null if not convertible
-	 */
-	public static String convertUnit(MatchResult match) {
-		String converted;
-		String convertedFeetInch = FeetInchStats.convertFeetInchUnitString(match);
-		if (convertedFeetInch != null) {
-			if (match.group(4).equals("5'11"))
-				return "Short.";
-			else
-				converted = convertedFeetInch;
-		} else
-			converted = Unit.of(match.group(13)).convert(match.group(12));
-		if (match.group(1).length() % 2 == 1)
-			return '-' + converted;
-		else
-			return converted;
-		// for (int i = 0; i < match.groupCount(); i++) {
-		// 	System.out.println(i + ":" + match.group(i));
-		// }
-		// return null;
-	}
+	// keep copy of original MatchResult ? (potential memory leak)
+	// (or does that allow users to ruin the purpose of this class)
+	public static class UnitMatch {
 
-	private static class FeetInchStats {
+		private final String fullMatch;
+		private final String negatives;
+		private final String feetInchBase;
+		private final String feetInch;
+		private final boolean isFeetInch; // as opposed to other units
+		private String feet;
+		private String inches;
+		private String inchWhole;
+		private String inchDecimal;
+		private boolean hasInchWhole;
+		private boolean hasInchDecimal;
+		private BigDecimal value;
+		private Unit unit;
 
-		boolean matchHasFeetInch;
-		String feet;
-		String inches;
-		String inchWhole;
-		String inchDecimal;
-
-		public FeetInchStats(MatchResult match) {
-			if (match.group(3) != null) {
+		public UnitMatch(MatchResult match) {
+			fullMatch = match.group(0);
+			negatives = match.group(1);
+			feetInch = match.group(3);
+			isFeetInch = feetInch != null;
+			feetInchBase = match.group(4);
+			if (isFeetInch) {
 				inchWhole = match.group(7);
-				if (inchWhole == null) {
+				hasInchWhole = inchWhole != null;
+				if (!hasInchWhole) {
 					inchWhole = "0";
-					inchDecimal = match.group(10);
-				} else {
 					inchDecimal = match.group(9);
+				} else {
+					inchDecimal = match.group(10);
 				}
-				if (inchDecimal == null)
+				hasInchDecimal = inchDecimal != null;
+				if (!hasInchDecimal)
 					inchDecimal = "0";
 				feet = match.group(5);
 				if (feet == null)
@@ -145,32 +139,53 @@ enum Unit {
 				inches = match.group(6);
 				if (inches == null)
 					inches = "0";
-				matchHasFeetInch = true;
 			} else {
-				matchHasFeetInch = false;
+//			value = Optional.ofNullable(match.group(12)).map(BigDecimal::new).orElse(null);
+//			value = nullify(match.group(12), BigDecimal::new);
+				value = new BigDecimal(match.group(12));
+				unit = Unit.of(match.group(13));
 			}
+
 		}
 
-		public static BigDecimal convertFeetInchUnit(MatchResult match) {
-			return new FeetInchStats(match).toFeetInchUnit();
+		public static <T, R> R nullify(T val, Function<T, R> process) {
+			return val == null ? null : process.apply(val);
 		}
 
-		public static String convertFeetInchUnitString(MatchResult match) {
-			return new FeetInchStats(match).toFeetInchString();
+		public String fullMatch() {
+			return fullMatch;
+		}
+
+		/**
+		 * @return null if not convertible
+		 */
+		public String convertUnit() {
+			String converted;
+			if (isFeetInch) {
+				if (feetInchBase.equals("5'11"))
+					return "Short.";
+				else
+					converted = toFeetInchString();
+			} else
+				converted = unit.convert(value);
+			if (negatives.length() % 2 == 1)
+				return '-' + converted;
+			else
+				return converted;
+			// for (int i = 0; i < match.groupCount(); i++) {
+			// 	System.out.println(i + ":" + match.group(i));
+			// }
+			// return null;
 		}
 
 		/**
 		 * @return to feet + inch
 		 */
 		public BigDecimal toFeetInchUnit() {
-			if (!matchHasFeetInch)
-				return null;
 			return getInchFeetSum().setScale(getScale(), RoundingMode.HALF_UP);
 		}
 
 		public String toFeetInchString() {
-			if (!matchHasFeetInch)
-				return null;
 			int scale = getScale();
 			final BigDecimal product = getInchFeetSum().multiply(new BigDecimal("0.3048"));
 			final boolean cmRange = product.compareTo(new BigDecimal("2")) <= 0;
@@ -182,13 +197,11 @@ enum Unit {
 		}
 
 		private int getScale() {
-			int scale;
-			if (inchWhole == null) {
-				scale = Math.max(0, 2 + new BigDecimal(feet).stripTrailingZeros().scale());
+			if (!hasInchWhole) {
+				return Math.max(0, 2 + new BigDecimal(feet).stripTrailingZeros().scale());
 			} else {
-				scale = inchDecimal == null ? 2 : Math.max(2, inchDecimal.length());
+				return Math.max(2, inchDecimal.length());
 			}
-			return scale;
 		}
 
 		private BigDecimal getInchFeetSum() {
@@ -197,12 +210,12 @@ enum Unit {
 
 	}
 
-	public static BMI getBMI(Iterable<MatchResult> matches) {
+	public static BMI getBMI(Iterable<UnitMatch> matches) {
 		return new BMI(matches);
 	}
 
 	public static class BMI { // unstable non-synchronously
-		private final Iterable<MatchResult> matches;
+		private final Iterable<UnitMatch> matches;
 
 		private int heightCount = 0, weightCount = 0;
 
@@ -222,32 +235,31 @@ enum Unit {
 
 		static final double weightFrom = 20, weightTo = 400, heightFrom = .5, heightTo = 3;
 
-		public BMI(final Iterable<MatchResult> matches) {
+		public BMI(final Iterable<UnitMatch> matches) {
 			this.matches = matches;
 			couldCalculate = calculateBMI();
 		}
 
 		public synchronized boolean calculateBMI() {
-			for (MatchResult match : matches) {
+			for (UnitMatch match : matches) {
 				try {
-					if (match.group(3) != null) {
-						potential = FeetInchStats.convertFeetInchUnit(match);
+					if (match.isFeetInch) {
+						potential = match.toFeetInchUnit();
 						potentialConverted = FT.convertToUnit(potential, M);
 						isWeight = false;
 						setToPotential();
 					} else {
-						Unit unit = Unit.of(match.group(13));
-						if (unit.baseUnitType == LENGTH) {
+						if (match.unit.baseUnitType == LENGTH) {
 							isWeight = false;
 							setToPotential(match, M);
 						}
-						else if (unit.baseUnitType == MASS) {
+						else if (match.unit.baseUnitType == MASS) {
 							isWeight = true;
 							setToPotential(match, KG);
 						}
 					}
 				} catch (NullPointerException npe) { // ignore the match if parsing/conversion fails
-					LOGGER.error("failed convert " + match.group(0));
+					LOGGER.error("failed to convert " + match.fullMatch);
 				}
 			}
 			if (heightCount == 1 && weightCount == 1) {
@@ -261,9 +273,9 @@ enum Unit {
 				return false;
 		}
 
-		private synchronized void setToPotential(MatchResult match, Unit toUnit) {
-			potential = new BigDecimal(match.group(12));
-			potentialConverted = Unit.of(match.group(13)).convertToUnit(potential, toUnit);
+		private synchronized void setToPotential(UnitMatch match, Unit toUnit) {
+			potential = match.value;
+			potentialConverted = match.unit.convertToUnit(potential, toUnit);
 			setToPotential();
 		}
 

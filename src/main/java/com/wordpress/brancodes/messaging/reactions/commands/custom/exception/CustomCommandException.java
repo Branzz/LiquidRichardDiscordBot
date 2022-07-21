@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.messaging.reactions.commands.custom;
+package com.wordpress.brancodes.messaging.reactions.commands.custom.exception;
 
 public class CustomCommandException extends Exception {
 

@@ -4,7 +4,6 @@ import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
 
 import javax.security.auth.login.LoginException;
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -23,15 +22,27 @@ public class Main {
 			e.printStackTrace();
 		}
 
+//		if (args.length > 1)
+//			upsertCommands(new HashSet<>(List.of(args)));
+
 		Runtime.getRuntime().addShutdownHook(new Thread(Reactions::flushAutoDeleteQueue));
 
 		try (InputStreamReader iReader = new InputStreamReader(System.in);
 			 BufferedReader bReader = new BufferedReader(iReader)) {
-			bReader.readLine();
+
+//			while (true) {
+				String[] input = bReader.readLine().split("\\s+");
+//				if (input[0].equalsIgnoreCase("upsert")) {
+//					upsertCommands(new HashSet<>(Arrays.asList(input).subList(1, input.length)));
+//				} else {
+//					break;
+//				}
+//			}
 
 			// PoolConnection.end();
 
 			System.exit(0);
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -45,6 +56,15 @@ C:/Users/Brock/.jdks/openjdk-16.0.1/bin/java.exe -Dfile.encoding=windows-1252 -D
 
 
  */
+
+//	public static void upsertCommands(Set<String> upsertCommands) {
+//		Reactions.reactions.stream()
+//				.filter(r -> upsertCommands.contains(r.getName()))
+////				.filter(r -> r instanceof SlashCommand)
+//				.map(r -> (SlashCommand) r)
+//				.forEach(SlashCommand::upsertCommand);
+//	}
+
 	public static LiquidRichardBot getBot() {
 		return bot;
 	}

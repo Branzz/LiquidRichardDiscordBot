@@ -16,3 +16,5 @@
   * integral
 
 * CONVERT TO SPRING DATA BASE
+
+* multi message command (builder)

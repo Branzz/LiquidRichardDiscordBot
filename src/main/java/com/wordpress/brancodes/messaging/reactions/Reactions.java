@@ -1,22 +1,22 @@
 package com.wordpress.brancodes.messaging.reactions;
 
 import bran.parser.CompositionParser;
-import bran.parser.ExpressionParser;
-import bran.parser.StatementParser;
 import bran.tree.compositions.Composition;
 import bran.tree.compositions.expressions.Expression;
 import bran.tree.compositions.statements.Statement;
-
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.Chats;
-import com.wordpress.brancodes.messaging.reactions.Reaction.ReactionBuilder;
+import com.wordpress.brancodes.messaging.reactions.MessageReaction.MessageReactionBuilder;
+import com.wordpress.brancodes.messaging.reactions.Unit.UnitMatch;
 import com.wordpress.brancodes.messaging.reactions.commands.Command.CommandBuilder;
+import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand;
+import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand.SlashCommandBuilder;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandCompileErrorException;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.InvalidCustomCommandException;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.CustomCommandCompileErrorException;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.InvalidCustomCommandException;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.*;
 import com.wordpress.brancodes.voice.PlayerManager;
@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
@@ -55,8 +56,9 @@ import java.util.stream.Stream;
 
 import static com.wordpress.brancodes.bot.LiquidRichardBot.autodeleteLog;
 import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
-import static com.wordpress.brancodes.messaging.reactions.Reaction.getMatcher;
+import static com.wordpress.brancodes.messaging.reactions.MessageReaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.*;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
 import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
@@ -64,6 +66,8 @@ import static com.wordpress.brancodes.util.ImageUtil.*;
 import static java.util.stream.Collectors.*;
 
 public class Reactions { // TODO convert into singleton (?)
+
+	// TODO awkward encapsulation and member ordering
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Reactions.class);
 
@@ -142,6 +146,7 @@ public class Reactions { // TODO convert into singleton (?)
 	}
 
 	public static List<Reaction> reactions;
+	public static List<MessageReaction> messageReactions;
 
 	public static Map<String, Reaction> commandsByName;
 
@@ -151,7 +156,7 @@ public class Reactions { // TODO convert into singleton (?)
 			.collect(Reactions.orChainRegex()) + "($|\\s)";
 
 	static {
-	  reactions = List.of(
+		reactions = List.of(
 				// new Command.Builder("", "Create Command", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
 				// 	// addCommand()
 				// }).build(),
@@ -344,13 +349,13 @@ public class Reactions { // TODO convert into singleton (?)
 			return true;
 		})).build(),
 
-		new ReactionBuilder("Greeting", "^(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
+		new MessageReactionBuilder("Greeting", "^(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
 												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*$",
 							DEFAULT, GUILD_AND_PRIVATE).execute(message ->
 				reply(message.getTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		).addChannelCooldown(5_000L).build(),
 
-		new ReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD).executeResponse((message, matcher) -> {
+		new MessageReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD).executeResponse((message, matcher) -> {
 			if ((message.getGuild().getIdLong() != 953143574453706792L
 				 && (message.getGuild().getIdLong() == 722001554374131713L || message.getGuild().getIdLong() == 907042440924528662L))
 					&& !message.isPinned()) { // TODO guild subscribed to this command
@@ -363,7 +368,7 @@ public class Reactions { // TODO convert into singleton (?)
 				return FAILURE;
 		}).build(),
 
-		new ReactionBuilder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message ->
+		new MessageReactionBuilder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message ->
 			booleanReturnStatus(message.getGuild().getIdLong() == 907042440924528662L, () ->
 				message.delete().queue())
 		).build(),
@@ -401,25 +406,24 @@ public class Reactions { // TODO convert into singleton (?)
 			message.reply(truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue();
 		}).helpPanel("Purge Censor Current Channel").build(),
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
-		new ReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
-											  + "(-*)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
-											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|[Mm]([^\\w]+|$)"
+		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
+											  + "(-*)(?<!\\$)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
+											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|m([^\\w]+|$)"
 											  + "|meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
-							DEFAULT, GUILD_AND_PRIVATE).executeResponse((message, matcher) -> { // TODO detect number without unit
+							DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> { // TODO detect number without unit
 			if (message.getGuild().getIdLong() == 953143574453706792L)
 				return FAILURE;
-			List<MatchResult> matches = matcher.reset().results().collect(toList());
+			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
 			if (matches.size() == 0) {
 				LOGGER.error("failed to convert " + message.getContentRaw());
 				return FAILURE;
 			} else {
 				StringJoiner converted = new StringJoiner(", ");
 				StringJoiner conversionArrow = new StringJoiner(", ");
-				for (MatchResult match : matches) {
-					String convertedUnit = Unit.convertUnit(match);
-					converted.add(convertedUnit);
-					conversionArrow.add(match.group(0) + " -> " + convertedUnit);
+				for (UnitMatch match : matches) {
+					converted.add(match.convertUnit());
+					conversionArrow.add(match.fullMatch() + " -> " + match.convertUnit());
 				}
 				Unit.BMI bmi = Unit.getBMI(matches);
 				if (bmi.couldCalculate()) {
@@ -431,7 +435,7 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 		}).addChannelCooldown(4_000L).build(),
 
-		new ReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
+		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
 			if (message.getMentions(Message.MentionType.USER)
 					.stream()
 					.anyMatch(i -> i.getIdLong() == 849711011456221285L)) {
@@ -489,12 +493,12 @@ public class Reactions { // TODO convert into singleton (?)
 				image -> sendSpeechBubbleImage(message, image))
 			).helpPanel("Add Speech Bubble To Image").build(),
 
-		new ReactionBuilder("Harita", "^haritard$", DEFAULT, GUILD).caseInsensitive().execute(message -> {
+		new MessageReactionBuilder("Harita", "^haritard$", DEFAULT, GUILD).caseInsensitive().execute(message -> {
 			message.getChannel().sendMessage("https://media.discordapp.net/attachments/722001554944819202/965120982480224296/Screenshot_20220415-020148_Chrome.png.jpg").queue();
 			message.delete().queue();
 		}).build(),
 
-		new ReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD).executeStatus(
+		new MessageReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD).executeStatus(
 				message -> {
 			if (!PermissionUtil.checkPermission(message.getMember(), Permission.MESSAGE_EMBED_LINKS)
 				|| !PermissionUtil.checkPermission(message.getTextChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)) {
@@ -552,13 +556,30 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 		}).helpPanel("Set Main Channel").deniable().deactivated().build(),
 
-		new CommandBuilder("Censor Target", ".*" + censorChainRegex("america, amerimut, kek, based, healthcare, capital", "[\\s.,]*") + ".*",
+		new CommandBuilder("Change Log", "^!l\\s+([\\w\\d]+)$", OWNER, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
+			String channel = matcher.group(1);
+			if (channel.equalsIgnoreCase("console")) {
+				Main.getBot().setConsoleIDE();
+				return true;
+			} else {
+				if (channel.equalsIgnoreCase("default"))
+					channel = "955111291272450048";
+				TextChannel textChannel = message.getJDA().getTextChannelById(channel);
+				if (textChannel != null) {
+					Main.getBot().setConsole(textChannel);
+					return true;
+				} else
+					return false;
+			}
+		}).build(),
+
+		new CommandBuilder("Censor Target", ".*" + censorChainRegex("special, words", "[\\s.,]*") + ".*",
 								   CENSORED, GUILD).executeStatus(message -> // TODO censor optimizer
 			booleanReturnStatus(message.getGuild().getIdLong() == 793333500303769600L, () ->
 				message.delete().queue())
 		).helpPanel("Censor Targeted Users").deactivated().build(),
 
-		new ReactionBuilder("Censor AAVE", aaveRegex,  //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
+		new MessageReactionBuilder("Censor AAVE", aaveRegex,  //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
 							DEFAULT, GUILD).caseInsensitive().executeStatus((message, matcher) -> // TODO censor optimizer
 			booleanReturnStatus(message.getGuild().getIdLong() == 910004207120183326L || message.getGuild().getIdLong() == 907042440924528662L, () ->
 				reply(message, String.format(
@@ -570,7 +591,7 @@ public class Reactions { // TODO convert into singleton (?)
 						CaseUtil.properCase(message.getAuthor().getName()),
 						CaseUtil.properCase(matcher.reset().results().findFirst().get().group()))))
 		).deactivated().build(),
-		new ReactionBuilder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
+		new MessageReactionBuilder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
 					if (message.getMember().getIdLong() == 155149108183695360L
 							&& message.getGuild().getIdLong() == 907042440924528662L) {
 						Optional<Member> member = message.getMentionedMembers().stream().findFirst();
@@ -584,10 +605,10 @@ public class Reactions { // TODO convert into singleton (?)
 						return false;
 				}
 		).deactivated().build(),
-		new ReactionBuilder("Me&Whom", "(me\\s*and\\s*who)[^Mm][.,;:!?\\s]", DEFAULT, GUILD).caseInsensitive().execute(message -> {
+		new MessageReactionBuilder("Me&Whom", "(me\\s*and\\s*who)[^Mm][.,;:!?\\s]", DEFAULT, GUILD).caseInsensitive().execute(message -> {
 			reply(message, "Me And Whom.*");
 		}).deactivated().build(),
-		new ReactionBuilder("Yawn", ".*", YAWN, GUILD_AND_PRIVATE).execute(message -> {
+		new MessageReactionBuilder("Yawn", ".*", YAWN, GUILD_AND_PRIVATE).execute(message -> {
 			// if (message.getAuthor().getIdLong() == 749625271937663027L)
 			if (!message.isFromGuild() || hasPermission(message.getTextChannel(), Permission.MESSAGE_EXT_EMOJI))
 				for (final String yawnEmoji : YAWN_EMOJIS) {
@@ -599,11 +620,11 @@ public class Reactions { // TODO convert into singleton (?)
 				logMissingChannelPermissions(message.getTextChannel());
 			}
 		}).build(),
-		new ReactionBuilder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message ->
+		new MessageReactionBuilder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message ->
 			booleanReturnStatus(message.getAuthor().getIdLong() == 748583074073280532L, () -> // TheRealBrady
 				message.addReaction("U+1F3F3U+FE0FU+200DU+1F308").queue())
 		).deactivated().build(),
-		new ReactionBuilder("Questions",
+		new MessageReactionBuilder("Questions",
 							// "^(" +
 		//		"((.*(\\?|:(grey_)?question:|\u2753|\u2754))|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(\\?|:(grey_)?question:|\u2753|\u2754)))"
 		//		+ "[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*"
@@ -632,11 +653,14 @@ public class Reactions { // TODO convert into singleton (?)
 			String response;
 			try {
 				Composition comp = CompositionParser.parse(matcher.group(1));
-				if (!(comp instanceof Expression))
-					throw new Exception("not an expression");
-				double evaluation = ((Expression) comp).evaluate();
-				System.out.println(evaluation % 1);
-				response = evaluation % 1 == 0 ? Integer.toString((int) evaluation) : Double.toString(evaluation);
+				if (comp instanceof Statement) {
+//					throw new Exception("not an expression");
+					response = String.valueOf(((Statement) comp).truth());
+				} else {
+					double evaluation = ((Expression) comp).evaluate();
+					System.out.println(evaluation % 1);
+					response = evaluation % 1 == 0 ? Integer.toString((int) evaluation) : Double.toString(evaluation);
+				}
 			} catch (Exception e) {
 				response = "`" + e.getMessage() + '`';
 			}
@@ -702,7 +726,7 @@ public class Reactions { // TODO convert into singleton (?)
 				response = "`" + e.getMessage() + '`';
 			}
 			message.reply(response).queue();
-		}).caseInsensitive().build(),
+		}).caseInsensitive().deactivated().build(),
 		new CommandBuilder("Truth Table", "^Truth\\s+Table`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
 			String response;
 			try {
@@ -724,11 +748,29 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 			 message.reply(response).queue();
 			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
-		}).caseInsensitive().build()
+		}).caseInsensitive().build(),
+		new CommandBuilder("Random", "Random\\s*(\\d+)", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+			String response;
+//			try {
+				response = CompositionParser.generate(Integer.parseInt(matcher.group(1)));
+//			} catch (Exception e) {
+//				response = "`" + e.getMessage() + '`';
+//			}
+			message.reply(response).queue();
+			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
+		}).caseInsensitive().build(),
+		new SlashCommandBuilder("kill", "End Your Life.", DEFAULT, GUILD_AND_PRIVATE)
+				.addOption(OptionType.STRING, "cause", "Cause Of Death.", true)
+				.build()
 	  );
+	  messageReactions =
+	  		reactions.stream()
+	  				.filter(r -> r instanceof MessageReaction)
+	  				.map(r -> (MessageReaction) r)
+	  				.collect(toList());
 	}
 
-	private static ReactionResponse parseCommand(Message message, Consumer<Reaction> successMessage, String... potentialMatches) {
+	private static ReactionResponse parseCommand(Message message, Consumer<MessageReaction> successMessage, String... potentialMatches) {
 		String commandName = null;
 		for (String potentialMatch : potentialMatches) {
 			if (potentialMatch != null) {
@@ -736,15 +778,20 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 		}
 		if (commandName == null) {
-			LOGGER.error("Command Info regex group number misplacement encountered");
+			LOGGER.error("Command Info - probable regex group number misplacement encountered");
 			return FAILURE;
 		}
-		final Reaction reaction = commandsByName.get(commandName);
+		Reaction reaction = commandsByName.get(commandName);
 		if (reaction == null) {
 			return FAILURE.onFailureReply(message.getTextChannel().sendMessage(truncate("That Command Doesn't Exist.")));
 		} else {
-			successMessage.accept(reaction);
-			return ReactionResponse.SUCCESS;
+			if (reaction instanceof MessageReaction) {
+				successMessage.accept((MessageReaction) reaction);
+				return SUCCESS;
+			}
+			else {
+				return FAILURE.onFailureReply(message.getTextChannel().sendMessage(truncate("Can't Use A Slash Command")));
+			}
 		}
 	}
 
@@ -773,9 +820,9 @@ public class Reactions { // TODO convert into singleton (?)
 		}
 		final AuditableRestAction<Void> delete = message.delete();
 		autoDeleteQueue.addFirst(delete);
-		delete
-			   .and(new GenericRestAction(message.getJDA(), autoDeleteQueue::pop))
-			   .queueAfter(1, TimeUnit.HOURS);
+		delete.and(new GenericRestAction(message.getJDA(), autoDeleteQueue::pop))
+			  .queueAfter(1, TimeUnit.HOURS, s -> {}, s -> {});
+//					  () -> LOGGER.info("failed to delete already deleted message " + messageContent);
 		final String words = String.join(", ", censoredWords);
 		autodeleteLog.sendMessageEmbeds(
 				new EmbedBuilder()
@@ -861,24 +908,34 @@ public class Reactions { // TODO convert into singleton (?)
 		return dateTimeFormatter.format(date);
 	}
 
-	public static final Map<ReactionChannelType, Map<UserCategory, Set<Reaction>>> commandsByCategoryChannel =
-			Stream.of(ReactionChannelType.values()).collect(toMap(channelType -> channelType, channelType ->
-					Stream.of(UserCategory.values()).collect(toMap(userCategory -> userCategory, userCategory ->
-							reactions.stream()
-									.filter(cT -> cT.getChannelType().inRange(channelType))
-									.filter(uC -> uC.getUserCategory().inRange(userCategory))
+	public static <R extends Reaction> Map<ReactionChannelType, Map<UserCategory, Set<R>>>
+	reactionsByCategoryChannel(Class<R> c) {
+			return Stream.of(ReactionChannelType.values()).collect(toMap(Function.identity(), channelType ->
+					Stream.of(UserCategory.values()).collect(toMap(Function.identity(), userCategory ->
+							messageReactions.stream()
+									.filter(r -> r.getChannelType().inRange(channelType))
+									.filter(r -> r.getUserCategory().inRange(userCategory))
+									.filter(r -> r.getClass().isAssignableFrom(c))
+									.map(r -> (R) r)
 									.collect(toSet())))));
+	}
+
+	public static final Map<ReactionChannelType, Map<UserCategory, Set<MessageReaction>>> messageReactionsByCategoryChannel =
+			reactionsByCategoryChannel(MessageReaction.class);
+
+	public static final Map<ReactionChannelType, Map<UserCategory, Set<SlashCommand>>> slashCommandsByCategoryChannel =
+			reactionsByCategoryChannel(SlashCommand.class);
 
 	static {
 		commandsByName = reactions.stream().collect(toMap(Reaction::getName, Function.identity()));
 	}
 
-	private static Set<Reaction> getReactionSet(final Reaction command) {
-		return commandsByCategoryChannel.get(command.getChannelType())
+	private static Set<MessageReaction> getReactionSet(final MessageReaction command) {
+		return messageReactionsByCategoryChannel.get(command.getChannelType())
 				.get(command.getUserCategory());
 	}
 
-	public static Set<Reaction> getReactions(ReactionChannelType channelType, UserCategory userCategory, MessageType type) {
+	public static Set<MessageReaction> getReactions(ReactionChannelType channelType, UserCategory userCategory, MessageType type) {
 		if (!Main.getBot().getJDA().getGatewayIntents().contains(GatewayIntent.GUILD_MEMBERS) // can't detect when joined? find join message
 				&& type == MessageType.GUILD_MEMBER_JOIN) {
 //			getReactions(ReactionChannelType.GUILD, type.)
@@ -886,18 +943,18 @@ public class Reactions { // TODO convert into singleton (?)
 		return getReactions(channelType, userCategory);
 	}
 
-	public static Set<Reaction> getReactions(ReactionChannelType channelType, UserCategory userCategory) {
-		return commandsByCategoryChannel.get(channelType).get(userCategory);
+	public static Set<MessageReaction> getReactions(ReactionChannelType channelType, UserCategory userCategory) {
+		return messageReactionsByCategoryChannel.get(channelType).get(userCategory);
 	}
 
-	static boolean addCommand(Reaction command) {
-		final Set<Reaction> commandSet = getReactionSet(command);
+	static boolean addCommand(MessageReaction command) {
+		final Set<MessageReaction> commandSet = getReactionSet(command);
 		if (commandSet.stream().anyMatch(c -> c.equals(command) || c.getName().equals(command.getName())))
 			return false;
 		return commandSet.add(command);
 	}
 
-	static void removeCommand(Reaction command) {
+	static void removeCommand(MessageReaction command) {
 		getReactionSet(command).remove(command);
 	}
 

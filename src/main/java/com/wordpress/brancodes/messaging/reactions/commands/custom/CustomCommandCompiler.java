@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions.commands.custom;
 
+import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.CustomCommandCompileErrorException;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.tokens.*;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.tokens.tree.Expressions;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.tokens.tree.TokenTreeNode;

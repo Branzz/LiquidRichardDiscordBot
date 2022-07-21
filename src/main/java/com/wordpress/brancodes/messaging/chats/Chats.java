@@ -1,13 +1,10 @@
 package com.wordpress.brancodes.messaging.chats;
 
-import com.wordpress.brancodes.util.NumberToText;
-import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.YearMonth;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -61,17 +58,18 @@ public class Chats {
 
 	public static MessageAction getBdayMessage(TextChannel channel) {
 		Date current = new Date();
-		int days = angelitteBirthday.getDate() - current.getDate();
-		int months = angelitteBirthday.getMonth() - current.getMonth();
-		if (days < 0) {
-			days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
-			months--;
-		}
-		return channel.sendMessage((months != 0 ? CaseUtil.properCase(NumberToText.numberToString(months))
-											   + " Month" + (months != 1 ? "s" : "") : "")
-								+ (days != 0 ? (months != 0 ? " And " : "")
-											   + CaseUtil.properCase(NumberToText.numberToString(days))
-											   + " Day" + (days != 1 ? "s" : "") : "") + " U");
+//		int days = angelitteBirthday.getDate() - current.getDate();
+//		int months = angelitteBirthday.getMonth() - current.getMonth();
+//		if (days < 0) {
+//			days += YearMonth.of(current.getYear(), current.getMonth()).lengthOfMonth();
+//			months--;
+//		}
+//		return channel.sendMessage((months != 0 ? CaseUtil.properCase(NumberToText.numberToString(months))
+//											   + " Month" + (months != 1 ? "s" : "") : "")
+//								+ (days != 0 ? (months != 0 ? " And " : "")
+//											   + CaseUtil.properCase(NumberToText.numberToString(days))
+//											   + " Day" + (days != 1 ? "s" : "") : "") + " U");
+		return channel.sendMessage(angelitteBirthday.getHours() - current.getHours() + " Hours.");
 	}
 
 }

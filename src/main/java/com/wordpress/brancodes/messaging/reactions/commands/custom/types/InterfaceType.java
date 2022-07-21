@@ -1,6 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions.commands.custom.types;
 
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommandCompileErrorException;
+import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.CustomCommandCompileErrorException;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.ClassType;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.Method;
 

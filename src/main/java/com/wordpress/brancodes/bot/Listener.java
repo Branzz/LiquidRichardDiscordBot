@@ -2,7 +2,7 @@ package com.wordpress.brancodes.bot;
 
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
-import com.wordpress.brancodes.messaging.reactions.Reaction;
+import com.wordpress.brancodes.messaging.reactions.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
@@ -13,7 +13,10 @@ import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import com.wordpress.brancodes.util.Pair;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageActivity;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -21,22 +24,17 @@ import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMuteEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.entities.AbstractMessage;
-import org.hibernate.internal.util.collections.BoundedConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Collectors;
 import java.util.AbstractMap;
-import java.util.Comparator;
 
-import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
 public class Listener extends ListenerAdapter {
@@ -57,7 +55,8 @@ public class Listener extends ListenerAdapter {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			Reactions.commandsByName.get("Join Voice").execute(new AbstractMessage("!J " + event.getChannelLeft().getId(), "", false) {
+			((MessageReaction) Reactions.commandsByName.get("Join Voice"))
+					.execute(new AbstractMessage("!J " + event.getChannelLeft().getId(), "", false) {
 				@NotNull @Override public JDA getJDA() { return event.getJDA(); }
 				@Override protected void unsupported() { }
 				@Nullable @Override public MessageActivity getActivity() { return null; }
@@ -108,9 +107,14 @@ public class Listener extends ListenerAdapter {
 		final User user = event.getMember().getUser();
 		if (!user.isBot() && event.getJDA().getGuildById(907042440924528662L).getMember(user) != null
 		 && event.getJDA().getGuildById(910004207120183326L).getMember(user) != null) {
-			event.getMember().ban(0).queue();
+//			event.getMember().ban(0).queue();
 			LOGGER.info("found crossover user:" + event.getMember().getUser().getName() + " " + event.getMember().getIdLong());
 		}
+	}
+
+	@Override
+	public void onSlashCommand(@NotNull SlashCommandEvent event) {
+//		event.getMember().getUser();
 	}
 
 	@Override
@@ -143,7 +147,7 @@ public class Listener extends ListenerAdapter {
 					   ? UserCategory.MOD : userCategory;
 	}
 
-	private static boolean chainable(Reaction reaction) {
+	private static boolean chainable(MessageReaction reaction) {
 		return reaction instanceof Command && ((Command) reaction).chainable();
 	}
 
@@ -306,7 +310,7 @@ public class Listener extends ListenerAdapter {
 
 	}
 
-	static void logReactionResponse(Message message, Pair<Reaction, ReactionResponse> responsePair) {
+	static void logReactionResponse(Message message, Pair<MessageReaction, ReactionResponse> responsePair) {
 		logReactionResponse(message, responsePair.getKey(), responsePair.getValue());
 //		Map<Boolean, List<Pair<Command, ReactionResponse>>> byChainableSuccess =
 //		Map<Boolean, List<Reaction>> byChainable =
@@ -351,17 +355,17 @@ public class Listener extends ListenerAdapter {
 //		}
 	}
 
-	static void logReactionResponse(Message message, Reaction reaction, ReactionResponse response) {
+	static void logReactionResponse(Message message, MessageReaction reaction, ReactionResponse response) {
 		if (response.status()) {
-			String log = String.format("%s %s %s by %s in %s in #%s", //Commands.qCount +
+			String log = String.format("%s %s %s by %s in %s in #%s%s", //Commands.qCount +
 									   response.status() ? "Ran" : "Failed to run",
 									   reaction,
 									   reaction.getClass().getSimpleName(),
 									   LiquidRichardBot.getUserName(message.getAuthor()),
 									   message.isFromGuild() ? message.getGuild().getName() : "'s DMs",
-									   message.getChannel().getName());
-			if (response.status() || response.hasFailureResponse())
-				log = response.hasLogResponse() ? log + ": " + response.getLogResponse() : log;
+									   message.getChannel().getName(),
+									   (response.status() || response.hasFailureResponse()) && response.hasLogResponse()
+											   ? (": " + response.getLogResponse()) : "");
 			LOGGER.info(log);
 		}
 	}

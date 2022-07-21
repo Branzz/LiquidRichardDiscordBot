@@ -17,11 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
-import java.awt.*;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Random;
@@ -38,6 +36,7 @@ public class LiquidRichardBot {
 	private static final Random random = new Random();
 
 	private final JDA jda;
+	private final PrintStream defaultOut;
 	private Map<Long, ChatScheduler> guildChatSchedulers;
 	private final Listener listener;
 
@@ -79,13 +78,12 @@ public class LiquidRichardBot {
 				  )
 				  .setActivity(Activity.streaming("My Shitty Gameplay", "https://www.youtube.com/watch?v=rrS5HDSBm1Y"))
 				  .build();
-
 		// final String name = "Liquid Richard";
 		// if (!bot.getJDA().getSelfUser().getName().equals(name))
 		// 	bot.setName(name);
-
 		denyCommands = true;
 		denyChance = .2;
+		defaultOut = System.out;
 	}
 
 
@@ -111,6 +109,18 @@ public class LiquidRichardBot {
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+		LOGGER.info("Commands: {}", jda.retrieveCommands().complete().stream().map(c -> c.getName() + " " + c.getId()).collect(joining(", ")));
+
+//		TextChannel channel = jda.getTextChannelById(907045483476836412L);
+//		if (channel != null)
+//			channel.getHistoryAfter(990030713199919154L, 100).queue(s ->
+//						channel.getHistoryAfter(990096355173203989L, 100).queue(r -> {
+//							List<Message> history = new ArrayList<>(s.getRetrievedHistory());
+////							history.removeAll(r.getRetrievedHistory());
+//							System.out.println(history.get(1).getContentRaw());
+//							channel.purgeMessages(history);
+//						})
+//			);
 
 		// new ColorChangingRole(981357094164889600L, 750L, Arrays.stream(new int[] { 0xF32D2D, 0xF55916, 0xFFD61F, 0x1CBD0D, 0x3D51FF, 0xB53DFF })
 		// 														.mapToObj(Color::new)
@@ -125,9 +135,16 @@ public class LiquidRichardBot {
 		//    .forEachOrdered(System.out::println);
 	}
 
-	private void setConsole() {
+	public void setConsole(TextChannel textChannel) {
 		LOGGER.info("Setting sysout to log channel...");
-		System.setOut(new PrintStream(new ChannelOutputStream(jda.getTextChannelById(955111291272450048L))));
+		System.setOut(new PrintStream(new ChannelOutputStream(textChannel)));
+		LOGGER.info("Set sysout to log channel");
+	}
+
+	public void setConsoleIDE() {
+		LOGGER.info("Setting sysout to console...");
+		System.setOut(defaultOut);
+		LOGGER.info("Set sysout to console");
 	}
 
 	private static final ClassLoader loader = Thread.currentThread().getContextClassLoader();

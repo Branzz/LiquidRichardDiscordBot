@@ -17,8 +17,8 @@ public final class Config {
 			"token", "OTIwNTUzMzQ2MTUzMTk3NTk4.YbmCHA.vW0g8IeSTcHwN41A3muuhJdzdr4",
 			"prefix", "Pimp",
 			"suffix", "",
-			"aliases", new String[] { },
-			"ownerID", 849711011456221285L, // Don't make this a bot's ID
+			"aliases", new String[] { "Pimp", "Richard", "Liquid Richard" },
+			"ownerID", 996757252176363551L, // Don't make this a bot's ID //
 			"creatorID", 849711011456221285L,
 			"embedColor", new Color(47, 49, 54)
 	};

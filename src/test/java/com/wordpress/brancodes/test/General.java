@@ -1,8 +1,6 @@
 package com.wordpress.brancodes.test;
 
-import com.wordpress.brancodes.messaging.reactions.Reaction;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.mifmif.common.regex.Generex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,8 +14,44 @@ public class General {
 	//  0110100110010110100101100110100110010110011010010110100110010110100101100110100101101001100101100110
 //		0	1	1	0	1	0	0	1	1	0	0	1	0	1	1	0	1	0	0	1	0	1	1	0	0
 
+	enum X {
+		A(), B;
+		X() {
+			class C {
+				class D {}
+			}
+		}
+		void m() {}
+		public static int Z = 1;
+		public static class i {}
+	}
+	interface Y {
+		int Z = 0;
+		void m();
+		public static class i {}
+	}
+	abstract class Z {
+		public abstract void m();
+		public class i {}
+	}
 	public static void main(String[] args) {
 
+		String doubleRegex = "[+-]?((((\\d+)(\\.)?((\\d+)?)" +
+				"([eE][+-]?(\\d+))?)|(\\.(\\d+)([eE][+-]?(\\d+))?)|" +
+				"(((0[xX]([0123456789abcdefABCDEF]+)(\\.)?)|(0[xX]([0123456789abcdefABCDEF]+)?(\\.)([0123456789abcdefABCDEF]+)))" +
+				"[pP][+-]?(\\d+)))[fFdD]?)";
+		Generex generex = new Generex(doubleRegex);
+		for (int i = 0; i < 20; i++) {
+			double wtf = 0XD.AP+0_0D;
+			String doubleStr = generex.random(2);
+			String doubleParse;
+			try {
+				doubleParse = String.valueOf(Double.parseDouble(doubleStr));
+			} catch (NumberFormatException e) {
+				doubleParse = e.getMessage();
+			}
+			System.out.println(doubleStr + " ".repeat(Math.max(1, 12 - doubleStr.length())) + doubleParse);
+		}
 		// for (Reaction reaction : Reactions.reactions) {
 		// 	String regex = reaction.getRegex();
 		// 	StringBuilder sB = new StringBuilder();
