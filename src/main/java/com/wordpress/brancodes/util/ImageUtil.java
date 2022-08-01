@@ -113,7 +113,7 @@ public class ImageUtil {
 
 	public static Optional<Attachment> getFirstEmote(Message message) {
 		// Optional.ofNullable(message.getEmotes().get(0))
-		return message.getEmotes().stream().findFirst().map(emote -> URLToAttachment(emote.getImageUrl()));
+		return message.getMentions().getCustomEmojis().stream().findFirst().map(emote -> URLToAttachment(emote.getImageUrl()));
 	}
 
 	private static final Matcher jumpMessageMatcher = Message.JUMP_URL_PATTERN.matcher("");
@@ -129,7 +129,7 @@ public class ImageUtil {
 
 	@NotNull
 	public static Optional<Message.Attachment> getMentionedMemberPFP(Message message) {
-		return message.getMentionedMembers()
+		return message.getMentions().getMembers()
 					  .stream()
 					  .filter(member -> !message.isFromGuild()
 										|| (message.getReferencedMessage() == null // dont include @ of referenced user

@@ -1,13 +1,12 @@
 package com.wordpress.brancodes.messaging.reactions;
 
-import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import javax.annotation.RegEx;
 import java.awt.*;
-import java.security.InvalidParameterException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -162,41 +161,6 @@ public class MessageReaction extends Reaction {
 
 		public B executeResponse(BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
 			object.executeMatcherResponse = executeMatcherResponse;
-			return thisObject;
-		}
-
-		public B addGuildCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
-		}
-
-		public B addChannelCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, Message::getTextChannel, TextChannel.class));
-		}
-
-		public B addMemberCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild member", new CooldownPool<>(duration, Message::getMember, Member.class));
-		}
-
-		public B addDMCooldown(long duration) {
-			return addCooldown(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, Message::getPrivateChannel, PrivateChannel.class));
-		}
-
-		private B addCooldown(ChannelType intendedLocation, String locationName, CooldownPool cooldownPool) {
-			if (!object.channelCategory.inRange(intendedLocation))
-				throw new InvalidParameterException(locationName + "cooldowns can't be used in " + object.channelCategory);
-			return addCooldown(cooldownPool);
-		}
-
-		private B addCooldown(CooldownPool cooldownPool) {
-			object.cooldownPools.add(cooldownPool);
-			return thisObject;
-		}
-
-		/**
-		 * if users are sending the exact same message
-		 */
-		public B addContentCooldown(long duration) {
-			object.cooldownPools.add(new CooldownPool<>(duration, Message::getContentRaw, String.class));
 			return thisObject;
 		}
 

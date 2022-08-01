@@ -23,6 +23,8 @@ import com.wordpress.brancodes.voice.PlayerManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Message.MentionType;
+import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -30,6 +32,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.requests.restaction.AuditableRestAction;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
+import net.dv8tion.jda.internal.entities.emoji.CustomEmojiImpl;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +61,8 @@ import static com.wordpress.brancodes.bot.LiquidRichardBot.autodeleteLog;
 import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
 import static com.wordpress.brancodes.messaging.reactions.MessageReaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
-import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.*;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.SUCCESS;
 import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
 import static com.wordpress.brancodes.util.ImageUtil.*;
@@ -67,17 +70,18 @@ import static java.util.stream.Collectors.*;
 
 public class Reactions { // TODO convert into singleton (?)
 
-	// TODO awkward encapsulation and member ordering
+	// TODO awkward encapsulation and property ordering
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Reactions.class);
 
 	public static int qCount = 0;
 	final static boolean reactionQuestions = false;
 
-	private static final String[] YAWN_EMOJIS = new String[] { "yawn~1:864990663438106624", "yawn~2:864990672209444864",
+	private static final CustomEmoji[] YAWN_EMOJIS = Arrays.stream(new String[] { "yawn~1:864990663438106624", "yawn~2:864990672209444864",
 			"yawn~3:864990679645814825", "yawn~4:864990712919883804", "yawn~5:864990744786763797"/*, "yawn~6:864990758711721995",
 			"yawn~7:864990776757190656", "yawn~8:864990782707204108", "yawn~9:864990787028647966", "yawn~10:864990791700578345",
-			"yawn~11:864990796088737792", "yawn~12:864990799086747668", "yawn~13:864990801867964468", "yawn~14:864990805293793310", "yawn~15:864990808766414899"*/ };
+			"yawn~11:864990796088737792", "yawn~12:864990799086747668", "yawn~13:864990801867964468", "yawn~14:864990805293793310", "yawn~15:864990808766414899"*/ }
+	).map(e -> e.split(":")).map(s -> new CustomEmojiImpl(s[0], Long.parseLong(s[1]), false)).toArray(CustomEmoji[]::new);
 
 	private static final Map<Character, String> homoglyphs = new HashMap<>();
 
@@ -299,7 +303,7 @@ public class Reactions { // TODO convert into singleton (?)
 		}).build(),
 
 		new CommandBuilder("Nick All", "^Nick\\s+\"([\\w]{2,32})\"\\s[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
-			message.getMentionedMembers().forEach(member -> { // TODO bad return status... needs to wait for queue?
+			message.getMentions().getMembers().forEach(member -> { // TODO bad return status... needs to wait for queue?
 				try {
 					member.modifyNickname(matcher.group(1)).queue();
 				} catch (InsufficientPermissionException ignored) {
@@ -310,7 +314,7 @@ public class Reactions { // TODO convert into singleton (?)
 		}).build(),
 
 		new CommandBuilder("Kick All", "^Kick[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
-			message.getMentionedMembers().forEach(member -> { // TODO bad return status... needs to wait for queue? (if found nobody?)
+			message.getMentions().getMembers().forEach(member -> { // TODO bad return status... needs to wait for queue? (if found nobody?)
 				try {
 					member.kick().queue();
 				} catch (InsufficientPermissionException ignored) {
@@ -352,12 +356,14 @@ public class Reactions { // TODO convert into singleton (?)
 		new MessageReactionBuilder("Greeting", "^(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
 												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*$",
 							DEFAULT, GUILD_AND_PRIVATE).execute(message ->
-				reply(message.getTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
+				reply(message.getChannel().asTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		).addChannelCooldown(5_000L).build(),
 
 		new MessageReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD).executeResponse((message, matcher) -> {
 			if ((message.getGuild().getIdLong() != 953143574453706792L
-				 && (message.getGuild().getIdLong() == 722001554374131713L || message.getGuild().getIdLong() == 907042440924528662L))
+				 && (message.getGuild().getIdLong() == 973797632436760606L
+							 || message.getGuild().getIdLong() == 722001554374131713L
+							 || message.getGuild().getIdLong() == 907042440924528662L))
 					&& !message.isPinned()) { // TODO guild subscribed to this command
 				final String censoredWords = logWordCensor(message, matcher);
 				if (censoredWords == null)
@@ -436,9 +442,10 @@ public class Reactions { // TODO convert into singleton (?)
 		}).addChannelCooldown(4_000L).build(),
 
 		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
-			if (message.getMentions(Message.MentionType.USER)
-					.stream()
-					.anyMatch(i -> i.getIdLong() == 849711011456221285L)) {
+			if (message.getMentions()
+					   .getMentions(MentionType.USER)
+					   .stream()
+					   .anyMatch(i -> i.getIdLong() == 849711011456221285L)) {
 				message.delete().queue();
 			} else {
 				final Message referenceMessage = message.getReferencedMessage();
@@ -501,7 +508,7 @@ public class Reactions { // TODO convert into singleton (?)
 		new MessageReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD).executeStatus(
 				message -> {
 			if (!PermissionUtil.checkPermission(message.getMember(), Permission.MESSAGE_EMBED_LINKS)
-				|| !PermissionUtil.checkPermission(message.getTextChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)) {
+				|| !PermissionUtil.checkPermission(message.getChannel().asTextChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)) {
 				if (message.getGuild().getIdLong() != 907042440924528662L) {
 					message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here.").queue();
 				} else return false;
@@ -512,7 +519,8 @@ public class Reactions { // TODO convert into singleton (?)
 		}).build(),
 
 		new CommandBuilder("Angie", "^When( I|')s The Best Discord Girl'?s Birthday[?]?", DEFAULT, GUILD).caseInsensitive().executeStatus(message ->
-			booleanReturnStatus(message.getGuild().getIdLong() == 910004207120183326L, () -> Chats.getBdayMessage(message.getTextChannel()).queue())
+			booleanReturnStatus(message.getGuild().getIdLong() == 910004207120183326L, () ->
+					Chats.getBdayMessage(message.getChannel().asTextChannel()).queue())
 		).build(),
 
 		new CommandBuilder("Get Mods", getCommandRegex("(The|A|An)\\s+(Mod|Moderator)s?\\s*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]*\\s*",
@@ -527,7 +535,7 @@ public class Reactions { // TODO convert into singleton (?)
 		new CommandBuilder("Give Mod", getCommandRegex("((((Make|Set|Give)\\s*)@.{1,32}\\s*(A\\s+)?(Mod|Moderator))|(((Make|Set|Give)\\s*)?(Mod|Moderator)\\s+@.{1,32}))"),
 								   OWNER, GUILD).execute(message ->
 				reply(message, DataBase.addMod(message.getGuild().getIdLong(),
-						message.getMentionedMembers().stream()
+						message.getMentions().getMembers().stream()
 								.map(Member::getIdLong) // TODO or filter by if it isn't a bot
 								.filter(memberID -> !memberID.equals(message.getJDA().getSelfUser().getIdLong()))
 								.findFirst()
@@ -539,7 +547,7 @@ public class Reactions { // TODO convert into singleton (?)
 		new CommandBuilder("Remove Mod", getCommandRegex("(((Remove|Re Move|Take)\\s*@.{1,32}\\s*('?s\\s+)?(Mod|Moderator))|(((Remove|Re Move|Take)\\s*)?(Mod|Moderator)\\s*@.{1,32}))"),
 								   OWNER, GUILD).execute(message -> reply(message, DataBase.removeMod(
 						message.getGuild().getIdLong(),
-						message.getMentionedMembers().stream()
+						message.getMentions().getMembers().stream()
 								.map(Member::getIdLong) // TODO or filter by if it isn't a bot
 								.filter(memberID -> !memberID.equals(message.getJDA().getSelfUser().getIdLong()))
 								.findFirst()
@@ -549,7 +557,10 @@ public class Reactions { // TODO convert into singleton (?)
 
 		new CommandBuilder("Main Channel", getCommandRegex("((((Make|Set)\\s*)#.{1,32}\\s*((The|A)\\s+)?(Main\\s+Channel))|((Make|Set)\\s+((The|A)\\s+)?(Main\\s+Channel)\\s*#.{1,32}))"),
 								   MOD, GUILD).execute(message -> {
-			Optional<TextChannel> channel = message.getMentionedChannels().stream().findFirst();
+			Optional<TextChannel> channel = message.getMentions()
+												   .getChannels(TextChannel.class)
+												   .stream()
+												   .findFirst();
 			if (channel.isPresent()) {
 				DataBase.setMainChannel(message.getGuild().getIdLong(), channel.get().getIdLong());
 				Main.getBot().setGuildMainChannel(message.getGuild().getIdLong(), channel.get());
@@ -594,7 +605,7 @@ public class Reactions { // TODO convert into singleton (?)
 		new MessageReactionBuilder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
 					if (message.getMember().getIdLong() == 155149108183695360L
 							&& message.getGuild().getIdLong() == 907042440924528662L) {
-						Optional<Member> member = message.getMentionedMembers().stream().findFirst();
+						Optional<Member> member = message.getMentions().getMembers().stream().findFirst();
 						if (member.isEmpty())
 							return false;
 						else {
@@ -610,20 +621,20 @@ public class Reactions { // TODO convert into singleton (?)
 		}).deactivated().build(),
 		new MessageReactionBuilder("Yawn", ".*", YAWN, GUILD_AND_PRIVATE).execute(message -> {
 			// if (message.getAuthor().getIdLong() == 749625271937663027L)
-			if (!message.isFromGuild() || hasPermission(message.getTextChannel(), Permission.MESSAGE_EXT_EMOJI))
-				for (final String yawnEmoji : YAWN_EMOJIS) {
+			if (!message.isFromGuild() || hasPermission(message.getChannel().asTextChannel(), Permission.MESSAGE_EXT_EMOJI))
+				for (CustomEmoji yawnEmoji : YAWN_EMOJIS) {
 					message.addReaction(yawnEmoji).queue();
 				}
 			else {
-				if (hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION))
-					message.addReaction("U+1F971").queue();
-				logMissingChannelPermissions(message.getTextChannel());
+//				if (hasPermission(message.getChannel().asTextChannel(), Permission.MESSAGE_ADD_REACTION))
+//					message.addReaction("U+1F971").queue();
+				logMissingChannelPermissions(message.getChannel().asTextChannel());
 			}
 		}).build(),
-		new MessageReactionBuilder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message ->
-			booleanReturnStatus(message.getAuthor().getIdLong() == 748583074073280532L, () -> // TheRealBrady
-				message.addReaction("U+1F3F3U+FE0FU+200DU+1F308").queue())
-		).deactivated().build(),
+//		new MessageReactionBuilder("Gay", ".*", DEFAULT, GUILD_AND_PRIVATE).executeStatus(message ->
+//			booleanReturnStatus(message.getAuthor().getIdLong() == 748583074073280532L, () -> // TheRealBrady
+//				message.addReaction("U+1F3F3U+FE0FU+200DU+1F308").queue())
+//		).deactivated().build(),
 		new MessageReactionBuilder("Questions",
 							// "^(" +
 		//		"((.*(\\?|:(grey_)?question:|\u2753|\u2754))|([,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*(\\?|:(grey_)?question:|\u2753|\u2754)))"
@@ -639,11 +650,11 @@ public class Reactions { // TODO convert into singleton (?)
 												 // + "\\s+([Ff][Uu]?[Cc]?[Kk]?|[Hh][Ee]+[Ll]+))[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*")) {
 				// qCount++;
 				if (reactionQuestions) {
-					message.addReaction("U+1F1F3").queue();
-					message.addReaction("U+1F1ED").queue();
-					message.addReaction("U+1F1F9").queue();
-					message.addReaction("U+1F1E6").queue();
-					message.addReaction("U+1F1F6").queue();
+//					message.addReaction("U+1F1F3").queue();
+//					message.addReaction("U+1F1ED").queue();
+//					message.addReaction("U+1F1F9").queue();
+//					message.addReaction("U+1F1E6").queue();
+//					message.addReaction("U+1F1F6").queue();
 					// message.addReaction("NHTAQ:864184033046298656").queue();
 				} else
 					reply(message, "Not Here To Answer Questions.");
@@ -760,7 +771,11 @@ public class Reactions { // TODO convert into singleton (?)
 			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
 		}).caseInsensitive().build(),
 		new SlashCommandBuilder("kill", "End Your Life.", DEFAULT, GUILD_AND_PRIVATE)
+//				.addSubcommands(new SubcommandData("info", "Show Details.").addOption())
 				.addOption(OptionType.STRING, "cause", "Cause Of Death.", true)
+				.execute(event -> {
+					event.getInteraction().reply("Hope You Die By " + CaseUtil.properCase(event.getOption("cause").getAsString())).queue();
+				})
 				.build()
 	  );
 	  messageReactions =
@@ -783,14 +798,14 @@ public class Reactions { // TODO convert into singleton (?)
 		}
 		Reaction reaction = commandsByName.get(commandName);
 		if (reaction == null) {
-			return FAILURE.onFailureReply(message.getTextChannel().sendMessage(truncate("That Command Doesn't Exist.")));
+			return FAILURE.onFailureReply(message.getChannel().asTextChannel().sendMessage(truncate("That Command Doesn't Exist.")));
 		} else {
 			if (reaction instanceof MessageReaction) {
 				successMessage.accept((MessageReaction) reaction);
 				return SUCCESS;
 			}
 			else {
-				return FAILURE.onFailureReply(message.getTextChannel().sendMessage(truncate("Can't Use A Slash Command")));
+				return FAILURE.onFailureReply(message.getChannel().asTextChannel().sendMessage(truncate("Can't Use A Slash Command")));
 			}
 		}
 	}
@@ -913,11 +928,11 @@ public class Reactions { // TODO convert into singleton (?)
 			return Stream.of(ReactionChannelType.values()).collect(toMap(Function.identity(), channelType ->
 					Stream.of(UserCategory.values()).collect(toMap(Function.identity(), userCategory ->
 							messageReactions.stream()
-									.filter(r -> r.getChannelType().inRange(channelType))
-									.filter(r -> r.getUserCategory().inRange(userCategory))
-									.filter(r -> r.getClass().isAssignableFrom(c))
-									.map(r -> (R) r)
-									.collect(toSet())))));
+											.filter(r -> r.getChannelType().inRange(channelType))
+											.filter(r -> r.getUserCategory().inRange(userCategory))
+											.filter(r -> r.getClass().isAssignableFrom(c))
+											.map(r -> (R) r)
+											.collect(toSet())))));
 	}
 
 	public static final Map<ReactionChannelType, Map<UserCategory, Set<MessageReaction>>> messageReactionsByCategoryChannel =
@@ -935,16 +950,20 @@ public class Reactions { // TODO convert into singleton (?)
 				.get(command.getUserCategory());
 	}
 
-	public static Set<MessageReaction> getReactions(ReactionChannelType channelType, UserCategory userCategory, MessageType type) {
+	public static Set<MessageReaction> getMessageReactions(ReactionChannelType channelType, UserCategory userCategory, MessageType type) {
 		if (!Main.getBot().getJDA().getGatewayIntents().contains(GatewayIntent.GUILD_MEMBERS) // can't detect when joined? find join message
 				&& type == MessageType.GUILD_MEMBER_JOIN) {
 //			getReactions(ReactionChannelType.GUILD, type.)
 		}
-		return getReactions(channelType, userCategory);
+		return getMessageReactions(channelType, userCategory);
 	}
 
-	public static Set<MessageReaction> getReactions(ReactionChannelType channelType, UserCategory userCategory) {
+	public static Set<MessageReaction> getMessageReactions(ReactionChannelType channelType, UserCategory userCategory) {
 		return messageReactionsByCategoryChannel.get(channelType).get(userCategory);
+	}
+
+	public static Set<SlashCommand> getSlashReactions(ReactionChannelType channelType, UserCategory userCategory) {
+		return slashCommandsByCategoryChannel.get(channelType).get(userCategory);
 	}
 
 	static boolean addCommand(MessageReaction command) {
@@ -960,14 +979,14 @@ public class Reactions { // TODO convert into singleton (?)
 
 	public static void reply(final Message message, final String reply) {
 		if (message.getChannelType() == ChannelType.TEXT)
-			reply(message.getTextChannel(), reply);
+			reply(message.getChannel().asTextChannel(), reply);
 		else
 			message.getChannel().sendMessage(truncate(reply)).queue(); // in DMs
 	}
 
 	public static void reply(final Message message, final MessageEmbed reply) {
 		if (message.getChannelType() == ChannelType.TEXT)
-			reply(message.getTextChannel(), reply);
+			reply(message.getChannel().asTextChannel(), reply);
 		else
 			message.getChannel().sendMessageEmbeds(reply).queue();
 	}

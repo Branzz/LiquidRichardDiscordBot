@@ -14,6 +14,7 @@ import com.wordpress.brancodes.messaging.reactions.commands.custom.types.obj.Met
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
@@ -178,14 +179,14 @@ public class CustomCommand extends Command {
 //						(id, args) -> Main.getBot().getJDA().getTextChannelById(id)))
 		);
 		putType(new ClassType<Message>("message",
-				new Field<>("channel", "channel", true, Message::getTextChannel),
+				new Field<>("channel", "channel", true, m -> m.getChannel().asTextChannel()),
 				new Field<>("author", "user", false, Message::getAuthor),
 				new Field<>("server", "server", false, Message::getGuild),
 				new Field<>("time", "str", false, Message::getTimeCreated),
 				new Field<>("jump", "url", false, Message::getJumpUrl),
-				new Field<>("mentioned", "list", false, Message::getMentionedMembers),
+				new Field<>("mentioned", "list", false, m -> m.getMentions().getUsers()),
 				new Method<>("react", "void", (message, args) -> {
-					message.addReaction((Emote) args[0].get()); return VOID; }, "emoji")
+					message.addReaction((Emoji) args[0].get()); return VOID; }, "emoji")
 				).extend("object")
 				.implement((InterfaceType<ISnowflake>) getType("identifiable"))
 		);
@@ -202,7 +203,7 @@ public class CustomCommand extends Command {
 				.implement((InterfaceType<ISnowflake>) getType("identifiable"))
 
 		);
-		putType(new ClassType<Emote>("emoji"));
+		putType(new ClassType<Emoji>("emoji"));
 		putType(new ClassType<List<Instance>>("list"));
 	}
 

@@ -3,6 +3,7 @@ package com.wordpress.brancodes.messaging.reactions.users;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,8 +47,12 @@ public enum UserCategory {
 			// 749625271937663027L, YAWN, 708038453509619734L, YAWN, 829546063538552852L, YAWN
 	);
 
-	public static UserCategory getUserCategory(@NotNull final MessageReceivedEvent privateMessageReceivedEvent) {
-		return getUserCategory(privateMessageReceivedEvent.getJDA(), privateMessageReceivedEvent.getAuthor());
+	public static UserCategory getUserCategory(@NotNull final MessageReceivedEvent messageReceivedEvent) {
+		return getUserCategory(messageReceivedEvent.getJDA(), messageReceivedEvent.getAuthor());
+	}
+
+	public static UserCategory getUserCategory(@NotNull final SlashCommandInteractionEvent slashCommandEvent) {
+		return getUserCategory(slashCommandEvent.getJDA(), slashCommandEvent.getUser());
 	}
 
 	public static UserCategory getUserCategory(JDA jda, User author) {

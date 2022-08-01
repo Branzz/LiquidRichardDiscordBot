@@ -75,7 +75,7 @@ public class Reaction {
 		}
 
 		public B addChannelCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, Message::getTextChannel, TextChannel.class));
+			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asTextChannel(), TextChannel.class));
 		}
 
 		public B addMemberCooldown(long duration) {
@@ -83,7 +83,7 @@ public class Reaction {
 		}
 
 		public B addDMCooldown(long duration) {
-			return addCooldown(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, Message::getPrivateChannel, PrivateChannel.class));
+			return addCooldown(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, m -> m.getChannel().asPrivateChannel(), PrivateChannel.class));
 		}
 
 		private B addCooldown(ChannelType intendedLocation, String locationName, CooldownPool cooldownPool) {

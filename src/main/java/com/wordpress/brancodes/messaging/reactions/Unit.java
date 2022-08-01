@@ -104,41 +104,34 @@ enum Unit {
 		private final String fullMatch;
 		private final String negatives;
 		private final String feetInchBase;
-		private final String feetInch;
 		private final boolean isFeetInch; // as opposed to other units
 		private String feet;
 		private String inches;
-		private String inchWhole;
 		private String inchDecimal;
 		private boolean hasInchWhole;
-		private boolean hasInchDecimal;
 		private BigDecimal value;
 		private Unit unit;
 
 		public UnitMatch(MatchResult match) {
 			fullMatch = match.group(0);
 			negatives = match.group(1);
-			feetInch = match.group(3);
-			isFeetInch = feetInch != null;
+			isFeetInch = match.group(3) != null;
 			feetInchBase = match.group(4);
 			if (isFeetInch) {
-				inchWhole = match.group(7);
-				hasInchWhole = inchWhole != null;
-				if (!hasInchWhole) {
-					inchWhole = "0";
-					inchDecimal = match.group(9);
-				} else {
-					inchDecimal = match.group(10);
-				}
-				hasInchDecimal = inchDecimal != null;
-				if (!hasInchDecimal)
-					inchDecimal = "0";
 				feet = match.group(5);
 				if (feet == null)
 					feet = "0";
 				inches = match.group(6);
 				if (inches == null)
 					inches = "0";
+				hasInchWhole = match.group(7) != null;
+				if (!hasInchWhole) {
+					inchDecimal = match.group(9);
+				} else {
+					inchDecimal = match.group(10);
+				}
+				if (inchDecimal == null)
+					inchDecimal = "0";
 			} else {
 //			value = Optional.ofNullable(match.group(12)).map(BigDecimal::new).orElse(null);
 //			value = nullify(match.group(12), BigDecimal::new);
@@ -322,7 +315,8 @@ enum Unit {
 
 		@NotNull
 		private static String getBMIString(double bmiDouble, String bmi) {
-			return bmi + " BMI (" + (bmiDouble < 18.5 ? "Underweight" : bmiDouble < 25 ? "Healthy" : bmiDouble < 30 ? "Overweight" : "Obese") + ')';
+			return bmi + " BMI (" + (bmiDouble < 12 ? "Ideal" : bmiDouble < 15 ? "Kinda Skinny" : bmiDouble < 18 ? "Normal" : bmiDouble < 22 ? "Kinda Fat" : "Fat") + ')';
+//			return bmi + " BMI (" + (bmiDouble < 18.5 ? "Underweight" : bmiDouble < 25 ? "Healthy" : bmiDouble < 30 ? "Overweight" : "Obese") + ')';
 		}
 
 		@NotNull

@@ -42,10 +42,10 @@ public class CooldownManager {
 	public boolean check(Message message) {
 		if (message.isFromGuild()) {
 			return (check(guildCooldownPool, message.getGuild())
-				   && check(channelCooldownPool, message.getTextChannel())
+				   && check(channelCooldownPool, message.getChannel().asTextChannel())
 				   && check(memberCooldownPool, message.getMember()));
 		} else {
-			return check(DMCooldownPool, message.getPrivateChannel());
+			return check(DMCooldownPool, message.getChannel().asPrivateChannel());
 		}
 	}
 

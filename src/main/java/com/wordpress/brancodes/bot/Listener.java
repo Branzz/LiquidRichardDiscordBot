@@ -7,24 +7,21 @@ import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.messaging.reactions.commands.Command;
+import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import com.wordpress.brancodes.util.Pair;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageActivity;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.events.emote.update.EmoteUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMuteEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.entities.AbstractMessage;
@@ -95,11 +92,11 @@ public class Listener extends ListenerAdapter {
 		Main.getBot().removeChats(event.getGuild().getIdLong());
 	}
 
-	@Override
-	public void onEmoteUpdateName(@NotNull final EmoteUpdateNameEvent event) {
-		DataBase.setEmoji(event.getGuild().getIdLong(), event.getOldName(), event.getNewName());
-		super.onEmoteUpdateName(event);
-	}
+//	@Override
+//	public void onEmoteUpdateName(@NotNull final EmoteUpdateNameEvent event) {
+//		DataBase.setEmoji(event.getGuild().getIdLong(), event.getOldName(), event.getNewName());
+//		super.onEmoteUpdateName(event);
+//	}
 
 	@Override
 	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
@@ -113,8 +110,45 @@ public class Listener extends ListenerAdapter {
 	}
 
 	@Override
-	public void onSlashCommand(@NotNull SlashCommandEvent event) {
-//		event.getMember().getUser();
+	public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+		if (event.getChannel().getType() == ChannelType.PRIVATE) {
+			if (!pause) {
+				slashCommand(event, ChannelType.PRIVATE, UserCategory.getUserCategory(event));
+				if (!event.getUser().equals(event.getJDA().getSelfUser()) && !event.getUser().equals(Config.get("ownerUser")))
+					LOGGER.info("DM from {}: \"{}\" in {} DM's", LiquidRichardBot.getUserName(event.getUser()),
+							event.getCommandString(),
+							LiquidRichardBot.getUserName(event.getUser()));
+			}
+		} else if (event.isFromGuild()) {
+			if (!pause) {
+				slashCommand(event, event.getChannel().getType(), checkMod(event, UserCategory.getUserCategory(event))); // TODO refactor extract
+			}
+		}
+	}
+
+	private void slashCommand(SlashCommandInteractionEvent event, ChannelType channelType, UserCategory userCategory) {
+		String name = event.getName();
+
+		SlashCommand slashCommand = (SlashCommand) Reactions.commandsByName.get(name);
+		boolean channelInRange = slashCommand.getChannelType().inRange(channelType);
+		boolean userInRange = slashCommand.getUserCategory().inRange(userCategory);
+
+		if (channelInRange && userInRange) {
+			slashCommand.execute(event);
+		} else {
+			StringBuilder failureMessageBuilder = new StringBuilder();
+			if (!channelInRange)
+				failureMessageBuilder.append("You Can't Use ").append(name).append(" Here");
+			if (!channelInRange && !userInRange)
+				failureMessageBuilder.append(" And ");
+			if (!userInRange)
+				failureMessageBuilder.append("You Don't Have Permission To Use ").append(name);
+			String failureMessage = failureMessageBuilder.toString();
+			event.getInteraction()
+					.reply(failureMessage)
+					.setEphemeral(true)
+					.queue(s -> LOGGER.info("slash command {} user failure {}", name, failureMessage));
+		}
 	}
 
 	@Override
@@ -124,7 +158,7 @@ public class Listener extends ListenerAdapter {
 			if (event.getAuthor().equals(Config.get("ownerUser")) && event.getMessage().getContentRaw().equals("!p"))
 				pause ^= true; // overrides every other command
 			if (!pause) {
-				messageReceived(event.getChannel().getType(), UserCategory.getUserCategory(event), event.getMessage());
+				messageReceived(event.getChannel().getType(), UserCategory.getUserCategory(event), event.getMessage()); //TODO replace channel Type with ReactionChannelType argument
 				if (!event.getAuthor().equals(event.getJDA().getSelfUser()) && !event.getAuthor().equals(Config.get("ownerUser")))
 					LOGGER.info("DM from {}: \"{}\"{} in {} DM's", LiquidRichardBot.getUserName(event.getAuthor()),
 								event.getMessage().getContentRaw(), event.getMessage().getAttachments().stream().map(Message.Attachment::getUrl).collect(joining("\n,")),
@@ -141,9 +175,17 @@ public class Listener extends ListenerAdapter {
 	}
 
 	private static UserCategory checkMod(@NotNull final MessageReceivedEvent event, final UserCategory userCategory) {
+		return checkMod(userCategory, event.isFromGuild(), event.getAuthor(), event.isFromGuild() ? event.getGuild() : null);
+	}
+
+	private static UserCategory checkMod(@NotNull final SlashCommandInteractionEvent event, final UserCategory userCategory) {
+		return checkMod(userCategory, event.isFromGuild(), event.getUser(), event.isFromGuild() ? event.getGuild() : null);
+	}
+
+	private static UserCategory checkMod(final UserCategory userCategory, boolean isFromGuild, User user, Guild guild) {
 		return (userCategory == UserCategory.DEFAULT
-				&& event.isFromGuild()
-				&& DataBase.userIsMod(event.getAuthor().getIdLong(), event.getGuild().getIdLong()).get())
+				&& isFromGuild
+				&& DataBase.userIsMod(user.getIdLong(), guild.getIdLong()).get())
 					   ? UserCategory.MOD : userCategory;
 	}
 
@@ -181,7 +223,7 @@ public class Listener extends ListenerAdapter {
 				 // .takeWhile(r -> chainable(r.getKey()))
 				 // .forEach(r -> logReactionResponse(message, r));
 		//
-		Reactions.getReactions(ReactionChannelType.of(channelType), userCategory)
+		Reactions.getMessageReactions(ReactionChannelType.of(channelType), userCategory)
 				.stream()
 //				.peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())

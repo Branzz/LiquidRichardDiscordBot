@@ -50,17 +50,18 @@ public class LiquidRichardBot {
 				GatewayIntent.GUILD_MESSAGES,
 				GatewayIntent.GUILD_MESSAGE_REACTIONS,
 				GatewayIntent.DIRECT_MESSAGE_REACTIONS,
-				GatewayIntent.GUILD_EMOJIS,
+				GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
 				GatewayIntent.GUILD_VOICE_STATES,
-				GatewayIntent.GUILD_MEMBERS
-				// GatewayIntent.GUILD_PRESENCES
+				GatewayIntent.MESSAGE_CONTENT,
+						// GatewayIntent.GUILD_PRESENCES
+						GatewayIntent.GUILD_MEMBERS
 		)
 				  .disableCache(EnumSet.of(
 				  		CacheFlag.ROLE_TAGS
 				  ))
 				  .enableCache(EnumSet.of(
 				  		CacheFlag.VOICE_STATE,
-						CacheFlag.EMOTE
+						CacheFlag.EMOJI
 				  ))
 				  .setChunkingFilter(ChunkingFilter.include(907042440924528662L, 910004207120183326L))
 				  .setStatus(OnlineStatus.ONLINE)
@@ -111,6 +112,7 @@ public class LiquidRichardBot {
 		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
 		LOGGER.info("Commands: {}", jda.retrieveCommands().complete().stream().map(c -> c.getName() + " " + c.getId()).collect(joining(", ")));
 
+//		setName("Retired Unit");
 //		TextChannel channel = jda.getTextChannelById(907045483476836412L);
 //		if (channel != null)
 //			channel.getHistoryAfter(990030713199919154L, 100).queue(s ->
