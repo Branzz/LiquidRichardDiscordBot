@@ -1,4 +1,3 @@
-* DAILY REMINDER periodic chat
 * create a todo command that loads into disk or a note command that saves
 * AND CHAIN COMMAND
 * Better command builder with "text must contain VS fully match" --- or we do just regex ^ $ (?)

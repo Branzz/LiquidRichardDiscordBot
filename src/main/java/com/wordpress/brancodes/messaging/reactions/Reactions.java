@@ -4,19 +4,19 @@ import bran.parser.CompositionParser;
 import bran.tree.compositions.Composition;
 import bran.tree.compositions.expressions.Expression;
 import bran.tree.compositions.statements.Statement;
-import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.Chats;
 import com.wordpress.brancodes.messaging.reactions.MessageReaction.MessageReactionBuilder;
-import com.wordpress.brancodes.messaging.reactions.Unit.UnitMatch;
+import com.wordpress.brancodes.messaging.reactions.unit.BMI;
 import com.wordpress.brancodes.messaging.reactions.commands.Command.CommandBuilder;
 import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand;
 import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand.SlashCommandBuilder;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.CustomCommandCompileErrorException;
 import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.InvalidCustomCommandException;
+import com.wordpress.brancodes.messaging.reactions.unit.UnitMatch;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.*;
 import com.wordpress.brancodes.voice.PlayerManager;
@@ -323,14 +323,14 @@ public class Reactions { // TODO convert into singleton (?)
 			return true;
 		}).build(),
 
-		new CommandBuilder("Info", getCommandRegex("(Tell\\s+Me(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?"),
+		new CommandBuilder("Info", getCommandRegex("(Tell\\s+Me(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?") + "$",
 								   MOD, GUILD_AND_PRIVATE).executeResponse((message, matcher) ->
-				parseCommand(message, command -> reply(message, command.toFullString()), matcher.group(19), matcher.group(20))
+				parseCommand(message, command -> reply(message, command.toFullString()), matcher.group(18), matcher.group(19))
 		).andChainable().helpPanel("Guide On Activating A Command").build(),
 
-		new CommandBuilder("Example", getCommandRegex("(Tell|Show|Give)\\s+(Me\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)"),
+		new CommandBuilder("Example", getCommandRegex("(Tell|Show|Give)\\s+(Me\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)") + "$",
 								   DEFAULT, GUILD_AND_PRIVATE).executeResponse((message, matcher) ->
-				parseCommand(message, command -> message.reply(truncate(new Generex(command.getRegex()).random())).queue(), matcher.group(22), matcher.group(23))
+				parseCommand(message, command -> message.reply(truncate(command.getGenerex().random())).queue(), matcher.group(22), matcher.group(23))
 		).andChainable().helpPanel("Give Example On How To Activate A Command").build(),
 
 		// new Command.Builder("Execute Code", "![Ee].+", OWNER, GUILD_AND_PRIVATE).execute(message -> {
@@ -418,7 +418,7 @@ public class Reactions { // TODO convert into singleton (?)
 											  + "|meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 							DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> { // TODO detect number without unit
-			if (message.getGuild().getIdLong() == 953143574453706792L)
+			if (message.getGuild().getIdLong() == 959299477729079328L)
 				return FAILURE;
 			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
 			if (matches.size() == 0) {
@@ -431,7 +431,7 @@ public class Reactions { // TODO convert into singleton (?)
 					converted.add(match.convertUnit());
 					conversionArrow.add(match.fullMatch() + " -> " + match.convertUnit());
 				}
-				Unit.BMI bmi = Unit.getBMI(matches);
+				BMI bmi = BMI.getBMI(matches);
 				if (bmi.couldCalculate()) {
 					converted.add(bmi.getConvertedString());
 					conversionArrow.add(bmi.getLogString());
@@ -584,11 +584,11 @@ public class Reactions { // TODO convert into singleton (?)
 			}
 		}).build(),
 
-		new CommandBuilder("Censor Target", ".*" + censorChainRegex("special, words", "[\\s.,]*") + ".*",
-								   CENSORED, GUILD).executeStatus(message -> // TODO censor optimizer
-			booleanReturnStatus(message.getGuild().getIdLong() == 793333500303769600L, () ->
-				message.delete().queue())
-		).helpPanel("Censor Targeted Users").deactivated().build(),
+		// new CommandBuilder("Censor Target", ".*" + censorChainRegex("special, words", "[\\s.,]*") + ".*",
+		// 						   CENSORED, GUILD).executeStatus(message -> // TODO censor optimizer
+		// 	booleanReturnStatus(message.getGuild().getIdLong() == 793333500303769600L, () ->
+		// 		message.delete().queue())
+		// ).helpPanel("Censor Targeted Users").deactivated().build(),
 
 		new MessageReactionBuilder("Censor AAVE", aaveRegex,  //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
 							DEFAULT, GUILD).caseInsensitive().executeStatus((message, matcher) -> // TODO censor optimizer
@@ -819,7 +819,7 @@ public class Reactions { // TODO convert into singleton (?)
 
 
 	public static void flushAutoDeleteQueue() {
-		autoDeleteQueue.forEach(RestAction::complete);
+		autoDeleteQueue.forEach(RestAction::complete); // try catch ?
 	}
 
 	private static final Deque<AuditableRestAction<Void>> autoDeleteQueue = new ArrayDeque<>();
@@ -842,9 +842,9 @@ public class Reactions { // TODO convert into singleton (?)
 		autodeleteLog.sendMessageEmbeds(
 				new EmbedBuilder()
 						.setAuthor(getUserName(message.getAuthor()), message.getJumpUrl(), message.getAuthor().getAvatarUrl())
-						.addField("Message", messageContent.substring(0, Math.min(messageContent.length(), 1024)), false)
+						.addField("Message", truncateEnd(messageContent, 1024), false)
 						.addField("ID", message.getId(), false)
-						.addField("Censored Word" + (censoredWords.length > 1 ? "s" : ""), words, false)
+						.addField("Censored Word" + (censoredWords.length > 1 ? "s" : ""), truncate(censoredWords, 1024), false)
 						.setColor(Color.RED)
 						.build()).queue();
 		return words;
@@ -930,7 +930,7 @@ public class Reactions { // TODO convert into singleton (?)
 							messageReactions.stream()
 											.filter(r -> r.getChannelType().inRange(channelType))
 											.filter(r -> r.getUserCategory().inRange(userCategory))
-											.filter(r -> r.getClass().isAssignableFrom(c))
+											.filter(r -> c.isAssignableFrom(r.getClass()))
 											.map(r -> (R) r)
 											.collect(toSet())))));
 	}
@@ -998,8 +998,44 @@ public class Reactions { // TODO convert into singleton (?)
 			logMissingChannelPermissions(channel);
 	}
 
-	private static String truncate(final String text) {
-		return text.length() > 2000 ? text.substring(0, 998) + "..." + text.substring(text.length() - 998) : text;
+	public static String truncate(String text) {
+		return truncateMiddle(text, 2000);
+	}
+
+	private static String truncate(final String[] censoredWords, int maxSize) {
+		int joinedLength = Arrays.stream(censoredWords).mapToInt(String::length).sum() + (censoredWords.length - 1) * 2;
+		if (joinedLength <= maxSize)
+			return String.join(", ", censoredWords); // TODO truncate this just in case size is wrong? it shouldn't
+		List<String> wordsByLength = Arrays.stream(censoredWords)
+										   .sorted(Comparator.comparing(String::length).reversed())
+										   .collect(toList());
+		int totalLength = joinedLength;
+		int ind = 0;
+		while (totalLength > maxSize) {
+			int wordLength = wordsByLength.get(ind).length();
+			if (wordLength < 7)
+				return truncateMiddle(String.join(", ", censoredWords), maxSize);
+			/*
+			totalLength aaaxxxxx
+			wordLength  aaa
+			take out between
+			(x {1 to wL+7}) >= tL - maxSize
+			dif = tL - maxSize;
+			if (dif > wL+7)
+			 */
+			wordsByLength.set(ind, truncateMiddle(wordsByLength.get(ind), wordLength - maxSize));
+			totalLength -= wordLength + 7;
+			ind++;
+		}
+		return truncateEnd(String.join(", ", wordsByLength), maxSize);
+	}
+
+	public static String truncateMiddle(String text, int maxSize) {
+		return text.length() > maxSize ? text.substring(0, maxSize / 2 - 1) + "..." + text.substring(text.length() - maxSize / 2 - 2) : text;
+	}
+
+	public static String truncateEnd(String text, int maxSize) {
+		return text.length() > maxSize ? text.substring(0, maxSize - 3) + "..." : text;
 	}
 
 	public static void reply(final TextChannel channel, final MessageEmbed reply) {

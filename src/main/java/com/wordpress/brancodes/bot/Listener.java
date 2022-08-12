@@ -223,9 +223,10 @@ public class Listener extends ListenerAdapter {
 				 // .takeWhile(r -> chainable(r.getKey()))
 				 // .forEach(r -> logReactionResponse(message, r));
 		//
+		// System.out.println(channelType + " " + userCategory + " " + contentDisplay);
 		Reactions.getMessageReactions(ReactionChannelType.of(channelType), userCategory)
 				.stream()
-//				.peek(System.out::println)
+				// .peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())
 				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
 				.filter(response -> response.getValue().status()).findFirst() // method 1

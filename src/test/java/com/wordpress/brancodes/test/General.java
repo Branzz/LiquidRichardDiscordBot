@@ -2,6 +2,7 @@ package com.wordpress.brancodes.test;
 
 import com.mifmif.common.regex.Generex;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,22 +37,24 @@ public class General {
 	}
 	public static void main(String[] args) {
 
-		String doubleRegex = "[+-]?((((\\d+)(\\.)?((\\d+)?)" +
-				"([eE][+-]?(\\d+))?)|(\\.(\\d+)([eE][+-]?(\\d+))?)|" +
-				"(((0[xX]([0123456789abcdefABCDEF]+)(\\.)?)|(0[xX]([0123456789abcdefABCDEF]+)?(\\.)([0123456789abcdefABCDEF]+)))" +
-				"[pP][+-]?(\\d+)))[fFdD]?)";
-		Generex generex = new Generex(doubleRegex);
-		for (int i = 0; i < 20; i++) {
-			double wtf = 0XD.AP+0_0D;
-			String doubleStr = generex.random(2);
-			String doubleParse;
-			try {
-				doubleParse = String.valueOf(Double.parseDouble(doubleStr));
-			} catch (NumberFormatException e) {
-				doubleParse = e.getMessage();
-			}
-			System.out.println(doubleStr + " ".repeat(Math.max(1, 12 - doubleStr.length())) + doubleParse);
-		}
+
+		// String doubleRegex = "[+-]?((((\\d+)(\\.)?((\\d+)?)" +
+		// 		"([eE][+-]?(\\d+))?)|(\\.(\\d+)([eE][+-]?(\\d+))?)|" +
+		// 		"(((0[xX]([0123456789abcdefABCDEF]+)(\\.)?)|(0[xX]([0123456789abcdefABCDEF]+)?(\\.)([0123456789abcdefABCDEF]+)))" +
+		// 		"[pP][+-]?(\\d+)))[fFdD]?)";
+		// Generex generex = new Generex(doubleRegex);
+		// for (int i = 0; i < 20; i++) {
+		// 	double wtf = 0XD.AP+0_0D;
+		// 	String doubleStr = generex.random(2);
+		// 	String doubleParse;
+		// 	try {
+		// 		doubleParse = String.valueOf(Double.parseDouble(doubleStr));
+		// 	} catch (NumberFormatException e) {
+		// 		doubleParse = e.getMessage();
+		// 	}
+		// 	System.out.println(doubleStr + " ".repeat(Math.max(1, 12 - doubleStr.length())) + doubleParse);
+		// }
+
 		// for (Reaction reaction : Reactions.reactions) {
 		// 	String regex = reaction.getRegex();
 		// 	StringBuilder sB = new StringBuilder();

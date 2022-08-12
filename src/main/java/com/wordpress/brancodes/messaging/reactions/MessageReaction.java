@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -14,11 +15,15 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.wordpress.brancodes.messaging.reactions.Reactions.truncateEnd;
+
 public class MessageReaction extends Reaction {
 
 	Matcher matcher;
 	Function<Message, ReactionResponse> executeResponse;
 	BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
+	String generexString;
+	Generex generex; // lazily created
 
 	protected MessageReaction() { }
 
@@ -55,6 +60,10 @@ public class MessageReaction extends Reaction {
 		return matcher.pattern().pattern();
 	}
 
+	protected static String truncateField(String text) {
+		return truncateEnd(text, 1024);
+	}
+
 	/**
 	 * for children classes to add on to its toFullString embed builder
 	 * <pre>
@@ -68,7 +77,7 @@ public class MessageReaction extends Reaction {
 		final EmbedBuilder embedBuilder =
 				new EmbedBuilder().setTitle(name)
 								  .setColor(Color.YELLOW)
-								  .addField("RegEx", matcher.pattern().toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\\*", "\\\\*"), true)
+								  .addField("RegEx", truncateField(matcher.pattern().toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\\*", "\\\\*")), true)
 								  .addField("User", userCategory.toString(), true)
 								  .addField("Location", channelCategory.toString(), true);
 		cooldownPools.forEach(pool -> embedBuilder.addField("Cooldown", pool.toString(), false));
@@ -93,6 +102,12 @@ public class MessageReaction extends Reaction {
 
 	public static Matcher getMatcher(@RegEx String regex) {
 		return getMatcher(regex, "");
+	}
+
+	public Generex getGenerex() {
+		if (generex == null)
+			generex = new Generex(generexString == null ? getRegex() : generexString);
+		return generex;
 	}
 
 	public static abstract class Builder<T extends MessageReaction, B extends Builder<T, B>> extends Reaction.Builder<T, B> {
@@ -164,12 +179,33 @@ public class MessageReaction extends Reaction {
 			return thisObject;
 		}
 
+		/**
+		 * @param regex a RegEx String that works with Generex library (exclude < and >'s)
+		 */
+		public B generexString(String regex) {
+			object.generexString = regex;
+			return thisObject;
+		}
+
 		@Override
 		public T build() {
 			if (object.executeResponse == null && object.executeMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
+			if (object.generexString != null) {
+				autoCreateGenerexString();
+			}
 			object.matcher = caseInsensitive ? getMatcherCaseInsensitive(regex) : getMatcher(regex);
 			return object;
+		}
+
+		private void autoCreateGenerexString() {
+			int lastLeftParenInd = -1; // TODO
+			StringBuilder str = new StringBuilder();
+			for (int i = 0; i < regex.length(); i++) {
+				if (regex.charAt(i) == '(')
+					lastLeftParenInd = i;
+			}
+			object.generexString = str.toString();
 		}
 
 	}

@@ -6,8 +6,13 @@ import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.RegEx;
 import java.security.InvalidParameterException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static com.wordpress.brancodes.util.JavaUtil.arrayToSet;
+import static com.wordpress.brancodes.util.JavaUtil.longArrayToSet;
 
 public class Reaction {
 
@@ -16,6 +21,9 @@ public class Reaction {
 	UserCategory userCategory;
 	ReactionChannelType channelCategory;
 	Set<CooldownPool<?>> cooldownPools;
+	boolean guildFiltering;
+	boolean whitelist;
+	Set<Long> guildlist;
 
 	protected boolean hasCooldown(final Message message) {
 		return !cooldownPools.stream().allMatch(cooldownPool -> cooldownPool.check(message));
@@ -102,6 +110,24 @@ public class Reaction {
 		 */
 		public B addContentCooldown(long duration) {
 			object.cooldownPools.add(new CooldownPool<>(duration, Message::getContentRaw, String.class));
+			return thisObject;
+		}
+
+		public B whitelistGuilds(long... guildIDs) {
+			if (object.guildFiltering)
+				throw new InvalidParameterException("can't combine whitelist and blacklist");
+			object.guildFiltering = true;
+			object.whitelist = true;
+			object.guildlist = longArrayToSet(guildIDs);
+			return thisObject;
+		}
+
+		public B blacklistGuilds(long... guildIDs) {
+			if (object.guildFiltering)
+				throw new InvalidParameterException("can't combine whitelist and blacklist");
+			object.guildFiltering = true;
+			object.whitelist = false;
+			object.guildlist = longArrayToSet(guildIDs);
 			return thisObject;
 		}
 

@@ -1,8 +1,13 @@
 package com.wordpress.brancodes.messaging.reactions;
 
+import com.wordpress.brancodes.bot.Listener;
 import net.dv8tion.jda.api.requests.RestAction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReactionResponse {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReactionResponse.class);
 
 	public static final ReactionResponse SUCCESS = new ReactionResponse(true);
 	public static final ReactionResponse FAILURE = new ReactionResponse(false);
@@ -52,6 +57,11 @@ public class ReactionResponse {
 
 	public String getLogResponse() {
 		return logResponse;
+	}
+
+	public void logResponse() {
+		if (status() || hasFailureResponse() && hasLogResponse())
+			LOGGER.info(getLogResponse());
 	}
 
 	public ReactionResponse onFailureReply(RestAction<?> response) {
