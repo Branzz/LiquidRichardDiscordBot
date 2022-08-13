@@ -1,13 +1,15 @@
 package com.wordpress.brancodes.messaging.reactions;
 
 import com.mifmif.common.regex.Generex;
+import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.*;
 
+import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
 import java.awt.*;
+import java.security.InvalidParameterException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -15,9 +17,10 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
 import static com.wordpress.brancodes.messaging.reactions.Reactions.truncateEnd;
 
-public class MessageReaction extends Reaction {
+public class MessageReaction extends Reaction<Message> {
 
 	Matcher matcher;
 	Function<Message, ReactionResponse> executeResponse;
@@ -31,25 +34,24 @@ public class MessageReaction extends Reaction {
 		return matcher.reset(match).results().findAny().isPresent();
 	}
 
-	public ReactionResponse execute(Message message) {
-		return execute(message, message.getContentRaw());
+	@Override
+	@OverridingMethodsMustInvokeSuper
+	protected boolean canExecute(Message message) {
+		return super.canExecute(message) && guildAllowed(message.getGuild().getIdLong()) && matches(message.getContentRaw());
 	}
 
-	public ReactionResponse execute(Message message, String match) {
-		if (deactivated)
-			return ReactionResponse.FAILURE;
-		if (matches(match)) {
+	public ReactionResponse execute(Message message) {
+		if (canExecute(message)) {
 			ReactionResponse reactionResponse = accept(message);
 			if (reactionResponse.status())
 				addCooldowns(message);
 			return reactionResponse;
+		} else {
+			return FAILURE;
 		}
-		return ReactionResponse.FAILURE;
 	}
 
 	protected ReactionResponse accept(Message message) {
-		if (hasCooldown(message))
-			return ReactionResponse.FAILURE;
 		if (executeResponse != null)
 			return executeResponse.apply(message);
 		else
@@ -153,7 +155,7 @@ public class MessageReaction extends Reaction {
 					executeMatcherResponse.accept(m, r);
 					return ReactionResponse.SUCCESS;
 				} else {
-					return ReactionResponse.FAILURE;
+					return FAILURE;
 				}
 			};
 			return thisObject;
@@ -184,6 +186,36 @@ public class MessageReaction extends Reaction {
 		 */
 		public B generexString(String regex) {
 			object.generexString = regex;
+			return thisObject;
+		}
+
+		public B addGuildCooldown(long duration) {
+			return addCooldown(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
+		}
+
+		public B addChannelCooldown(long duration) {
+			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asTextChannel(), TextChannel.class));
+		}
+
+		public B addMemberCooldown(long duration) {
+			return addCooldown(ChannelType.TEXT, "Guild member", new CooldownPool<>(duration, Message::getMember, Member.class));
+		}
+
+		public B addDMCooldown(long duration) {
+			return addCooldown(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, m -> m.getChannel().asPrivateChannel(), PrivateChannel.class));
+		}
+
+		protected B addCooldown(ChannelType intendedLocation, String locationName, CooldownPool<Message, ?> cooldownPool) {
+			if (!object.channelCategory.inRange(intendedLocation))
+				throw new InvalidParameterException(locationName + "cooldowns can't be used in " + object.channelCategory);
+			return addCooldown(cooldownPool);
+		}
+
+		/**
+		 * if users are sending the exact same message
+		 */
+		public B addContentCooldown(long duration) {
+			object.cooldownPools.add(new CooldownPool<>(duration, Message::getContentRaw, String.class));
 			return thisObject;
 		}
 

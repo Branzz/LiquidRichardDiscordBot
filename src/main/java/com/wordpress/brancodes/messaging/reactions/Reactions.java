@@ -4,6 +4,7 @@ import bran.parser.CompositionParser;
 import bran.tree.compositions.Composition;
 import bran.tree.compositions.expressions.Expression;
 import bran.tree.compositions.statements.Statement;
+import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
@@ -160,6 +161,9 @@ public class Reactions { // TODO convert into singleton (?)
 			.collect(Reactions.orChainRegex()) + "($|\\s)";
 
 	static {
+		final long GUILD_GS = 910004207120183326L;
+		final long GUILD_C = 907042440924528662L;
+		final long GUILD_DW = 959299477729079328L;
 		reactions = List.of(
 				// new Command.Builder("", "Create Command", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
 				// 	// addCommand()
@@ -359,12 +363,9 @@ public class Reactions { // TODO convert into singleton (?)
 				reply(message.getChannel().asTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		).addChannelCooldown(5_000L).build(),
 
-		new MessageReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD).executeResponse((message, matcher) -> {
-			if ((message.getGuild().getIdLong() != 953143574453706792L
-				 && (message.getGuild().getIdLong() == 973797632436760606L
-							 || message.getGuild().getIdLong() == 722001554374131713L
-							 || message.getGuild().getIdLong() == 907042440924528662L))
-					&& !message.isPinned()) { // TODO guild subscribed to this command
+		new MessageReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD)
+				.whitelistGuilds(973797632436760606L, 722001554374131713L, GUILD_C).executeResponse((message, matcher) -> {
+			if (!message.isPinned()) { // TODO guild subscribed to this command
 				final String censoredWords = logWordCensor(message, matcher);
 				if (censoredWords == null)
 					return FAILURE;
@@ -374,9 +375,9 @@ public class Reactions { // TODO convert into singleton (?)
 				return FAILURE;
 		}).build(),
 
-		new MessageReactionBuilder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD).executeStatus(message ->
-			booleanReturnStatus(message.getGuild().getIdLong() == 907042440924528662L, () ->
-				message.delete().queue())
+		new MessageReactionBuilder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD)
+				.whitelistGuilds(GUILD_C).execute(message ->
+				message.delete().queue()
 		).build(),
 
 		new CommandBuilder("Purge All", getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), MOD, GUILD).execute(message -> {
@@ -411,15 +412,49 @@ public class Reactions { // TODO convert into singleton (?)
 			});
 			message.reply(truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue();
 		}).helpPanel("Purge Censor Current Channel").build(),
+
+		new CommandBuilder("Prune", "^prune", MOD, GUILD).caseInsensitive().executeResponse(commandMessage -> {
+			commandMessage.getGuild().loadMembers().onSuccess(guildMembers -> {
+				final Role requiredRole = commandMessage.getGuild().getRoles().stream().filter(role -> role.getIdLong() == 907451275807981638L).findFirst().get();
+				commandMessage.getGuild().findMembersWithRoles(requiredRole).onSuccess(membersWithRole0 -> {
+					// System.out.println(membersWithRole.stream()
+					// 								  .map(Member::getEffectiveName)
+					// 								  .collect(joining()));
+					Set<Member> membersWithOnlyRole = membersWithRole0.stream().filter(member -> member.getRoles().size() == 1).collect(toSet());
+					Set<Member> recentMembers = commandMessage.getGuild()
+												   .getTextChannels()
+												   .stream()
+												   .flatMap(channel -> channel.getHistory()
+																			  .retrievePast(100)
+																			  .complete()
+																			  .stream())
+												   .filter(message -> message.getIdLong() > 1002439766500978688L) // ~2 weeks
+												   .map(message -> commandMessage.getGuild().getMember(message.getAuthor()))
+												   .collect(toSet());
+					Set<Member> nonRecentMembers = new HashSet<>();
+					membersWithOnlyRole.stream()
+								 .filter(member -> !recentMembers.contains(member))
+								 .forEach(nonRecentMembers::add);
+					nonRecentMembers.forEach(member -> member.kick("PRUNE (HASN'T TALKED IN 2 WEEKS)").queue());
+					System.out.printf("ALL USERS (%d):\n%s\nRECENT USERS(%d):\n%s\nNON RECENT USERS(%d)\n%s\n",
+									  guildMembers.size(),
+									  guildMembers.stream().map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")),
+									  recentMembers.size(),
+									  recentMembers.stream().filter(Objects::nonNull).map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")),
+									  nonRecentMembers.size(),
+									  nonRecentMembers.stream().map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")));
+					LOGGER.info("PRUNED " + nonRecentMembers.size() + " MEMBERS.");
+				});
+			});
+			return SUCCESS;
+		}).build(),
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
 											  + "(-*)(?<!\\$)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
 											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|m([^\\w]+|$)"
 											  + "|meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
-							DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> { // TODO detect number without unit
-			if (message.getGuild().getIdLong() == 959299477729079328L)
-				return FAILURE;
+					DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().blacklistGuilds(GUILD_DW).executeResponse((message, matcher) -> { // TODO detect number without unit
 			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
 			if (matches.size() == 0) {
 				LOGGER.error("failed to convert " + message.getContentRaw());
@@ -488,7 +523,7 @@ public class Reactions { // TODO convert into singleton (?)
 		}).helpPanel("Celebrate The Princess's Birthday").deniable().build(),
 
 		new CommandBuilder("Speech Bubble", "^(speech\\s*bubble|sb)", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
-			(message.getGuild().getIdLong() != 910004207120183326L || message.getChannel().getIdLong() == 910004207610904673L)
+			(message.getGuild().getIdLong() != GUILD_GS || message.getChannel().getIdLong() == 910004207610904673L)
 				&& presentOrElseReturnStatus(
 					getFirstImage(message) // will users ever be able to send embeds? ImageUtil.getFirstEmbed
 					.or(() -> getFirstSticker(message)
@@ -505,13 +540,12 @@ public class Reactions { // TODO convert into singleton (?)
 			message.delete().queue();
 		}).build(),
 
-		new MessageReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD).executeStatus(
+		new MessageReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD)
+				.blacklistGuilds(GUILD_C).executeStatus(
 				message -> {
 			if (!PermissionUtil.checkPermission(message.getMember(), Permission.MESSAGE_EMBED_LINKS)
 				|| !PermissionUtil.checkPermission(message.getChannel().asTextChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)) {
-				if (message.getGuild().getIdLong() != 907042440924528662L) {
 					message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here.").queue();
-				} else return false;
 				return true;
 			} else {
 				return false;
@@ -519,7 +553,7 @@ public class Reactions { // TODO convert into singleton (?)
 		}).build(),
 
 		new CommandBuilder("Angie", "^When( I|')s The Best Discord Girl'?s Birthday[?]?", DEFAULT, GUILD).caseInsensitive().executeStatus(message ->
-			booleanReturnStatus(message.getGuild().getIdLong() == 910004207120183326L, () ->
+			booleanReturnStatus(message.getGuild().getIdLong() == GUILD_GS, () ->
 					Chats.getBdayMessage(message.getChannel().asTextChannel()).queue())
 		).build(),
 
@@ -592,7 +626,7 @@ public class Reactions { // TODO convert into singleton (?)
 
 		new MessageReactionBuilder("Censor AAVE", aaveRegex,  //".*([Bb][.,\\s;:]*[Rr][.,\\s;:]*[Aa][.,\\s;:]*[Nn][.,\\s;:]*[Dd][.,\\s;:]*[Oo0]).*"
 							DEFAULT, GUILD).caseInsensitive().executeStatus((message, matcher) -> // TODO censor optimizer
-			booleanReturnStatus(message.getGuild().getIdLong() == 910004207120183326L || message.getGuild().getIdLong() == 907042440924528662L, () ->
+			booleanReturnStatus(message.getGuild().getIdLong() == GUILD_GS || message.getGuild().getIdLong() == GUILD_C, () ->
 				reply(message, String.format(
 						"Please Retract This Message, %s. Are You A Black Person Of Color? "
 								+ "No? Then No, You Should **NOT** Be Using The Word \"%s\", "
@@ -604,7 +638,7 @@ public class Reactions { // TODO convert into singleton (?)
 		).deactivated().build(),
 		new MessageReactionBuilder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
 					if (message.getMember().getIdLong() == 155149108183695360L
-							&& message.getGuild().getIdLong() == 907042440924528662L) {
+							&& message.getGuild().getIdLong() == GUILD_C) {
 						Optional<Member> member = message.getMentions().getMembers().stream().findFirst();
 						if (member.isEmpty())
 							return false;

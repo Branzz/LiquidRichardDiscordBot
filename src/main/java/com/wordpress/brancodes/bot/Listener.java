@@ -25,6 +25,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.entities.AbstractMessage;
+import net.dv8tion.jda.internal.entities.ReceivedMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -194,17 +195,19 @@ public class Listener extends ListenerAdapter {
 	}
 
 	static final int FAILURE = 0, SUCCESS = 1, CHAINABLE = 2;
-	private void messageReceived(final ChannelType channelType, final UserCategory userCategory, final Message message) {
+	private void messageReceived(ChannelType channelType, UserCategory userCategory, Message originalMessage) {
 //		 LOGGER.info("Message \"{}\" by {} in #{} ChannelType: {} UserCategory: {}",
 //		 			message.getContentRaw(),
 //		 			LiquidRichardBot.getUserName(message.getAuthor()),
 //		 			message.getChannel().getName(),
 //		 			channelType,
 //		 			userCategory);
-		String contentDisplay = message.getContentDisplay();
+		String contentDisplay = originalMessage.getContentDisplay(); // TODO Stripped?
 		String messageContent = MorseUtil.isMorse(contentDisplay)
 										? CaseUtil.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
-										: message.getContentRaw();
+										: originalMessage.getContentRaw();
+		final Message message = customContentMessage(originalMessage, messageContent);
+
 		// .forEach(r -> System.out.println(r.getKey().getName()));
 		// List<AbstractMap.SimpleEntry<Reaction, ReactionResponse>> reactions =
 		// Map<Integer, List<Pair<Reaction, ReactionResponse>>> reactionsTyped =
@@ -228,7 +231,7 @@ public class Listener extends ListenerAdapter {
 				.stream()
 				// .peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())
-				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message, messageContent)))
+				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message)))
 				.filter(response -> response.getValue().status()).findFirst() // method 1
 				// .min(Comparator.comparing(r -> r.getValue().status())) // method 3
 				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
@@ -411,6 +414,15 @@ public class Listener extends ListenerAdapter {
 											   ? (": " + response.getLogResponse()) : "");
 			LOGGER.info(log);
 		}
+	}
+
+	private static Message customContentMessage(Message message, String messageContent) {
+		return new ReceivedMessage(message.getIdLong(), message.getChannel(), message.getType(), message.getMessageReference(),
+								   message.isWebhookMessage(), message.isTTS(), message.isPinned(), messageContent, message.getNonce(),
+								   message.getAuthor(), message.getMember(), message.getActivity(), message.getTimeEdited(),
+								   message.getMentions(), message.getReactions(), message.getAttachments(), message.getEmbeds(),
+								   message.getStickers(), message.getActionRows(), (int) message.getFlagsRaw(), message.getInteraction(),
+								   message.getStartedThread());
 	}
 
 }

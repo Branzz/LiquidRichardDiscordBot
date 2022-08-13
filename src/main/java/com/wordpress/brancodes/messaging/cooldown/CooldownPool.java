@@ -1,28 +1,27 @@
 package com.wordpress.brancodes.messaging.cooldown;
 
 import com.wordpress.brancodes.util.CaseUtil;
-import net.dv8tion.jda.api.entities.Message;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public class CooldownPool<T> {
+public class CooldownPool<B, T> {
 
 	private final Map<T, Long> cooldownPool;
-	private final Function<Message, T> messageTypeConverter;
+	private final Function<B, T> messageTypeConverter;
 	private final long cooldown;
-	private final Class<T> type;
+	private final Class<T> type; // not really an anti-pattern, just want for toString TODO get class name of T
 
-	public CooldownPool(long cooldown, Function<Message, T> messageTypeConverter, Class<T> type) {
+	public CooldownPool(long cooldown, Function<B, T> messageTypeConverter, Class<T> type) {
 		cooldownPool = new HashMap<>();
 		this.cooldown = cooldown;
 		this.messageTypeConverter = messageTypeConverter;
 		this.type = type;
 	}
 
-	public void add(Message message) {
+	public void addConverted(B message) {
 		add(messageTypeConverter.apply(message));
 	}
 
@@ -30,7 +29,7 @@ public class CooldownPool<T> {
 		cooldownPool.put(t, System.currentTimeMillis());
 	}
 
-	public boolean check(Message message) {
+	public boolean checkConverted(B message) {
 		return check(messageTypeConverter.apply(message));
 	}
 
@@ -52,7 +51,7 @@ public class CooldownPool<T> {
 		if (o == null || getClass() != o.getClass())
 			return false;
 
-		final CooldownPool<?> that = (CooldownPool<?>) o;
+		final CooldownPool<?, ?> that = (CooldownPool<?, ?>) o;
 
 		if (cooldown != that.cooldown)
 			return false;

@@ -1,8 +1,10 @@
 package com.wordpress.brancodes.messaging.reactions.commands;
 
+import com.sun.xml.bind.v2.TODO;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
+import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -21,7 +23,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SlashCommand extends Reaction {
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.SUCCESS;
+
+public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SlashCommand.class);
 
@@ -46,8 +51,14 @@ public class SlashCommand extends Reaction {
 		}
 	}
 
-	public void execute(SlashCommandInteractionEvent options) {
-		executer.accept(options);
+	@Override
+	public ReactionResponse execute(SlashCommandInteractionEvent options) {
+		if (canExecute(options)) {
+			executer.accept(options);
+			return SUCCESS;
+		} else {
+			return FAILURE;
+		}
 	}
 
 	public static abstract class Builder<T extends SlashCommand, B extends Builder<T, B>> extends Reaction.Builder<T, B> {

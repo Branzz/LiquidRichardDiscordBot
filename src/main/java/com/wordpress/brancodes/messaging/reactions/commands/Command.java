@@ -9,9 +9,11 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 
+import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
 
 import static com.wordpress.brancodes.bot.LiquidRichardBot.deny;
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
 
 public class Command extends MessageReaction {
 
@@ -21,16 +23,10 @@ public class Command extends MessageReaction {
 
 	protected Command() { }
 
-	public ReactionResponse execute(Message message, String match) {
-		if (matches(match)) {
-			if (deniable && deny(message))
-				return ReactionResponse.FAILURE;
-			ReactionResponse reactionResponse = accept(message);
-			if (reactionResponse.status())
-				addCooldowns(message);
-			return reactionResponse;
-		}
-		return ReactionResponse.FAILURE;
+	@Override
+	@OverridingMethodsMustInvokeSuper
+	protected boolean canExecute(final Message message) {
+		return super.canExecute(message) && !(deniable && deny(message));
 	}
 
 	private static final @RegEx String aliasesRegexPart = (String) Config.get("aliasesRegex");

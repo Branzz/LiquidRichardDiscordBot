@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,7 @@ public class LiquidRichardBot {
 				  		CacheFlag.VOICE_STATE,
 						CacheFlag.EMOJI
 				  ))
+				  .setMemberCachePolicy(MemberCachePolicy.ALL)
 				  .setChunkingFilter(ChunkingFilter.include(907042440924528662L, 910004207120183326L))
 				  .setStatus(OnlineStatus.ONLINE)
 				  .addEventListeners(

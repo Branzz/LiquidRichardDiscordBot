@@ -4,34 +4,35 @@ import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import net.dv8tion.jda.api.entities.*;
 
+import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
 import java.security.InvalidParameterException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static com.wordpress.brancodes.util.JavaUtil.arrayToSet;
 import static com.wordpress.brancodes.util.JavaUtil.longArrayToSet;
 
-public class Reaction {
+public abstract class Reaction<T> { // abstract away Message to generic in super class
 
 	protected @RegEx String name;
 	boolean deactivated; // TODO remove from master reactions map to keep map tree style consistent (?)
 	UserCategory userCategory;
 	ReactionChannelType channelCategory;
-	Set<CooldownPool<?>> cooldownPools;
+	Set<CooldownPool<T, ?>> cooldownPools;
 	boolean guildFiltering;
+	Set<Long> guildList;
 	boolean whitelist;
-	Set<Long> guildlist;
 
-	protected boolean hasCooldown(final Message message) {
-		return !cooldownPools.stream().allMatch(cooldownPool -> cooldownPool.check(message));
+	// TODO could use AbstractMathLibrary's modular LogicStatements
+	//  to replace enforcement of super calls by ANDing each part to
+	//  a master condition (and rank them by easiness of calculating (easier
+	//  with just a list anyway??))
+	@OverridingMethodsMustInvokeSuper
+	protected boolean canExecute(T t) {
+		return !isDeactivated() && !hasCooldown(t);
 	}
 
-	protected void addCooldowns(Message message) {
-		cooldownPools.forEach(pool -> pool.add(message));
-	}
+	public abstract ReactionResponse execute(T t);
 
 	public String getName() {
 		return name;
@@ -48,12 +49,6 @@ public class Reaction {
 	public void activate() {
 		deactivated = false;
 	}
-
-	@Override
-	public String toString() {
-		return name;
-	}
-
 	public ReactionChannelType getChannelType() {
 		return channelCategory;
 	}
@@ -62,6 +57,40 @@ public class Reaction {
 		return userCategory;
 	}
 
+	protected boolean hasCooldown(T t) {
+		return !cooldownPools.stream().allMatch(cooldownPool -> cooldownPool.checkConverted(t));
+	}
+
+	protected void addCooldowns(T t) {
+		cooldownPools.forEach(pool -> pool.addConverted(t));
+	}
+
+	public boolean guildAllowed(long guildId) {
+		return !guildFiltering || (whitelist == guildList.contains(guildId));
+	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
+
+	/**
+	 * Template inheriting class:
+	 * <pre>
+	 * {@code
+	 * public static final class ReactionBuilder extends Builder<Reaction, ReactionBuilder> {
+	 *
+	 * 	public ReactionBuilder(final String name, final UserCategory userCategory, final ReactionChannelType channelCategory) {
+	 * 		super(name, userCategory, channelCategory);
+	 * 	}
+	 *
+	 *  @Override public Command build() { super.build(); return object; }
+	 * 	@Override protected Reaction createObject() { return new Reaction(); }
+	 * 	@Override protected ReactionBuilder thisObject() { return this; }
+	 * }
+	 * }
+	 * </pre>
+	 */
 	public static abstract class Builder<T extends Reaction, B extends Builder<T, B>> extends AbstractBuilder<T, B> {
 
 		public Builder(String name, UserCategory userCategory, ReactionChannelType channelCategory) {
@@ -78,47 +107,12 @@ public class Reaction {
 			return thisObject;
 		}
 
-		public B addGuildCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
-		}
-
-		public B addChannelCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asTextChannel(), TextChannel.class));
-		}
-
-		public B addMemberCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild member", new CooldownPool<>(duration, Message::getMember, Member.class));
-		}
-
-		public B addDMCooldown(long duration) {
-			return addCooldown(ChannelType.PRIVATE, "DM", new CooldownPool<>(duration, m -> m.getChannel().asPrivateChannel(), PrivateChannel.class));
-		}
-
-		private B addCooldown(ChannelType intendedLocation, String locationName, CooldownPool cooldownPool) {
-			if (!object.channelCategory.inRange(intendedLocation))
-				throw new InvalidParameterException(locationName + "cooldowns can't be used in " + object.channelCategory);
-			return addCooldown(cooldownPool);
-		}
-
-		private B addCooldown(CooldownPool cooldownPool) {
-			object.cooldownPools.add(cooldownPool);
-			return thisObject;
-		}
-
-		/**
-		 * if users are sending the exact same message
-		 */
-		public B addContentCooldown(long duration) {
-			object.cooldownPools.add(new CooldownPool<>(duration, Message::getContentRaw, String.class));
-			return thisObject;
-		}
-
 		public B whitelistGuilds(long... guildIDs) {
 			if (object.guildFiltering)
 				throw new InvalidParameterException("can't combine whitelist and blacklist");
 			object.guildFiltering = true;
 			object.whitelist = true;
-			object.guildlist = longArrayToSet(guildIDs);
+			object.guildList = longArrayToSet(guildIDs);
 			return thisObject;
 		}
 
@@ -127,7 +121,16 @@ public class Reaction {
 				throw new InvalidParameterException("can't combine whitelist and blacklist");
 			object.guildFiltering = true;
 			object.whitelist = false;
-			object.guildlist = longArrayToSet(guildIDs);
+			object.guildList = longArrayToSet(guildIDs);
+			return thisObject;
+		}
+
+		public B usedEverywhereCooldown(long duration) {
+			return addCooldown(new CooldownPool<>(duration, m -> null, Object.class));
+		}
+
+		protected B addCooldown(CooldownPool cooldownPool) {
+			object.cooldownPools.add(cooldownPool);
 			return thisObject;
 		}
 
@@ -135,24 +138,6 @@ public class Reaction {
 		public T build() {
 			return object;
 		}
-
-	}
-
-	public static final class ReactionBuilder extends Builder<Reaction, ReactionBuilder> {
-
-		public ReactionBuilder(final String name, final UserCategory userCategory, final ReactionChannelType channelCategory) {
-			super(name, userCategory, channelCategory);
-		}
-
-		@Override
-		public Reaction build() {
-			super.build();
-			// if (object.executeResponse != null && object.executeMatcherResponse != null)
-			// 	throw new IllegalArgumentException("Must define execute only once");
-			return object;
-		}
-		@Override protected Reaction createObject() { return new Reaction(); }
-		@Override protected ReactionBuilder thisObject() { return this; }
 
 	}
 
