@@ -2,10 +2,13 @@ package com.wordpress.brancodes.messaging.reactions;
 
 import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.util.AbstractBuilder;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
+import java.awt.*;
 import java.security.InvalidParameterException;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -15,13 +18,13 @@ import static com.wordpress.brancodes.util.JavaUtil.longArrayToSet;
 public abstract class Reaction<T> { // abstract away Message to generic in super class
 
 	protected @RegEx String name;
-	boolean deactivated; // TODO remove from master reactions map to keep map tree style consistent (?)
-	UserCategory userCategory;
-	ReactionChannelType channelCategory;
-	Set<CooldownPool<T, ?>> cooldownPools;
-	boolean guildFiltering;
-	Set<Long> guildList;
-	boolean whitelist;
+	protected boolean deactivated; // TODO remove from master reactions map to keep map tree style consistent (?)
+	protected UserCategory userCategory;
+	protected ReactionChannelType channelCategory;
+	protected Set<CooldownPool<T, ?>> cooldownPools;
+	protected boolean guildFiltering;
+	protected Set<Long> guildList;
+	protected boolean whitelist;
 
 	// TODO could use AbstractMathLibrary's modular LogicStatements
 	//  to replace enforcement of super calls by ANDing each part to
@@ -67,6 +70,19 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 
 	public boolean guildAllowed(long guildId) {
 		return !guildFiltering || (whitelist == guildList.contains(guildId));
+	}
+
+	protected EmbedBuilder getMessageEmbed() {
+		EmbedBuilder embedBuilder = new EmbedBuilder().setTitle(name)
+													  .setColor(Color.YELLOW)
+													  .addField("User", userCategory.toString(), true)
+													  .addField("Location", channelCategory.toString(), true);
+		cooldownPools.forEach(pool -> embedBuilder.addField("Cooldown", pool.toString(), false));
+		return embedBuilder;
+	}
+
+	public MessageEmbed toFullString() {
+		return getMessageEmbed().build();
 	}
 
 	@Override

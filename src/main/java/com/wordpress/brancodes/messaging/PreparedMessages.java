@@ -2,7 +2,7 @@ package com.wordpress.brancodes.messaging;
 
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.bot.LiquidRichardBot;
-import com.wordpress.brancodes.messaging.reactions.commands.Command;
+import com.wordpress.brancodes.messaging.reactions.message.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.messaging.reactions.*;
 import com.wordpress.brancodes.database.DataBase;

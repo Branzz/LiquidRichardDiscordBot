@@ -1,6 +1,6 @@
 package com.wordpress.brancodes.test;
 
-import com.wordpress.brancodes.messaging.reactions.MessageReaction;
+import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.test.proxy.TesterMessage;

@@ -2,7 +2,7 @@ package com.wordpress.brancodes.main;
 
 import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.messaging.reactions.Reactions;
-import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand;
+import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
 
 import javax.security.auth.login.LoginException;
 import java.io.BufferedReader;

@@ -7,8 +7,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 
-import static com.wordpress.brancodes.messaging.reactions.MessageReaction.getMatcher;
-import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
+import static com.wordpress.brancodes.messaging.reactions.message.MessageReaction.getMatcher;
+import static com.wordpress.brancodes.messaging.reactions.message.commands.Command.getCommandRegex;
 import static java.util.stream.Collectors.joining;
 
 public class BasicTesting {

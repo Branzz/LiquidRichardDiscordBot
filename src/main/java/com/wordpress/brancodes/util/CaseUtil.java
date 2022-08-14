@@ -1,10 +1,20 @@
 package com.wordpress.brancodes.util;
 
-import net.dv8tion.jda.api.requests.RestAction;
-
-import javax.annotation.Nullable;
-import java.util.function.Consumer;
 public final class CaseUtil {
+
+	public static String splitNoSpaceCase(String string) {
+		StringBuilder withSpaces = new StringBuilder();
+		for (int i = 1; i < string.toCharArray().length; i++) {
+			final char currentChar = string.charAt(i);
+			final char previousChar = string.charAt(i - 1);
+			if (!Character.isWhitespace(previousChar) && Character.isUpperCase(currentChar)) {
+				withSpaces.append(' ').append(currentChar);
+			} else {
+				withSpaces.append(currentChar);
+			}
+		}
+		return withSpaces.toString();
+	}
 
 	public static String properCase(String string) {
 		StringBuilder properCase = new StringBuilder(string.length());

@@ -17,3 +17,7 @@
 * CONVERT TO SPRING DATA BASE
 
 * multi message command (builder)
+
+* display all custom commands
+
+* store them... (recompile)

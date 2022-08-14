@@ -9,14 +9,18 @@ import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.Chats;
-import com.wordpress.brancodes.messaging.reactions.MessageReaction.MessageReactionBuilder;
+import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
+import com.wordpress.brancodes.messaging.reactions.message.MessageReaction.MessageReactionBuilder;
+import com.wordpress.brancodes.messaging.reactions.message.commands.custom.CustomCommand.CustomCommandBuilder;
+import com.wordpress.brancodes.messaging.reactions.message.commands.custom.CustomCommandCompiler;
+import com.wordpress.brancodes.messaging.reactions.message.commands.custom.types.obj.ClassType;
 import com.wordpress.brancodes.messaging.reactions.unit.BMI;
-import com.wordpress.brancodes.messaging.reactions.commands.Command.CommandBuilder;
-import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand;
-import com.wordpress.brancodes.messaging.reactions.commands.SlashCommand.SlashCommandBuilder;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.CustomCommand;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.CustomCommandCompileErrorException;
-import com.wordpress.brancodes.messaging.reactions.commands.custom.exception.InvalidCustomCommandException;
+import com.wordpress.brancodes.messaging.reactions.message.commands.Command.CommandBuilder;
+import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
+import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand.SlashCommandBuilder;
+import com.wordpress.brancodes.messaging.reactions.message.commands.custom.CustomCommand;
+import com.wordpress.brancodes.messaging.reactions.message.commands.custom.exception.CustomCommandCompileErrorException;
+import com.wordpress.brancodes.messaging.reactions.message.commands.custom.exception.InvalidCustomCommandException;
 import com.wordpress.brancodes.messaging.reactions.unit.UnitMatch;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.*;
@@ -27,7 +31,11 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
@@ -60,16 +68,16 @@ import java.util.stream.Stream;
 
 import static com.wordpress.brancodes.bot.LiquidRichardBot.autodeleteLog;
 import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
-import static com.wordpress.brancodes.messaging.reactions.MessageReaction.getMatcher;
+import static com.wordpress.brancodes.messaging.reactions.message.MessageReaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.SUCCESS;
-import static com.wordpress.brancodes.messaging.reactions.commands.Command.getCommandRegex;
+import static com.wordpress.brancodes.messaging.reactions.message.commands.Command.getCommandRegex;
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategory.*;
 import static com.wordpress.brancodes.util.ImageUtil.*;
 import static java.util.stream.Collectors.*;
 
-public class Reactions { // TODO convert into singleton (?)
+public class Reactions { // TODO convert into singleton (?) or a Manager
 
 	// TODO awkward encapsulation and property ordering
 
@@ -350,12 +358,12 @@ public class Reactions { // TODO convert into singleton (?)
 			String name = matcher.group(7);
 			String text = matcher.group(9);
 			try {
-				CustomCommand.create(message.getGuild(), name, event, text);
+				new CustomCommandBuilder(name, event, message.getAuthor(), message.getGuild(), text).build().register();
 			} catch (CustomCommandCompileErrorException | InvalidCustomCommandException e) {
 				return false;
 			}
 			return true;
-		})).build(),
+		})).deactivated().build(),
 
 		new MessageReactionBuilder("Greeting", "^(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
 												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*$",
@@ -415,12 +423,21 @@ public class Reactions { // TODO convert into singleton (?)
 
 		new CommandBuilder("Prune", "^prune", MOD, GUILD).caseInsensitive().executeResponse(commandMessage -> {
 			commandMessage.getGuild().loadMembers().onSuccess(guildMembers -> {
-				final Role requiredRole = commandMessage.getGuild().getRoles().stream().filter(role -> role.getIdLong() == 907451275807981638L).findFirst().get();
-				commandMessage.getGuild().findMembersWithRoles(requiredRole).onSuccess(membersWithRole0 -> {
+				final Map<Long, Role> roles = commandMessage.getGuild().getRoles().stream().collect(toMap(Role::getIdLong, Function.identity()));
+				final Set<Role> needsAnyOfRole = Stream.of(907451275807981638L)
+													   .map(roles::get).collect(toSet());
+				final Set<Role> butNotRole = Stream.of(957805137122971649L, 907468017280090122L, 921657925951447051L, 982590697515413554L, 922778685487087646L)
+												   .map(roles::get).collect(toSet());
+				final Role exceptAnyAboveRole = roles.get(994224838501748817L);
+				commandMessage.getGuild().loadMembers().onSuccess(membersWithRole -> {
 					// System.out.println(membersWithRole.stream()
 					// 								  .map(Member::getEffectiveName)
 					// 								  .collect(joining()));
-					Set<Member> membersWithOnlyRole = membersWithRole0.stream().filter(member -> member.getRoles().size() == 1).collect(toSet());
+					Set<Member> membersWithOnlyRole = membersWithRole.stream()
+																	  .filter(member -> member.getRoles().stream().anyMatch(needsAnyOfRole::contains))
+																	  .filter(member -> member.getRoles().stream().noneMatch(butNotRole::contains))
+																	  .filter(member -> member.getRoles().stream().noneMatch(role -> role.getPosition() >= exceptAnyAboveRole.getPosition()))
+																	  .collect(toSet());
 					Set<Member> recentMembers = commandMessage.getGuild()
 												   .getTextChannels()
 												   .stream()
@@ -451,8 +468,8 @@ public class Reactions { // TODO convert into singleton (?)
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
 											  + "(-*)(?<!\\$)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
-											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|m([^\\w]+|$)"
-											  + "|meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
+											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|" //m([^\w]+|$)|
+											  + "meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 					DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().blacklistGuilds(GUILD_DW).executeResponse((message, matcher) -> { // TODO detect number without unit
 			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
@@ -809,9 +826,81 @@ public class Reactions { // TODO convert into singleton (?)
 				.addOption(OptionType.STRING, "cause", "Cause Of Death.", true)
 				.execute(event -> {
 					event.getInteraction().reply("Hope You Die By " + CaseUtil.properCase(event.getOption("cause").getAsString())).queue();
+		}).build(),
+		((Supplier<SlashCommand>) () -> {
+			final List<Command.Choice> eventsToOptions = CustomCommand.events.keySet().stream()
+							.map(event -> new Command.Choice(CaseUtil.splitNoSpaceCase(event), event)).collect(toList());
+
+			SlashCommandBuilder builder = new SlashCommandBuilder("custom-command", "Create Your Own Command", MOD, GUILD_AND_PRIVATE);
+			final Map<String, String> names = builder.getData();
+			return builder
+				.addField("CREATE_NAME", "create")
+				.addField("RUN_NAME", "run")
+				.addField("INFO_NAME", "info")
+				.addField("EVENT_INFO_NAME", "event-info")
+				.addField("NAME_OPTION", "name")
+				.addField("DESC_OPTION", "description")
+				.addField("EVENT_OPTION", "event")
+				.addField("CODE_OPTION", "code")
+
+				.createSubcommandBranch(new SubcommandData(names.get("create"), "Create A Command")
+												.addOption(OptionType.STRING, "NAME_OPTION", "name of your command", true)
+												.addOptions(new OptionData(OptionType.STRING, names.get("EVENT_OPTION"), "events", true)
+																	.addChoices(eventsToOptions))
+												.addOption(OptionType.STRING, "CODE_OPTION", "code to run when event occurs (see \"/info\")", true) // TODO is it /info?
+												.addOption(OptionType.STRING, "DESC_OPTION", "describe what your command does", false),
+						event -> {
+							try {
+								new CustomCommandBuilder(event.getOption(names.get("NAME_OPTION")).getAsString(),
+														 event.getOption(names.get("EVENT_OPTION")).getAsString(),
+														 event.getUser(),
+														 event.getGuild(),
+														 event.getOption(names.get("CODE_OPTION")).getAsString())
+										.addDescription(event.getOption(names.get("DESC_OPTION")).getAsString())
+										.build()
+										.register();
+							} catch (CustomCommandCompileErrorException exception) {
+								event.getInteraction().reply(exception.getMessage());
+							}
+						}
+				)
+				.createSubcommandBranch(new SubcommandData(names.get("RUN_NAME"), "Run This Command Only Once And Now")
+												.addOption(OptionType.STRING, names.get("CODE_OPTION"), "code to run now", true),
+						event -> {
+							try {
+								CustomCommandCompiler.compile(event.getInteraction().getOption(names.get("CODE_OPTION")).getAsString(),
+															  (ClassType<Guild>) CustomCommand.getType("guild"));
+							} catch (CustomCommandCompileErrorException exception) {
+								event.getInteraction().reply(exception.getMessage());
+							}
 				})
-				.build()
-	  );
+				.createSubcommandBranch(new SubcommandData(names.get("EVENT_INFO_NAME"), "Info On Listened Event")
+												.addOptions(new OptionData(OptionType.STRING, names.get("EVENT_OPTION"), "events", true)
+																	.addChoices(eventsToOptions)),
+						event -> event.getInteraction().reply(CustomCommand.events.get(event.getOption(names.get("EVENT_OPTION")).getAsString()).toString()).queue())
+
+				.createSubcommandBranch(new SubcommandData(names.get("INFO_NAME"), "Details On Usage"),
+						event -> event.getInteraction().reply((String) JSONReader.getData().get("custom_command_info")).queue())
+
+				.subcommandExecuter(event -> LOGGER.error("bad subcommand naming for Custom Command"))
+			.build();
+		}).get(),
+		new SlashCommandBuilder("test", "test slash command", DEFAULT, GUILD, (data, names) -> {
+				// data.addOptions(new OptionData(OptionType.STRING, "option-a", "test"));
+				data.addSubcommands(new SubcommandData("sub-with-options", "test")
+											.addOptions(new OptionData(OptionType.STRING, "option-1", "test"))
+											.addOptions(new OptionData(OptionType.STRING, "option-2", "test")));
+				// data.addSubcommandGroups(new SubcommandGroupData("sub-group", "test")
+				// 								 .addSubcommands(new SubcommandData("sub-2-with-options", "test")
+				// 														 .addOptions(new OptionData(OptionType.STRING, "option-1", "test"))
+				// 														 .addOptions(new OptionData(OptionType.STRING, "option-2", "test"))));
+						// .addSubcommands(new SubcommandData("sub", "test"))
+				return event -> {
+
+				};
+			}).build()
+		);
+
 	  messageReactions =
 	  		reactions.stream()
 	  				.filter(r -> r instanceof MessageReaction)

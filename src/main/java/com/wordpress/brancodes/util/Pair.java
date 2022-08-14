@@ -26,6 +26,14 @@ public class Pair<K, V> implements Map.Entry<K, V> {
 		return value;
 	}
 
+	public K getLeft() {
+		return getKey();
+	}
+
+	public V getRight() {
+		return getValue();
+	}
+
 	@Override
 	public V setValue(final V value) {
 		return this.value = value;

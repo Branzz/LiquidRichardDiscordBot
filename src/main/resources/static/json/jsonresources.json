@@ -48,5 +48,6 @@
     "finna", "aggy", "fam", "ion", "ghetto",
     "go off"
   ],
-  "aave_response": "Please Retract This Message, %s. Are You A Black Person Of Color? No? Then No, You Should **NOT** Be Using The Word \"%s\", As It Is From From The AAVE Dialect And Is **Racist** To Use It. Please Educate Your Self And Avoid Any Future Microaggressions Against Black Individuals At https://aavenb.carrd.co/"
+  "aave_response": "Please Retract This Message, %s. Are You A Black Person Of Color? No? Then No, You Should **NOT** Be Using The Word \"%s\", As It Is From From The AAVE Dialect And Is **Racist** To Use It. Please Educate Your Self And Avoid Any Future Microaggressions Against Black Individuals At https://aavenb.carrd.co/",
+  "custom_command_info": "\"Custom Commmand slash command gives you programmatic access to discord's API; it's basically a macro. You can either run the command now, or have an event you choose be listened for (such as when a message is sent or a channel is created) in the slash command options. Once it is heard, you will be given details about this event which you can interact with in your code. It uses a custom script designed for readability and ease of use for non-coders. See info about syntax and language details at https://github.com/Branzz/LiquidRichardDiscordBot/blob/master/src/main/java/com/wordpress/brancodes/messaging/reactions/commands/custom/custom_command.md\n\nExample command:\n```js\na```"
 }
