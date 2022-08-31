@@ -229,9 +229,9 @@ public class Listener extends ListenerAdapter {
 		// System.out.println(channelType + " " + userCategory + " " + contentDisplay);
 		Reactions.getMessageReactions(ReactionChannelType.of(channelType), userCategory)
 				.stream()
-				// .peek(System.out::println)
 				.filter(reaction -> !reaction.isDeactivated())
 				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message)))
+				// .peek(p -> System.out.println(p.getKey() + " " + p.getValue().getLogResponse() + " " + p.getValue().status()))
 				.filter(response -> response.getValue().status()).findFirst() // method 1
 				// .min(Comparator.comparing(r -> r.getValue().status())) // method 3
 				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));

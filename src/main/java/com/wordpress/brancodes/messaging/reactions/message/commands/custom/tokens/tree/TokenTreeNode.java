@@ -11,4 +11,13 @@ public abstract class TokenTreeNode {
 
 	public static final TokenTreeNode END = new TokenTreeNode() {};
 
+	public Expressions run() {
+		// try {
+		//
+		// } catch (TreeBuilder.ReturnInterruption interruption) {
+		// 	return interruption.returnValue;
+		// }
+		return null;
+	}
+
 }

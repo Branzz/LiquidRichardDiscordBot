@@ -168,10 +168,11 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 			.map(Reactions::censorBasicRegexCaseInsensitive)
 			.collect(Reactions.orChainRegex()) + "($|\\s)";
 
+	public static final long GUILD_GS = 910004207120183326L;
+	public static final long GUILD_C = 907042440924528662L;
+	public static final long GUILD_DW = 959299477729079328L;
+
 	static {
-		final long GUILD_GS = 910004207120183326L;
-		final long GUILD_C = 907042440924528662L;
-		final long GUILD_DW = 959299477729079328L;
 		reactions = List.of(
 				// new Command.Builder("", "Create Command", OWNER, GUILD_AND_PRIVATE, (message, matcher) -> {
 				// 	// addCommand()
@@ -803,8 +804,11 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 		}).caseInsensitive().build(),
 		new CommandBuilder("Simplify", "^Simpl(if)?y`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
 			String response;
+			String input = matcher.group(2);
+			if (input.matches("[\\d\\w\\s',.\"?!]+"))
+				return;
 			try {
-				response = CompositionParser.parse(matcher.group(2)).simplified().toString();
+				response = CompositionParser.parse(input).simplified().toString();
 			} catch (Exception e) {
 				response = "`" + e.getMessage() + '`';
 			}
@@ -843,12 +847,12 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 				.addField("EVENT_OPTION", "event")
 				.addField("CODE_OPTION", "code")
 
-				.createSubcommandBranch(new SubcommandData(names.get("create"), "Create A Command")
-												.addOption(OptionType.STRING, "NAME_OPTION", "name of your command", true)
+				.createSubcommandBranch(new SubcommandData(names.get("CREATE_NAME"), "Create A Command")
+												.addOption(OptionType.STRING, names.get("NAME_OPTION"), "name of your command", true)
 												.addOptions(new OptionData(OptionType.STRING, names.get("EVENT_OPTION"), "events", true)
 																	.addChoices(eventsToOptions))
-												.addOption(OptionType.STRING, "CODE_OPTION", "code to run when event occurs (see \"/info\")", true) // TODO is it /info?
-												.addOption(OptionType.STRING, "DESC_OPTION", "describe what your command does", false),
+												.addOption(OptionType.STRING, names.get("CODE_OPTION"), "code to run when event occurs (see \"/info\")", true) // TODO is it /info?
+												.addOption(OptionType.STRING, names.get("DESC_OPTION"), "describe what your command does", false),
 						event -> {
 							try {
 								new CustomCommandBuilder(event.getOption(names.get("NAME_OPTION")).getAsString(),
@@ -870,8 +874,9 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 							try {
 								CustomCommandCompiler.compile(event.getInteraction().getOption(names.get("CODE_OPTION")).getAsString(),
 															  (ClassType<Guild>) CustomCommand.getType("guild"));
+								event.getInteraction().reply("Running").setEphemeral(true).queue();
 							} catch (CustomCommandCompileErrorException exception) {
-								event.getInteraction().reply(exception.getMessage());
+								event.getInteraction().reply(exception.getMessage()).queue();
 							}
 				})
 				.createSubcommandBranch(new SubcommandData(names.get("EVENT_INFO_NAME"), "Info On Listened Event")
@@ -1125,11 +1130,15 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 		return truncateMiddle(text, 2000);
 	}
 
-	private static String truncate(final String[] censoredWords, int maxSize) {
-		int joinedLength = Arrays.stream(censoredWords).mapToInt(String::length).sum() + (censoredWords.length - 1) * 2;
+	public static void main(String[] args) {
+		truncate(new String[] { "abcde", "fgh", "ijklmnop" }, 10);
+	}
+
+	private static String truncate(String[] words, int maxSize) { // failure
+		int joinedLength = Arrays.stream(words).mapToInt(String::length).sum() + (words.length - 1) * 2;
 		if (joinedLength <= maxSize)
-			return String.join(", ", censoredWords); // TODO truncate this just in case size is wrong? it shouldn't
-		List<String> wordsByLength = Arrays.stream(censoredWords)
+			return String.join(", ", words); // TODO truncate this just in case size is wrong? it shouldn't
+		List<String> wordsByLength = Arrays.stream(words)
 										   .sorted(Comparator.comparing(String::length).reversed())
 										   .collect(toList());
 		int totalLength = joinedLength;
@@ -1137,7 +1146,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 		while (totalLength > maxSize) {
 			int wordLength = wordsByLength.get(ind).length();
 			if (wordLength < 7)
-				return truncateMiddle(String.join(", ", censoredWords), maxSize);
+				return truncateMiddle(String.join(", ", words), maxSize);
 			/*
 			totalLength aaaxxxxx
 			wordLength  aaa

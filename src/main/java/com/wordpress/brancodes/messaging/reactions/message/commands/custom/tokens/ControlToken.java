@@ -15,8 +15,7 @@ public enum ControlToken implements TokenType, Symbolic {
 	LEFT_BRACKET("{", CODE), RIGHT_BRACKET("}", CODE),
 	CALL(".", ANY_TYPE),
 	DELIMITER(";", CODE, CODE),
-	RETURN("return", ANY_TYPE, ANY_TYPE)
-	;
+	RETURN("return", ANY_TYPE, ANY_TYPE);
 
 	private String[] symbols;
 	private TokenTypeType returnType;

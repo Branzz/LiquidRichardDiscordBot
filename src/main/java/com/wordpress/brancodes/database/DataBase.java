@@ -1,6 +1,7 @@
 package com.wordpress.brancodes.database;
 
 import com.wordpress.brancodes.messaging.PreparedMessages;
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ public class DataBase {
 	// 	return null;
 	// }
 
+
 	// private final static Set<Long> cryUniMods = Set.of(289894216354758657L, 850200778740072458L, 841201063637549076L);
 	// guildID == 929974932417437726L && (cryUniMods.contains(userID))
 	/**
@@ -61,8 +63,10 @@ public class DataBase {
 	public static Data<Boolean> userIsMod(final Long userID, final Long guildID) {
 		return new Data<>(
 			(guildID != null && userID != null)
-			&& (guildID == 907042440924528662L
-				&& (userID == 904203586551054376L || userID == 956135678893252628L || userID == 928336417514479646L || userID == 936433911486087208L)),
+			&& (guildID == Reactions.GUILD_C
+				&& (userID == 1006323394997919774L || userID == 904203586551054376L || userID == 956135678893252628L
+					|| userID == 928336417514479646L || userID == 936433911486087208L)
+			|| guildID == 973797632436760606L && (userID == 1006323394997919774L)),
 			guildID);
 		// return new Data<>(false);
 		// if (guildID != null && userID != null)

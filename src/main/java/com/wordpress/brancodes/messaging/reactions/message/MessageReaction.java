@@ -189,7 +189,7 @@ public class MessageReaction extends Reaction<Message> {
 		}
 
 		public B addChannelCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asTextChannel(), TextChannel.class));
+			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asGuildMessageChannel(), GuildMessageChannel.class));
 		}
 
 		public B addMemberCooldown(long duration) {

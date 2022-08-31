@@ -41,13 +41,13 @@ public class CustomCommandCompiler {
 //		}
 	}
 
-	public static Expressions run(TokenTreeNode node) {
-		// try {
-		//
-		// } catch (TreeBuilder.ReturnInterruption interruption) {
-		// 	return interruption.returnValue;
-		// }
-		return null;
+	public static String compileAndRun(String code, String event) {
+		try {
+			compile(code, event).run();
+			return "Ran";
+		} catch (CustomCommandCompileErrorException e) {
+			return e.getMessage();
+		}
 	}
 
 	static class Warning {

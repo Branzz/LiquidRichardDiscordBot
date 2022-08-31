@@ -69,8 +69,8 @@ public class Main {
 
 	public static void reset() {
 		bot.pause();
-		bot.getJDA().shutdownNow();
 		bot.shutdownChatSchedulers();
+		bot.getJDA().shutdownNow();
 	}
 
 }

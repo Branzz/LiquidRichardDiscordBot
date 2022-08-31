@@ -3,11 +3,9 @@ package com.wordpress.brancodes.test;
 import com.mifmif.common.regex.Generex;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class General {
@@ -35,8 +33,8 @@ public class General {
 		public abstract void m();
 		public class i {}
 	}
-	public static void main(String[] args) {
 
+	public static void main(String[] args) {
 
 		// String doubleRegex = "[+-]?((((\\d+)(\\.)?((\\d+)?)" +
 		// 		"([eE][+-]?(\\d+))?)|(\\.(\\d+)([eE][+-]?(\\d+))?)|" +
@@ -163,6 +161,23 @@ public class General {
 		// 	System.out.println("fail");
 		// }
 
+		// Double[] sortedSubset = Stream.generate(() -> -1.0).limit(6L).toArray(Double[]::new);
+		// sortSubArray(new Double[] {0.0, 0.5, 1.0, 1.5, 2.5, 2.5, 2.5, 3.0, 5.0, 6.0, 6.0, 7.0},
+		// 			 new Double[] {3.0, 1.5, 6.0, 2.5, 2.5, 1.0},
+		// 			 sortedSubset);
+		// System.out.println(Arrays.toString(sortedSubset));
+
+		System.out.println(Double.doubleToLongBits(-0.0) == Double.doubleToLongBits(0.0));
+	}
+
+	static <T> void sortSubArray(T[] sorted, T[] subset, T[] sortedSubset) { // subset.length == sortedSubset.length
+		Map<T, Integer> subsetFreqs = new HashMap<>();
+		for (T t : subset)
+			subsetFreqs.compute(t, (k, v) -> v == null ? 1 : v + 1);
+		int ind = 0;
+		for (T t : sorted)
+			if (subsetFreqs.compute(t, (k, v) -> v == null ? -1 : v - 1) >= 0)
+				sortedSubset[ind++] = t;
 	}
 
 	private static String removeDuplicates(String s) {

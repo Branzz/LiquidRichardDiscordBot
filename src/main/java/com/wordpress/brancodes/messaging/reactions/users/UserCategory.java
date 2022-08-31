@@ -1,7 +1,9 @@
 package com.wordpress.brancodes.messaging.reactions.users;
 
+import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -60,6 +62,15 @@ public enum UserCategory {
 										  author.equals(jda.getSelfUser())		 ? UserCategory.SELF
 										: author.isBot()						 ? UserCategory.BOT
 										: author.equals(Config.get("ownerUser")) ? UserCategory.OWNER : UserCategory.DEFAULT);
+	}
+
+	public static UserCategory getUserCategory(JDA jda, User user, Guild guild) {
+				return TRACKED_USERS.getOrDefault(user.getIdLong(),
+										  user.equals(jda.getSelfUser())		 ? UserCategory.SELF
+										: user.isBot()						 ? UserCategory.BOT
+										: user.equals(Config.get("ownerUser")) ? UserCategory.OWNER
+										: guild != null && DataBase.userIsMod(user.getIdLong(), guild.getIdLong()).get() ? UserCategory.MOD
+							   			: UserCategory.DEFAULT);
 	}
 
 	@Override

@@ -70,12 +70,20 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 		public Builder(String name, String description, UserCategory userCategory, ReactionChannelType channelCategory) {
 			super(name, userCategory, channelCategory);
 			object.commandData = new CommandDataImpl(name, description);
+			communicationMap = new HashMap<>() {
+				@Override
+				public String get(final Object key) {
+					String val = super.get(key);
+					if (val == null)
+						throw new InvalidParameterException(String.format("the %s key wasn't found in the field look up table", key));
+					return val;
+				}
+			};
 		}
 
 		public Builder(String name, String description, UserCategory userCategory, ReactionChannelType channelCategory,
 					   BiFunction<SlashCommandData, Map<String, String>, Consumer<SlashCommandInteractionEvent>> slashCreator) {
-			super(name, userCategory, channelCategory);
-			object.commandData = new CommandDataImpl(name, description);
+			this(name, description, userCategory, channelCategory);
 			defaultExecuter = slashCreator.apply(object.commandData, communicationMap);
 		}
 
@@ -194,16 +202,16 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 		}
 
 		public B addField(String key, String value) {
-			if (communicationMap == null)
-				communicationMap = new HashMap<>() {
-					@Override
-					public String get(final Object key) {
-						String val = super.get(key);
-						if (val == null)
-							throw new InvalidParameterException(String.format("the %s key wasn't found in the field look up table", key));
-						return val;
-					}
-				};
+			// if (communicationMap == null)
+			// 	communicationMap = new HashMap<>() {
+			// 		@Override
+			// 		public String get(final Object key) {
+			// 			String val = super.get(key);
+			// 			if (val == null)
+			// 				throw new InvalidParameterException(String.format("the %s key wasn't found in the field look up table", key));
+			// 			return val;
+			// 		}
+			// 	};
 			communicationMap.put(key, value);
 			return thisObject;
 		}
