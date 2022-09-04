@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.AbstractMap;
+import java.util.Comparator;
 
 import static java.util.stream.Collectors.joining;
 
@@ -228,13 +229,16 @@ public class Listener extends ListenerAdapter {
 		//
 		// System.out.println(channelType + " " + userCategory + " " + contentDisplay);
 		Reactions.getMessageReactions(ReactionChannelType.of(channelType), userCategory)
-				.stream()
-				.filter(reaction -> !reaction.isDeactivated())
-				.map(reaction -> new AbstractMap.SimpleEntry<>(reaction, reaction.execute(message)))
-				// .peek(p -> System.out.println(p.getKey() + " " + p.getValue().getLogResponse() + " " + p.getValue().status()))
-				.filter(response -> response.getValue().status()).findFirst() // method 1
-				// .min(Comparator.comparing(r -> r.getValue().status())) // method 3
-				.ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
+				 .stream()
+				 .filter(reaction -> !reaction.isDeactivated())
+				 .map(reaction -> Pair.of(reaction, reaction.execute(message)))
+				 // .peek(p -> System.out.println(p.getKey() + " " + p.getValue().getLogResponse() + " " + p.getValue().status()))
+				 // .filter(response -> response.getValue().status()).findFirst() // method 1
+				 // .min(Comparator.comparing(r -> r.getValue().status())) // method 3
+				 .filter(r -> r.getValue().status() || r.getValue().hasLogResponse())
+				 .min(Comparator.comparing((Pair<MessageReaction, ReactionResponse> r) -> r.getValue().status())
+								.thenComparing(r -> r.getValue().hasLogResponse()))
+				 .ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
 
 				 // .stream()
 				 // .sorted(comparing(Listener::chainable))

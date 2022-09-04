@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -42,7 +43,9 @@ import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.requests.restaction.AuditableRestAction;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.entities.emoji.CustomEmojiImpl;
+import net.dv8tion.jda.internal.requests.RestActionImpl;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +55,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -825,12 +829,29 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 			message.reply(response).queue();
 			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
 		}).caseInsensitive().build(),
+		new CommandBuilder("Upsert Slash", "^!us\\s+(.+)$", OWNER, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> {
+			List<String> inputStrings = Arrays.asList(matcher.group(1).split("\\s+"));
+			if (inputStrings.size() <= 1)
+				return new ReactionResponse(false, "you must provide a command name and \"true\" at the end for it to be upserted globally");
+			Set<String> upsertCommands = new HashSet<>(inputStrings.subList(1, inputStrings.size() - 1));
+			return getSlashCommands(upsertCommands).stream()
+											.map(s -> s.upsert(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")))
+											.reduce(ReactionResponse::combine)
+											.orElse(new ReactionResponse(false, "couldn't find any of those commands"));
+		}).build(),
+		new CommandBuilder("Delete Slash", "^!ds\\s+(.+)$", OWNER, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> {
+			Set<String> upsertCommands = new HashSet<>(Arrays.asList(matcher.group(1).split("\\s+")));
+			return upsertCommands.stream()
+						  .map(SlashCommand::delete)
+						  .reduce(ReactionResponse::combine)
+						  .orElse(new ReactionResponse(false, "couldn't find any of those commands"));
+		}).build(),
 		new SlashCommandBuilder("kill", "End Your Life.", DEFAULT, GUILD_AND_PRIVATE)
 //				.addSubcommands(new SubcommandData("info", "Show Details.").addOption())
 				.addOption(OptionType.STRING, "cause", "Cause Of Death.", true)
-				.execute(event -> {
-					event.getInteraction().reply("Hope You Die By " + CaseUtil.properCase(event.getOption("cause").getAsString())).queue();
-		}).build(),
+				.execute(event ->
+					event.getInteraction().reply("Hope You Die By " + CaseUtil.properCase(event.getOption("cause").getAsString())).queue()
+		).build(),
 		((Supplier<SlashCommand>) () -> {
 			final List<Command.Choice> eventsToOptions = CustomCommand.events.keySet().stream()
 							.map(event -> new Command.Choice(CaseUtil.splitNoSpaceCase(event), event)).collect(toList());
@@ -913,6 +934,15 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 	  				.collect(toList());
 	}
 
+	@NotNull
+	private static Set<SlashCommand> getSlashCommands(Set<String> upsertCommands) {
+		return Reactions.reactions.stream()
+								  .filter(r -> r instanceof SlashCommand)
+								  .filter(r -> upsertCommands.contains(r.getName()))
+								  .map(r -> (SlashCommand) r)
+								  .collect(toSet());
+	}
+
 	private static ReactionResponse parseCommand(Message message, Consumer<MessageReaction> successMessage, String... potentialMatches) {
 		String commandName = null;
 		for (String potentialMatch : potentialMatches) {
@@ -947,7 +977,12 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 
 
 	public static void flushAutoDeleteQueue() {
-		autoDeleteQueue.forEach(RestAction::complete); // try catch ?
+		// try catch ?
+		for (AuditableRestAction<Void> voidAuditableRestAction : autoDeleteQueue) {
+			try {
+				voidAuditableRestAction.complete();
+			} catch (ErrorResponseException | RejectedExecutionException ignored) { }
+		}
 	}
 
 	private static final Deque<AuditableRestAction<Void>> autoDeleteQueue = new ArrayDeque<>();

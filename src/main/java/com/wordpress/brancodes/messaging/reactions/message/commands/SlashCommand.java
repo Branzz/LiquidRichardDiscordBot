@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.security.InvalidParameterException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,7 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 	protected SlashCommandData commandData;
 	protected net.dv8tion.jda.api.interactions.commands.Command jdaCommand;
 	protected Consumer<SlashCommandInteractionEvent> executer;
+	private long commandId;
 
 	public SlashCommand() {
 	}
@@ -36,15 +38,33 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 	/**
 	 * to be called upon modification
 	 */
-	public void upsertCommand(boolean global) {
+	public ReactionResponse upsert(boolean global) {
 		if (global) {
 			Main.getBot().getJDA().upsertCommand(commandData).queue(s -> jdaCommand = s); // TODO global vs guild slash command
-			LOGGER.info("Upserted Command {} to global", name);
+			return new ReactionResponse(String.format("Upserted Command %s to global", name));
 		} else {
 			List<Guild> guilds = Main.getBot().getJDA().getGuilds();
 			guilds.forEach(g -> g.upsertCommand(commandData).queue(s -> jdaCommand = s));
-			LOGGER.info("Upserted Command {} to {}", name, guilds.stream().map(Guild::getName).collect(Collectors.joining(", ")));
+			return new ReactionResponse(String.format("Upserted Command %s to %s", name, guilds.stream().map(Guild::getName).collect(Collectors.joining(", "))));
 		}
+	}
+
+	public static ReactionResponse delete(String name) {
+		StringBuilder response = new StringBuilder();
+		AtomicBoolean success = new AtomicBoolean(false);
+		List<Guild> guilds = Main.getBot().getJDA().getGuilds();
+		guilds.forEach(g -> g.retrieveCommands().queue(
+				commands -> commands.stream()
+									.filter(c -> c.getName().equals(name))
+									.findFirst()
+									.ifPresentOrElse(
+											c -> {
+												c.delete().queue(v -> response.append(name).append(" deleted in ").append(g.getName()).append(", "));
+												success.set(true);
+											},
+											() -> response.append(name).append(" wasn't found in ").append(g.getName()).append(", ")
+									)));
+		return new ReactionResponse(success.get(), response.toString());
 	}
 
 	@Override

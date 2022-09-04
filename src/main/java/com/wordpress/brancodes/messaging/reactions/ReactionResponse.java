@@ -76,4 +76,15 @@ public class ReactionResponse {
 		return response != null;
 	}
 
+	public ReactionResponse combine(ReactionResponse other) {
+		String combinedResponse = null;
+		if (this.hasLogResponse()) {
+			combinedResponse = this.logResponse;
+			if (other.hasLogResponse()) {
+				combinedResponse += " " + other.logResponse;
+			}
+		}
+		return new ReactionResponse(this.status || other.status, combinedResponse); // OR because we care when any side effects happen
+	}
+
 }

@@ -48,7 +48,7 @@ public class Main {
 						.filter(r -> r instanceof SlashCommand)
 						.filter(r -> upsertCommands.contains(r.getName()))
 						.map(r -> (SlashCommand) r)
-						.forEach(s -> s.upsertCommand(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")));
+						.forEach(s -> s.upsert(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")));
 				input = bReader.readLine().split("\\s+");
 			}
 
