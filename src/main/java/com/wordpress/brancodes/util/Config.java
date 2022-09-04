@@ -14,7 +14,6 @@ public final class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
 	private static final Object[] DEFAULT_KEYVALUES = {
-			"token", "OTIwNTUzMzQ2MTUzMTk3NTk4.YbmCHA.vW0g8IeSTcHwN41A3muuhJdzdr4",
 			"prefix", "Pimp",
 			"suffix", "",
 			"aliases", new String[] { "Pimp", "Richard", "Liquid Richard" },
