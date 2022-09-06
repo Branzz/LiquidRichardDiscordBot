@@ -83,6 +83,15 @@ public class DataBase {
 		// return new Data<Boolean>(false);
 	}
 
+	public static Map<Long, Long> guildAutoDeleteChannelMap = Map.of(
+			907042440924528662L, 920653763130310706L,
+			973797632436760606L, 1001374877539893298L
+	);
+
+	public static Data<Long> autodeleteChannelId(@Nullable final Long guildID) {
+		return new Data<>(guildAutoDeleteChannelMap.get(guildID));
+	}
+
 	public static Data<Long> addMod(@Nullable final Long guildID, @Nullable final Long userID, final String userName) {
 		return null;
 	// 	if (guildID != null && userID != null && !userIsMod(guildID, userID).get())

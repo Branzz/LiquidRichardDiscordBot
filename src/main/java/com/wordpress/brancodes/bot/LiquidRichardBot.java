@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.bot;
 
+import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.ChannelOutputStream;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
@@ -24,6 +25,7 @@ import java.net.URL;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -96,7 +98,7 @@ public class LiquidRichardBot {
 
 	private static final Map<Long, Long> guildMainChannels = Map.of(910004207120183326L, 910004207438954567L); // <Guild, TextChannel> ?
 
-	public static TextChannel autodeleteLog;
+	public static Map<Long, TextChannel> autodeleteLogMap; // <guildId, auto-delete channel>
 
 	public Channel getMainChannel(final long guildID) {
 		return jda.getTextChannelById(guildMainChannels.get(guildID));
@@ -111,8 +113,13 @@ public class LiquidRichardBot {
 				   							    		new Chats(jda.getTextChannelById(guildMainChannels.get(guild.getIdLong()))), guild.getIdLong()))));
 
 		LOGGER.info("In Servers: {}", jda.getGuilds().stream().map(Guild::getName).collect(joining(", ")));
-		autodeleteLog = (TextChannel) Main.getBot().getJDA().getGuildChannelById(920653763130310706L);
+		autodeleteLogMap = DataBase.guildAutoDeleteChannelMap.entrySet()
+															 .stream()
+															 .collect(toMap(Map.Entry::getKey, e -> (TextChannel) Main.getBot()
+																													  .getJDA()
+																													  .getGuildChannelById(e.getValue())));
 		LOGGER.info("Commands: {}", jda.retrieveCommands().complete().stream().map(c -> c.getName() + " " + c.getId()).collect(joining(", ")));
+		// jda.getPrivateChannels().forEach(System.out::println);
 
 //		setName("Retired Unit");
 //		TextChannel channel = jda.getTextChannelById(907045483476836412L);

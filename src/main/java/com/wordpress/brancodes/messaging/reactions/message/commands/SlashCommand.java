@@ -29,7 +29,7 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 
 	protected SlashCommandData commandData;
 	protected net.dv8tion.jda.api.interactions.commands.Command jdaCommand;
-	protected Consumer<SlashCommandInteractionEvent> executer;
+	protected Consumer<SlashCommandInteractionEvent> executer; // TODO default to replying with that it's not implemented?
 	private long commandId;
 
 	public SlashCommand() {

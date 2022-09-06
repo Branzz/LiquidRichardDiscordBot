@@ -36,14 +36,12 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.requests.restaction.AuditableRestAction;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.entities.emoji.CustomEmojiImpl;
-import net.dv8tion.jda.internal.requests.RestActionImpl;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -70,7 +68,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.wordpress.brancodes.bot.LiquidRichardBot.autodeleteLog;
+import static com.wordpress.brancodes.bot.LiquidRichardBot.autodeleteLogMap;
 import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
 import static com.wordpress.brancodes.messaging.reactions.message.MessageReaction.getMatcher;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
@@ -202,7 +200,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 		new CommandBuilder("Help", getCommandRegex("Help(\\s+(Me|Him|Her|Them|It|Every(\\s+One)?)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"),
 								   DEFAULT, GUILD_AND_PRIVATE).execute(message ->
 				PreparedMessages.replyEmbedMessage(message, "help")
-		).helpPanel("Help On Commands (This Panel)").deniable().addChannelCooldown(10_000L).build(),
+		).helpPanel("Help On Commands (This Panel)").deniable().addGuildChannelCooldown(10_000L).build(),
 		new CommandBuilder("Say In", "^!s\\s*(\\d{18,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((message, matcher) -> {
 			final TextChannel textChannelById = message.getJDA().getTextChannelById(matcher.group(1));
 			if (textChannelById == null) {
@@ -302,6 +300,8 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 		new CommandBuilder("DM History", "^!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, PRIVATE).caseInsensitive().execute(message -> {
 			String[] messageParts = message.getContentRaw().split("\\s+");
 			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
+				if (user.equals(message.getJDA().getSelfUser())) // TODO FAILURE
+					return;
 				user.openPrivateChannel().queue(privateChannel -> {
 					int amount = Integer.parseInt(messageParts[2]);
 					privateChannel.getHistory().retrievePast(amount).queue(messageHistory -> {
@@ -374,7 +374,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*$",
 							DEFAULT, GUILD_AND_PRIVATE).execute(message ->
 				reply(message.getChannel().asTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
-		).addChannelCooldown(5_000L).build(),
+		).addGuildChannelCooldown(5_000L).build(),
 
 		new MessageReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD)
 				.whitelistGuilds(973797632436760606L, 722001554374131713L, GUILD_C).executeResponse((message, matcher) -> {
@@ -496,7 +496,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 				message.reply(truncate(converted.toString())).queue();
 				return new ReactionResponse(conversionArrow.toString());
 			}
-		}).addChannelCooldown(4_000L).build(),
+		}).addGuildChannelCooldown(4_000L).build(),
 
 		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
 			if (message.getMentions()
@@ -1002,7 +1002,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 			  .queueAfter(1, TimeUnit.HOURS, s -> {}, s -> {});
 //					  () -> LOGGER.info("failed to delete already deleted message " + messageContent);
 		final String words = String.join(", ", censoredWords);
-		autodeleteLog.sendMessageEmbeds(
+		autodeleteLogMap.get(message.getGuild().getIdLong()).sendMessageEmbeds(
 				new EmbedBuilder()
 						.setAuthor(getUserName(message.getAuthor()), message.getJumpUrl(), message.getAuthor().getAvatarUrl())
 						.addField("Message", truncateEnd(messageContent, 1024), false)

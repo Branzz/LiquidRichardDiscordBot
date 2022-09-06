@@ -40,7 +40,10 @@ public class MessageReaction extends Reaction<Message> {
 	@Override
 	@OverridingMethodsMustInvokeSuper
 	protected boolean canExecute(Message message) {
-		return super.canExecute(message) && guildAllowed(message.getGuild().getIdLong()) && matches(message.getContentRaw());
+		return !isDeactivated()
+			   && (!message.isFromGuild() || guildAllowed(message.getGuild().getIdLong()))
+			   && matches(message.getContentRaw())
+			   && super.canExecute(message);
 	}
 
 	public ReactionResponse execute(Message message) {
@@ -102,8 +105,13 @@ public class MessageReaction extends Reaction<Message> {
 	}
 
 	public Generex getGenerex() {
-		if (generex == null)
-			generex = new Generex(generexString == null ? getRegex() : generexString);
+		if (generex == null) {
+			try {
+				generex = new Generex(generexString == null ? getRegex() : generexString);
+			} catch (IllegalArgumentException e) {
+				generex = new Generex("The Author Of The Generex Library Abandoned Us!");
+			}
+		}
 		return generex;
 	}
 
@@ -188,8 +196,8 @@ public class MessageReaction extends Reaction<Message> {
 			return addCooldown(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
 		}
 
-		public B addChannelCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asGuildMessageChannel(), GuildMessageChannel.class));
+		public B addGuildChannelCooldown(long duration) {
+			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asTextChannel(), TextChannel.class));
 		}
 
 		public B addMemberCooldown(long duration) {
