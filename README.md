@@ -17,13 +17,16 @@ When worked on: March 2021 - April 2021, March 2022
   * Natural randomized responses with Generex library
   * Some commands it can already do:
     * Get the DM history it has with a user
-    * Clever auto purge
+    * Clever auto delete
       * Delete after a set time
       * Covers get-around censoring like "b.Ä,D_w.0.Яd"
     * Say something into any channel/DM anybody something
     * Join a voice channel
     * Help panel
     * Get info on the usage of a command
+    * Slash Command utility support
+      * Short-cuts for the repeat parts from creation and running phase slash command
+    * Incorporation of my math library (evaluate, derive, simplify, statements, randomly generate, etc.)
     * Create you own command with custom parser language (WIP)
 * Generic reactions
   * Message reactions (emojis)
@@ -43,7 +46,7 @@ new CommandBuilder("Hello",             // unique name
        .helpPanel("Make A Greeting")    // add to help panel with description
        .deniable()                      // randomly choose to ignore their greeting
        .deactivated()                   // command is not on by default
-       .caseInsensitive()               // match [Hh][Ii]
+       .caseInsensitive()               // like [Hh][Ii]
        .build()
 ```
 
