@@ -1,7 +1,7 @@
 # LiquidRichardDiscordBot
 Made with JDA
 
-When worked on: March 2021 - April 2021, March 2022
+When worked on: March 2021 - April 2021, various times after to update
 
 - - -
 
