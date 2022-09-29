@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -471,15 +472,23 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 			return SUCCESS;
 		}).build(),
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
-		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
-											  + "(-*)(?<!\\$)((((\\d+)['\u2019])((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
-											  + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|" //m([^\w]+|$)|
-											  + "meters?([^\\w]+|$)|cms?([^\\w]+|$)|feet([^\\w]+[\\w\\W]*|$)|in(\\.|ch)\\w*))"),
+		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})(-*)(?<!\\$)("
+													 + "(((\\d+)(?:['\u2019]|\\s*(?:foot|feet|ft\\.?)\\s*))((\\d+)(\\.(\\d*))?|\\.(\\d+))?+)"
+													 + "([^Ss]|$)|(\\d+\\.?\\d*|\\.\\d+)\\s*"
+													 + "(?:(?:something|ish|~)\\s*)?" // increase all by 1 after before unit
+													 + "(kgs?([\\s]+|$)|kilo([sg\\s]|$)\\w*|lbs?([^a-zA-Z]|$)|pound\\w*|" //m([^\w]+|$)|
+													 + "meters?([^\\w]+|$)|cms?([^\\w]+|$)|in(\\.|ch)\\w*)?)"), // made units optional; must check now
+								   //|feet([^\w]+[\w\W]*|$)
 							//|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
 					DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().blacklistGuilds(GUILD_DW).executeResponse((message, matcher) -> { // TODO detect number without unit
 			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
 			if (matches.size() == 0) {
 				LOGGER.error("failed to convert " + message.getContentRaw());
+				return FAILURE;
+			}
+			BMI bmi = new BMI(matches);
+			matches = bmi.getActualMatches();
+			if (matches.size() == 0) {
 				return FAILURE;
 			} else {
 				StringJoiner converted = new StringJoiner(", ");
@@ -488,7 +497,6 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 					converted.add(match.convertUnit());
 					conversionArrow.add(match.fullMatch() + " -> " + match.convertUnit());
 				}
-				BMI bmi = BMI.getBMI(matches);
 				if (bmi.couldCalculate()) {
 					converted.add(bmi.getConvertedString());
 					conversionArrow.add(bmi.getLogString());
@@ -496,7 +504,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 				message.reply(truncate(converted.toString())).queue();
 				return new ReactionResponse(conversionArrow.toString());
 			}
-		}).addGuildChannelCooldown(4_000L).build(),
+		}).addMemberCooldown(3_000L).addGuildChannelCooldown(1_000L).build(),
 
 		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
 			if (message.getMentions()

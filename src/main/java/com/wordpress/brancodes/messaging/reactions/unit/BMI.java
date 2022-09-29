@@ -6,31 +6,37 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.LENGTH;
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.MASS;
 import static com.wordpress.brancodes.messaging.reactions.unit.Unit.*;
+import static com.wordpress.brancodes.messaging.reactions.unit.UnitSystem.IMPERIAL;
 
 public class BMI { // unstable non-synchronously
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BMI.class);
 
-	public static BMI getBMI(Iterable<UnitMatch> matches) {
-		return new BMI(matches);
-	}
-
 	final Iterable<UnitMatch> matches;
+	final List<UnitMatch> actualMatches;
 
 	int heightCount = 0, weightCount = 0;
 
-	ScaledDecimal convertedHeight = null; // in kg
-	ScaledDecimal convertedWeight = null; // in m
+	ScaledDecimal convertedHeight; // in kg
+	ScaledDecimal convertedWeight; // in m
 
-	ScaledDecimal height = null;
-	ScaledDecimal weight = null;
+	ScaledDecimal height;
+	ScaledDecimal weight;
 	boolean isWeight;
 
-	final boolean couldCalculate;
+	Unit unit; // potential
+	Unit heightUnit; // known type
+	Unit weightUnit;
+
+	boolean couldCalculate;
 	String convertedString;
 	String logString;
 
@@ -39,32 +45,73 @@ public class BMI { // unstable non-synchronously
 
 	static final double weightFrom = 0, weightTo = 400, heightFrom = .5, heightTo = 3;
 
-	public BMI(final Iterable<UnitMatch> matches) {
+	public BMI(Iterable<UnitMatch> matches) {
 		this.matches = matches;
-		couldCalculate = calculateBMI();
+		actualMatches = new ArrayList<>();
+		calculateBMI();
 	}
 
-	public synchronized boolean calculateBMI() {
+	public List<UnitMatch> getActualMatches() {
+		return actualMatches;
+	}
+
+	public synchronized void calculateBMI() {
+		List<UnitMatch> lazies = new ArrayList<>();
 		for (UnitMatch match : matches) {
-			try {
-				if (match.isFeetInch) {
-					potential = match.toFeetInchUnit();
-					potentialConverted = FT.convertToUnit(potential, M);
-					isWeight = false;
-					setToPotential();
-				} else {
-					if (match.unit.baseUnitType == LENGTH) {
+			if (match.unit == LAZY) {
+				lazies.add(match);
+			} else {
+				actualMatches.add(match); // TODO remove
+				try {
+					if (match.isFeetInch) {
+						potential = match.toFeetInchUnit();
+						unit = FT;
+						potentialConverted = FT.convertToUnit(potential, M);
 						isWeight = false;
-						setToPotential(match, M);
+						setToPotential();
+					} else {
+						if (match.unit.baseUnitType == LENGTH) {
+							isWeight = false;
+							setToPotential(match, M);
+						}
+						else if (match.unit.baseUnitType == MASS) {
+							isWeight = true;
+							setToPotential(match, KG);
+						}
 					}
-					else if (match.unit.baseUnitType == MASS) {
-						isWeight = true;
-						setToPotential(match, KG);
-					}
+				} catch (NullPointerException ignored) { // ignore the match if parsing/conversion fails
+					LOGGER.error("failed to convert " + match.fullMatch);
 				}
-			} catch (NullPointerException npe) { // ignore the match if parsing/conversion fails
-				LOGGER.error("failed to convert " + match.fullMatch);
 			}
+		}
+		int laziesInRange = 0;
+		UnitMatch validLazy = null;
+		if (heightCount == 1 && weightCount == 0) {
+			isWeight = true;
+			for (UnitMatch lazy : lazies) {
+				lazy.unit = heightUnit.unitSystem == IMPERIAL ? LB : KG;
+				setToPotential(lazy, KG);
+				if (inRange()) {
+					validLazy = lazy;
+					laziesInRange++;
+				}
+			}
+			// if (laziesInRange == 1) {
+			//
+			// }
+		} else if (heightCount == 0 && weightCount == 1) {
+			isWeight = false;
+			for (UnitMatch lazy : lazies) {
+				lazy.unit = weightUnit.unitSystem == IMPERIAL ? FT : CM;
+				setToPotential(lazy, KG);
+				if (inRange()) {
+					validLazy = lazy;
+					laziesInRange++;
+				}
+			}
+		}
+		if (laziesInRange == 1) {
+			actualMatches.add(validLazy);
 		}
 		if (heightCount == 1 && weightCount == 1) {
 			BigDecimal scaledBmi = getConvertedBMI().createScaled();
@@ -72,13 +119,14 @@ public class BMI { // unstable non-synchronously
 			String bmi = scaledBmi.toString();
 			convertedString = getBMIString(bmiDouble, bmi);
 			logString = getLogString(bmi);
-			return true;
+			couldCalculate = true;
 		} else
-			return false;
+			couldCalculate = false;
 	}
 
 	private synchronized void setToPotential(UnitMatch match, Unit toUnit) {
 		potential = match.value;
+		unit = match.unit;
 		potentialConverted = match.unit.convertToUnit(potential, toUnit);
 		setToPotential();
 	}
@@ -95,12 +143,14 @@ public class BMI { // unstable non-synchronously
 
 	private synchronized void setHeightToPotential() {
 		height = potential;
+		heightUnit = unit;
 		convertedHeight = potentialConverted;
 		heightCount++;
 	}
 
 	private synchronized void setWeightToPotential() {
 		weight = potential;
+		weightUnit = unit;
 		convertedWeight = potentialConverted;
 		weightCount++;
 	}

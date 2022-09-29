@@ -247,7 +247,7 @@ public class MessageReaction extends Reaction<Message> {
 
 	public static final class MessageReactionBuilder extends Builder<MessageReaction, MessageReactionBuilder> {
 
-		public MessageReactionBuilder(final String name, final String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {
+		public MessageReactionBuilder(final String name, final @RegEx String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {
 			super(name, regex, userCategory, channelCategory);
 		}
 

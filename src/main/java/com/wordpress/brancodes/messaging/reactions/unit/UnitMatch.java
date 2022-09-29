@@ -43,7 +43,8 @@ public class UnitMatch {
 			//			value = Optional.ofNullable(match.group(12)).map(BigDecimal::new).orElse(null);
 			//			value = nullify(match.group(12), BigDecimal::new);
 			value = new ScaledDecimal(new BigDecimal(match.group(12)));
-			unit = Unit.of(match.group(13));
+			String potentialUnit = match.group(13);
+			unit = potentialUnit == null ? Unit.LAZY : Unit.of(potentialUnit);
 		}
 
 	}

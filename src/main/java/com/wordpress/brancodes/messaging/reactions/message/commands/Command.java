@@ -30,7 +30,7 @@ public class Command extends MessageReaction {
 	private static final @RegEx String aliasesRegexPart = (String) Config.get("aliasesRegex");
 	private static final @RegEx String questionRegexPart = "(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)*";
 
-	public static @RegEx String getCommandRegex(String regexQuestion) {
+	public static @RegEx String getCommandRegex(@RegEx String regexQuestion) {
 		return getCommandRegex(regexQuestion, questionRegexPart);
 	}
 

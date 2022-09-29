@@ -9,31 +9,40 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.*;
+import static com.wordpress.brancodes.messaging.reactions.unit.UnitSystem.*;
 
 public enum Unit {
-	KG(MASS, n -> convert(n, 2.2046226218487) + " lbs", n -> n, n -> n, 'k'),
-	LB(MASS, n -> convert(n, 0.45359237) + " kgs", n -> convert(n, 0.45359237), n -> convert(n, 1 / 0.45359237), 'l', 'p'), // not actually mass, gravitational force on earth
-	M(LENGTH, n -> convertedWithInches(n, 3.2808398950131), n -> n, n -> n, 'm'),
-	CM(LENGTH, n -> convertedWithInches(n, .0328083989501), n -> convert(n, .01), n -> convert(n, 100), 'c'),
-	FT(LENGTH, n -> convert(n, 0.3048) + " m", n -> convert(n, 0.3048), n -> convert(n, 1 / 0.3048), 'f'),
-	IN(LENGTH, n -> convert(n, 2.54) + " cm", n -> convert(n, .0254), n -> convert(n, 1 / .0254), 'i');
+	KG(MASS, METRIC, n -> convert(n, 2.2046226218487) + " lbs", n -> n, n -> n, 'k'),
+	LB(MASS, IMPERIAL, n -> convert(n, 0.45359237) + " kgs", n -> convert(n, 0.45359237), n -> convert(n, 1 / 0.45359237), 'l', 'p'), // not actually mass, gravitational force on earth
+	M(LENGTH, METRIC, n -> convertedWithInches(n, 3.2808398950131), n -> n, n -> n, 'm'),
+	CM(LENGTH, METRIC, n -> convertedWithInches(n, .0328083989501), n -> convert(n, .01), n -> convert(n, 100), 'c'),
+	FT(LENGTH, IMPERIAL, n -> convert(n, 0.3048) + " m", n -> convert(n, 0.3048), n -> convert(n, 1 / 0.3048), 'f'),
+	IN(LENGTH, IMPERIAL, n -> convert(n, 2.54) + " cm", n -> convert(n, .0254), n -> convert(n, 1 / .0254), 'i'),
+	LAZY(null, null, null, null, null)
+	;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Unit.class);
 
 	final BaseUnitType baseUnitType;
+	final UnitSystem unitSystem;
 	final Function<ScaledDecimal, String> converter;
 	final Function<ScaledDecimal, ScaledDecimal> normalizer; // to baseUnitType.normal
 	final Function<ScaledDecimal, ScaledDecimal> fromNormal; // from baseUnitType.normal
-	private char[] shortestSymbol;
+	final char[] shortestSymbol;
 
-	Unit(BaseUnitType baseUnitType, Function<ScaledDecimal, String> converter, Function<ScaledDecimal, ScaledDecimal> normalizer,
+	Unit(BaseUnitType baseUnitType, UnitSystem unitSystem, Function<ScaledDecimal, String> converter, Function<ScaledDecimal, ScaledDecimal> normalizer,
 		 Function<ScaledDecimal, ScaledDecimal> fromNormal, char... shortestSymbol) {
 		this.baseUnitType = baseUnitType;
+		this.unitSystem = unitSystem;
 		this.converter = converter;
 		this.normalizer = normalizer;
 		this.fromNormal = fromNormal;
@@ -43,16 +52,16 @@ public enum Unit {
 	// private static Map<Character, Unit> shortestSymbolMap = Arrays.stream(values())
 	// 															  .map(u -> Pair.of(u.shortestSymbol, u)).
 
+	private static final Map<Character, Unit> lookUpTable =
+			Arrays.stream(values())
+				  .flatMap(u -> new String(u.shortestSymbol)
+								 .chars()
+								 .flatMap(c -> IntStream.of(Character.toLowerCase(c), Character.toUpperCase(c)))
+								 .mapToObj(c -> Pair.of((char) c, u)))
+				  .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+
 	public static Unit of(String name) {
-		switch (name.charAt(0)) {
-			case 'K': case 'k': return KG;
-			case 'L': case 'l': case 'P': case 'p': return LB;
-			case 'M': case 'm': return M;
-			case 'C': case 'c': return CM;
-			case 'F': case 'f': return FT;
-			case 'I': case 'i': return IN;
-			default: return null;
-		}
+		return lookUpTable.get(name.charAt(0));
 	}
 
 	public ScaledDecimal convertToUnit(ScaledDecimal n, Unit targetUnit) {
