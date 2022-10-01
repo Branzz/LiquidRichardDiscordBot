@@ -1,7 +1,7 @@
 package com.wordpress.brancodes.messaging.reactions;
 
 import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
 import com.wordpress.brancodes.util.AbstractBuilder;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
@@ -19,8 +19,9 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 
 	protected @RegEx String name;
 	protected boolean deactivated; // TODO remove from master reactions map to keep map tree style consistent (?)
-	protected UserCategory userCategory;
+	protected UserCategoryType userCategoryType;
 	protected ReactionChannelType channelCategory;
+	protected boolean logging;
 	protected Set<CooldownPool<T, ?>> cooldownPools;
 	protected boolean guildFiltering;
 	protected Set<Long> guildList;
@@ -52,12 +53,17 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 	public void activate() {
 		deactivated = false;
 	}
+
+	public UserCategoryType getUserCategory() {
+		return userCategoryType;
+	}
+
 	public ReactionChannelType getChannelType() {
 		return channelCategory;
 	}
 
-	public UserCategory getUserCategory() {
-		return userCategory;
+	public boolean logging() {
+		return logging;
 	}
 
 	protected boolean hasCooldown(T t) {
@@ -75,7 +81,7 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 	protected EmbedBuilder getMessageEmbed() {
 		EmbedBuilder embedBuilder = new EmbedBuilder().setTitle(name)
 													  .setColor(Color.YELLOW)
-													  .addField("User", userCategory.toString(), true)
+													  .addField("User", userCategoryType.toString(), true)
 													  .addField("Location", channelCategory.toString(), true);
 		cooldownPools.forEach(pool -> embedBuilder.addField("Cooldown", pool.toString(), false));
 		return embedBuilder;
@@ -109,13 +115,19 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 	 */
 	public static abstract class Builder<T extends Reaction, B extends Builder<T, B>> extends AbstractBuilder<T, B> {
 
-		public Builder(String name, UserCategory userCategory, ReactionChannelType channelCategory) {
+		public Builder(String name, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
 			if (name.length() > 16)
 				throw new InvalidParameterException("name \"" + name + "\" must be 16 characters or less");
 			object.name = name;
-			object.userCategory = userCategory;
+			object.userCategoryType = userCategoryType;
 			object.channelCategory = channelCategory;
+			object.logging = true;
 			object.cooldownPools = new LinkedHashSet<>();
+		}
+
+		public B disableLogging() {
+			object.logging = false;
+			return thisObject;
 		}
 
 		public B deactivated() {

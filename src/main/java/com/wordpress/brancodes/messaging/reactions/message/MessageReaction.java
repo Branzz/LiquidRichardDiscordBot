@@ -1,17 +1,18 @@
 package com.wordpress.brancodes.messaging.reactions.message;
 
 import com.mifmif.common.regex.Generex;
+import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.cooldown.CooldownPool;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
-import java.awt.*;
 import java.security.InvalidParameterException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -41,7 +42,7 @@ public class MessageReaction extends Reaction<Message> {
 	@OverridingMethodsMustInvokeSuper
 	protected boolean canExecute(Message message) {
 		return !isDeactivated()
-			   && (!message.isFromGuild() || guildAllowed(message.getGuild().getIdLong()))
+			   && ((message.getChannelType() != null && !message.isFromGuild()) || (message.getGuild() != null && guildAllowed(message.getGuild().getIdLong())))
 			   && matches(message.getContentRaw())
 			   && super.canExecute(message);
 	}
@@ -119,9 +120,13 @@ public class MessageReaction extends Reaction<Message> {
 
 		protected final @RegEx String regex;
 		protected boolean caseInsensitive = false;
+		protected boolean reactsPositive;
 
-		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			super(name, userCategory, channelCategory);
+		Function<Message, ReactionResponse> preExecuteResponse;
+		BiFunction<Message, Matcher, ReactionResponse> preExecuteMatcherResponse;
+
+		public Builder(String name, @RegEx String regex, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
+			super(name, userCategoryType, channelCategory);
 			this.regex = regex;
 		}
 
@@ -136,7 +141,7 @@ public class MessageReaction extends Reaction<Message> {
 		}
 
 		public B execute(Consumer<Message> executeResponse) {
-			object.executeResponse = m -> {
+			preExecuteResponse = m -> {
 				executeResponse.accept(m);
 				return ReactionResponse.SUCCESS;
 			};
@@ -144,7 +149,7 @@ public class MessageReaction extends Reaction<Message> {
 		}
 
 		public B execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
-			object.executeMatcherResponse = (m, r) -> {
+			preExecuteMatcherResponse = (m, r) -> {
 				executeMatcherResponse.accept(m, r);
 				return ReactionResponse.SUCCESS;
 			};
@@ -153,7 +158,7 @@ public class MessageReaction extends Reaction<Message> {
 
 		// TODO untested
 		public B execute(BiFunction<Message, Matcher, Boolean> passes, BiConsumer<Message, Matcher> executeMatcherResponse) {
-			object.executeMatcherResponse = (m, r) -> {
+			preExecuteMatcherResponse = (m, r) -> {
 				if (passes.apply(m, r)) {
 					executeMatcherResponse.accept(m, r);
 					return ReactionResponse.SUCCESS;
@@ -165,7 +170,7 @@ public class MessageReaction extends Reaction<Message> {
 		}
 
 		public B executeStatus(Function<Message, Boolean> executeResponse) {
-			object.executeResponse = message -> new ReactionResponse(executeResponse.apply(message));
+			preExecuteResponse = message -> new ReactionResponse(executeResponse.apply(message));
 			return thisObject;
 		}
 
@@ -175,12 +180,17 @@ public class MessageReaction extends Reaction<Message> {
 		}
 
 		public B executeResponse(Function<Message, ReactionResponse> executeResponse) {
-			object.executeResponse = executeResponse;
+			preExecuteResponse = executeResponse;
 			return thisObject;
 		}
 
 		public B executeResponse(BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse) {
-			object.executeMatcherResponse = executeMatcherResponse;
+			preExecuteMatcherResponse = executeMatcherResponse;
+			return thisObject;
+		}
+
+		public B emojiReaction(Emoji emoji) {
+			// TODO
 			return thisObject;
 		}
 
@@ -196,8 +206,8 @@ public class MessageReaction extends Reaction<Message> {
 			return addCooldown(ChannelType.TEXT, "Guild", new CooldownPool<>(duration, Message::getGuild, Guild.class));
 		}
 
-		public B addGuildChannelCooldown(long duration) {
-			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, m -> m.getChannel().asTextChannel(), TextChannel.class));
+		public B addMessageChannelCooldown(long duration) {
+			return addCooldown(ChannelType.TEXT, "Guild text channel", new CooldownPool<>(duration, Message::getChannel, MessageChannel.class));
 		}
 
 		public B addMemberCooldown(long duration) {
@@ -222,12 +232,34 @@ public class MessageReaction extends Reaction<Message> {
 			return thisObject;
 		}
 
+		public B andReactPositive() {
+			reactsPositive = true;
+			return thisObject;
+		}
+
 		@Override
 		public T build() {
-			if (object.executeResponse == null && object.executeMatcherResponse == null)
+			if (preExecuteResponse == null && preExecuteMatcherResponse == null)
 				throw new IllegalArgumentException("Must define execute");
 			if (object.generexString != null) {
 				autoCreateGenerexString();
+			}
+			if (preExecuteResponse != null) {
+				object.executeResponse = reactsPositive ? message -> {
+					ReactionResponse reactionResponse = preExecuteResponse.apply(message);
+					if (reactionResponse.status()) {
+						PreparedMessages.reply(message, "positive");
+					}
+					return reactionResponse;
+				} : preExecuteResponse;
+			} else {
+				object.executeMatcherResponse = reactsPositive ? (message, matcher) -> {
+					ReactionResponse reactionResponse = preExecuteMatcherResponse.apply(message, matcher);
+					if (reactionResponse.status()) {
+						PreparedMessages.reply(message, "positive");
+					}
+					return reactionResponse;
+				} : preExecuteMatcherResponse;
 			}
 			object.matcher = caseInsensitive ? getMatcherCaseInsensitive(regex) : getMatcher(regex);
 			return object;
@@ -247,8 +279,8 @@ public class MessageReaction extends Reaction<Message> {
 
 	public static final class MessageReactionBuilder extends Builder<MessageReaction, MessageReactionBuilder> {
 
-		public MessageReactionBuilder(final String name, final @RegEx String regex, final UserCategory userCategory, final ReactionChannelType channelCategory) {
-			super(name, regex, userCategory, channelCategory);
+		public MessageReactionBuilder(String name, @RegEx String regex, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
+			super(name, regex, userCategoryType, channelCategory);
 		}
 
 		@Override

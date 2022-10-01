@@ -7,6 +7,7 @@ import java.util.function.Function;
 public class ScaledDecimal {
 
 	private int scale;
+	private int precision;
 	private BigDecimal bigDecimal;
 	private RoundingMode roundingMode;
 	private BigDecimal scaled;
@@ -26,14 +27,12 @@ public class ScaledDecimal {
 		this(bigDecimal, bigDecimal.scale());
 	}
 
-	public BigDecimal getFull() {
-		return bigDecimal;
+	public int getScale() {
+		return scale;
 	}
 
-	public BigDecimal createScaled() {
-		if (scaled != null)
-			return scaled;
-		return scaled = new BigDecimal(bigDecimal.toString()).setScale(scale, roundingMode);
+	public BigDecimal getFull() {
+		return bigDecimal;
 	}
 
 	public BigDecimal createScaled(int scale, RoundingMode roundingMode) {
@@ -42,6 +41,12 @@ public class ScaledDecimal {
 
 	public BigDecimal createScaled(int scale) {
 		return createScaled(scale, roundingMode);
+	}
+
+	public BigDecimal createScaled() {
+		if (scaled != null)
+			return scaled;
+		return scaled = createScaled(scale);
 	}
 
 	public ScaledDecimal setScale(int scale, RoundingMode roundingMode) {

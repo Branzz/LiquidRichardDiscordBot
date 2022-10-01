@@ -22,35 +22,38 @@ public class UnitMatch {
 	public UnitMatch(MatchResult match) {
 		fullMatch = match.group(0);
 		negatives = match.group(1);
-		isFeetInch = match.group(3) != null;
-		feetInchBase = match.group(4);
+		isFeetInch = match.group(2) != null;
+		feetInchBase = match.group(3);
 		if (isFeetInch) {
-			feet = match.group(5);
+			feet = match.group(4);
 			if (feet == null)
 				feet = "0";
-			inches = match.group(6);
+			inches = match.group(5);
 			if (inches == null)
 				inches = "0";
-			hasInchWhole = match.group(7) != null;
-			if (!hasInchWhole) {
-				inchDecimal = match.group(9);
+			hasInchWhole = match.group(6) != null;
+			if (hasInchWhole) {
+				inchDecimal = match.group(8);
 			} else {
-				inchDecimal = match.group(10);
+				inchDecimal = match.group(7);
 			}
 			if (inchDecimal == null)
 				inchDecimal = "0";
 		} else {
-			//			value = Optional.ofNullable(match.group(12)).map(BigDecimal::new).orElse(null);
-			//			value = nullify(match.group(12), BigDecimal::new);
-			value = new ScaledDecimal(new BigDecimal(match.group(12)));
+			String valueWhole = match.group(10);
+			int decimalAmount;
+			if (valueWhole != null) {
+				String decimal = match.group(11);
+				decimalAmount = decimal == null ? 0 : decimal.length();
+			} else {
+				valueWhole = "";
+				decimalAmount = match.group(12).length();
+			}
+			value = new ScaledDecimal(new BigDecimal(match.group(9)), decimalAmount);
 			String potentialUnit = match.group(13);
 			unit = potentialUnit == null ? Unit.LAZY : Unit.of(potentialUnit);
 		}
 
-	}
-
-	public static <T, R> R nullify(T val, Function<T, R> process) {
-		return val == null ? null : process.apply(val);
 	}
 
 	public String fullMatch() {

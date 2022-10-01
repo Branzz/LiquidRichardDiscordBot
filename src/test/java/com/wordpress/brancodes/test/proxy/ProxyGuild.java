@@ -14,4 +14,5 @@ public class ProxyGuild extends GuildImpl {
 	public static ProxyGuild getInstance() {
 		return INSTANCE;
 	}
+
 }

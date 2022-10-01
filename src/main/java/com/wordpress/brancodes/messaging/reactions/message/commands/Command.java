@@ -2,11 +2,10 @@ package com.wordpress.brancodes.messaging.reactions.message.commands;
 
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
 import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
@@ -66,8 +65,8 @@ public class Command extends MessageReaction {
 
 	public static abstract class Builder<T extends Command, B extends Command.Builder<T, B>> extends MessageReaction.Builder<T, B> {
 
-		public Builder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			super(name, regex, userCategory, channelCategory);
+		public Builder(String name, @RegEx String regex, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
+			super(name, regex, userCategoryType, channelCategory);
 		}
 
 		public B helpPanel(String description) {
@@ -88,8 +87,8 @@ public class Command extends MessageReaction {
 	}
 
 	public static final class CommandBuilder extends Command.Builder<Command, CommandBuilder> {
-		public CommandBuilder(String name, @RegEx String regex, UserCategory userCategory, ReactionChannelType channelCategory) {
-			super(name, regex, userCategory, channelCategory);
+		public CommandBuilder(String name, @RegEx String regex, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
+			super(name, regex, userCategoryType, channelCategory);
 		}
 		@Override public Command build() { super.build(); return object; }
 		@Override protected Command createObject() { return new Command(); }

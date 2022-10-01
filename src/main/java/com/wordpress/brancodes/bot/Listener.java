@@ -13,7 +13,6 @@ import com.wordpress.brancodes.util.CaseUtil;
 import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import com.wordpress.brancodes.util.Pair;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -24,14 +23,11 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMuteEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.internal.entities.AbstractMessage;
 import net.dv8tion.jda.internal.entities.ReceivedMessage;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.AbstractMap;
 import java.util.Comparator;
 
 import static java.util.stream.Collectors.joining;
@@ -46,7 +42,7 @@ public class Listener extends ListenerAdapter {
 	}
 
 	@Override
-	public void onGuildVoiceLeave(@NotNull final GuildVoiceLeaveEvent event) {
+	public void onGuildVoiceLeave(@NotNull GuildVoiceLeaveEvent event) {
 		super.onGuildVoiceLeave(event);
 		if (event.getMember().getUser().equals(event.getJDA().getSelfUser())) {
 			try {
@@ -54,13 +50,7 @@ public class Listener extends ListenerAdapter {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			((MessageReaction) Reactions.commandsByName.get("Join Voice"))
-					.execute(new AbstractMessage("!J " + event.getChannelLeft().getId(), "", false) {
-				@NotNull @Override public JDA getJDA() { return event.getJDA(); }
-				@Override protected void unsupported() { }
-				@Nullable @Override public MessageActivity getActivity() { return null; }
-				@Override public long getIdLong() { return 0L; }
-			});
+			event.getChannelLeft().getGuild().getAudioManager().openAudioConnection(event.getChannelLeft());
 		}
 	}
 
@@ -115,7 +105,7 @@ public class Listener extends ListenerAdapter {
 	public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
 		if (event.getChannel().getType() == ChannelType.PRIVATE) {
 			if (!pause) {
-				slashCommand(event, ChannelType.PRIVATE, UserCategory.getUserCategory(event));
+				slashCommand(event, ChannelType.PRIVATE, UserCategory.from(event));
 				if (!event.getUser().equals(event.getJDA().getSelfUser()) && !event.getUser().equals(Config.get("ownerUser")))
 					LOGGER.info("DM from {}: \"{}\" in {} DM's", LiquidRichardBot.getUserName(event.getUser()),
 							event.getCommandString(),
@@ -123,7 +113,7 @@ public class Listener extends ListenerAdapter {
 			}
 		} else if (event.isFromGuild()) {
 			if (!pause) {
-				slashCommand(event, event.getChannel().getType(), checkMod(event, UserCategory.getUserCategory(event))); // TODO refactor extract
+				slashCommand(event, event.getChannel().getType(), UserCategory.from(event)); // TODO refactor extract
 			}
 		}
 	}
@@ -133,7 +123,7 @@ public class Listener extends ListenerAdapter {
 
 		SlashCommand slashCommand = (SlashCommand) Reactions.commandsByName.get(name);
 		boolean channelInRange = slashCommand.getChannelType().inRange(channelType);
-		boolean userInRange = slashCommand.getUserCategory().inRange(userCategory);
+		boolean userInRange = userCategory.isPartOf(slashCommand.getUserCategory());
 
 		if (channelInRange && userInRange) {
 			slashCommand.execute(event);
@@ -160,9 +150,9 @@ public class Listener extends ListenerAdapter {
 			if (event.getAuthor().equals(Config.get("ownerUser")) && event.getMessage().getContentRaw().equals("!p"))
 				pause ^= true; // overrides every other command
 			if (!pause) {
-				messageReceived(event.getChannel().getType(), UserCategory.getUserCategory(event), event.getMessage()); //TODO replace channel Type with ReactionChannelType argument
+				messageReceived(event.getChannel().getType(), UserCategory.from(event), event.getMessage()); //TODO replace channel Type with ReactionChannelType argument
 				if (!event.getAuthor().equals(event.getJDA().getSelfUser()) && !event.getAuthor().equals(Config.get("ownerUser")))
-					LOGGER.info("DM from {}: \"{}\"{} in {} DM's", LiquidRichardBot.getUserName(event.getAuthor()),
+					LOGGER.info("DM from {}: \"{}\"{} in {} DMs", LiquidRichardBot.getUserName(event.getAuthor()),
 								event.getMessage().getContentRaw(), event.getMessage().getAttachments().stream().map(Message.Attachment::getUrl).collect(joining("\n,")),
 								LiquidRichardBot.getUserName(event.getAuthor()));
 			}
@@ -171,31 +161,32 @@ public class Listener extends ListenerAdapter {
 			// 	event.getChannel().sendMessage(Util.properCase(event.getMessage().getContentRaw())).queue();
 			// DataBase.respondToBots(event.getGuild().getIdLong()).get()
 			if (!pause) {
-				messageReceived(event.getChannel().getType(), checkMod(event, UserCategory.getUserCategory(event)), event.getMessage()); // TODO refactor extract
+				messageReceived(event.getChannel().getType(), UserCategory.from(event), event.getMessage()); // TODO refactor extract
 			}
 		}
 	}
 
-	private static UserCategory checkMod(@NotNull final MessageReceivedEvent event, final UserCategory userCategory) {
-		return checkMod(userCategory, event.isFromGuild(), event.getAuthor(), event.isFromGuild() ? event.getGuild() : null);
-	}
-
-	private static UserCategory checkMod(@NotNull final SlashCommandInteractionEvent event, final UserCategory userCategory) {
-		return checkMod(userCategory, event.isFromGuild(), event.getUser(), event.isFromGuild() ? event.getGuild() : null);
-	}
-
-	private static UserCategory checkMod(final UserCategory userCategory, boolean isFromGuild, User user, Guild guild) {
-		return (userCategory == UserCategory.DEFAULT
-				&& isFromGuild
-				&& DataBase.userIsMod(user.getIdLong(), guild.getIdLong()).get())
-					   ? UserCategory.MOD : userCategory;
-	}
+	// private static UserCategoryType checkMod(@NotNull final MessageReceivedEvent event, final UserCategoryType userCategoryType) {
+	// 	return checkMod(userCategoryType, event.isFromGuild(), event.getAuthor(), event.isFromGuild() ? event.getGuild() : null);
+	// }
+	//
+	// private static UserCategoryType checkMod(@NotNull final SlashCommandInteractionEvent event, final UserCategoryType userCategoryType) {
+	// 	return checkMod(userCategoryType, event.isFromGuild(), event.getUser(), event.isFromGuild() ? event.getGuild() : null);
+	// }
+	//
+	// private static UserCategoryType checkMod(final UserCategoryType userCategoryType, boolean isFromGuild, User user, Guild guild) {
+	// 	return (userCategoryType == UserCategoryType.DEFAULT
+	// 			&& isFromGuild
+	// 			&& DataBase.userIsMod(user.getIdLong(), guild.getIdLong()).get())
+	// 				   ? UserCategoryType.MOD : userCategoryType;
+	// }
 
 	private static boolean chainable(MessageReaction reaction) {
 		return reaction instanceof Command && ((Command) reaction).chainable();
 	}
 
 	static final int FAILURE = 0, SUCCESS = 1, CHAINABLE = 2;
+
 	private void messageReceived(ChannelType channelType, UserCategory userCategory, Message originalMessage) {
 //		 LOGGER.info("Message \"{}\" by {} in #{} ChannelType: {} UserCategory: {}",
 //		 			message.getContentRaw(),
@@ -406,16 +397,19 @@ public class Listener extends ListenerAdapter {
 	}
 
 	static void logReactionResponse(Message message, MessageReaction reaction, ReactionResponse response) {
-		if (response.status()) {
-			String log = String.format("%s %s %s by %s in %s in #%s%s", //Commands.qCount +
-									   response.status() ? "Ran" : "Failed to run",
-									   reaction,
-									   reaction.getClass().getSimpleName(),
-									   LiquidRichardBot.getUserName(message.getAuthor()),
-									   message.isFromGuild() ? message.getGuild().getName() : "'s DMs",
-									   message.getChannel().getName(),
-									   (response.status() || response.hasFailureResponse()) && response.hasLogResponse()
-											   ? (": " + response.getLogResponse()) : "");
+		if (reaction.logging() && response.status()) {
+			String log = String.format("%s %s %s by %s %s ", //Commands.qCount +
+							response.status() ? "Ran" : "Failed to run",
+							reaction,
+							reaction.getClass().getSimpleName(),
+							LiquidRichardBot.getUserName(message.getAuthor()),
+							message.isFromGuild() ?
+									String.format("in %s in #%s%s",
+											message.getGuild().getName(),
+											message.getChannel().getName(),
+											(response.status() || response.hasFailureResponse()) && response.hasLogResponse() ?
+													(": " + response.getLogResponse()) : "")
+									: "in DMs");
 			LOGGER.info(log);
 		}
 	}

@@ -4,7 +4,7 @@ import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -87,8 +87,8 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 		private Consumer<SlashCommandInteractionEvent> mainCommandExecuter;
 		private Consumer<SlashCommandInteractionEvent> subcommandExecuter;
 
-		public Builder(String name, String description, UserCategory userCategory, ReactionChannelType channelCategory) {
-			super(name, userCategory, channelCategory);
+		public Builder(String name, String description, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
+			super(name, userCategoryType, channelCategory);
 			object.commandData = new CommandDataImpl(name, description);
 			communicationMap = new HashMap<>() {
 				@Override
@@ -101,9 +101,9 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 			};
 		}
 
-		public Builder(String name, String description, UserCategory userCategory, ReactionChannelType channelCategory,
+		public Builder(String name, String description, UserCategoryType userCategoryType, ReactionChannelType channelCategory,
 					   BiFunction<SlashCommandData, Map<String, String>, Consumer<SlashCommandInteractionEvent>> slashCreator) {
-			this(name, description, userCategory, channelCategory);
+			this(name, description, userCategoryType, channelCategory);
 			defaultExecuter = slashCreator.apply(object.commandData, communicationMap);
 		}
 
@@ -249,12 +249,12 @@ public class SlashCommand extends Reaction<SlashCommandInteractionEvent> {
 	}
 
 	public static final class SlashCommandBuilder extends Builder<SlashCommand, SlashCommandBuilder> {
-		public SlashCommandBuilder(String name, String description, UserCategory userCategory, ReactionChannelType channelCategory) {
-			super(name, description, userCategory, channelCategory);
+		public SlashCommandBuilder(String name, String description, UserCategoryType userCategoryType, ReactionChannelType channelCategory) {
+			super(name, description, userCategoryType, channelCategory);
 		}
-		public SlashCommandBuilder(String name, String description, UserCategory userCategory, ReactionChannelType channelCategory,
+		public SlashCommandBuilder(String name, String description, UserCategoryType userCategoryType, ReactionChannelType channelCategory,
 								   BiFunction<SlashCommandData, Map<String, String>, Consumer<SlashCommandInteractionEvent>> slashCreator) {
-			super(name, description, userCategory, channelCategory, slashCreator);
+			super(name, description, userCategoryType, channelCategory, slashCreator);
 		}
 		@Override public SlashCommand build() { return object; }
 		@Override protected SlashCommand createObject() { return new SlashCommand(); }

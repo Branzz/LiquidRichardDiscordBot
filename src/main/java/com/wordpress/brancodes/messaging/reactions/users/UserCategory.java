@@ -1,81 +1,56 @@
 package com.wordpress.brancodes.messaging.reactions.users;
 
-import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.util.Config;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-public enum UserCategory {
+import static com.wordpress.brancodes.messaging.reactions.users.UserCategoryType.*;
 
-	OWNER("Bot Owner", true),
-	MOD("Moderator", true),
-	DEFAULT("Public", true),
-	BOT("Other Bots", true),
-	SELF("Liquid Richard", true),
+public class UserCategory {
 
-	PING_CENSORED("Censor List", false),
-	CENSORED("Censor List", false),
-	YAWN("Yawn List", false);
+	UserCategoryType baseUserCategoryType;
+	Set<UserCategoryType> extraTypes;
 
-	private final String displayName;
-	private final boolean ranked;
-
-	UserCategory(final String displayName, final boolean ranked) {
-		this.displayName = displayName;
-		this.ranked = ranked;
+	public UserCategory(UserCategoryType baseUserCategoryType, Set<UserCategoryType> extraTypes) {
+		this.baseUserCategoryType = baseUserCategoryType;
+		this.extraTypes = extraTypes;
 	}
 
-	public String getDisplayName() {
-		return displayName;
+	public static UserCategory from(MessageReceivedEvent messageReceivedEvent) {
+		return userCategoryReduce(new UserMemberMixin(messageReceivedEvent.getAuthor(), messageReceivedEvent.getMember()));
 	}
 
-	public boolean inRange(final UserCategory userCategory) {
-		int compare = this.compareTo(userCategory);
-		return this.ranked && userCategory.ranked ? compare >= 0 : compare == 0;
+	public static UserCategory from(SlashCommandInteractionEvent slashCommandEvent) {
+		return userCategoryReduce(new UserMemberMixin(slashCommandEvent.getUser(), slashCommandEvent.getMember()));
 	}
 
-	// static final Set<Long> CENSORED_USERS = Set.of(192130507771871232L, 799953862949208114L);
-	public static final Map<Long, UserCategory> TRACKED_USERS = Map.of(
-			717416156897738782L, PING_CENSORED,
-			915798454507307061L, CENSORED
-//			723748558314143766L, YAWN
-			// 192130507771871232L, CENSORED,
-			// 749625271937663027L, YAWN, 708038453509619734L, YAWN, 829546063538552852L, YAWN
-	);
-
-	public static UserCategory getUserCategory(@NotNull final MessageReceivedEvent messageReceivedEvent) {
-		return getUserCategory(messageReceivedEvent.getJDA(), messageReceivedEvent.getAuthor());
+	public static UserCategory of(User user) {
+		return userCategoryReduce(new UserMemberMixin(user));
 	}
 
-	public static UserCategory getUserCategory(@NotNull final SlashCommandInteractionEvent slashCommandEvent) {
-		return getUserCategory(slashCommandEvent.getJDA(), slashCommandEvent.getUser());
+	public static UserCategory of(Member member) {
+		return userCategoryReduce(new UserMemberMixin(member));
 	}
 
-	public static UserCategory getUserCategory(JDA jda, User author) {
-		return TRACKED_USERS.getOrDefault(author.getIdLong(),
-										  author.equals(jda.getSelfUser())		 ? UserCategory.SELF
-										: author.isBot()						 ? UserCategory.BOT
-										: author.equals(Config.get("ownerUser")) ? UserCategory.OWNER : UserCategory.DEFAULT);
+	private static UserCategory userCategoryReduce(UserMemberMixin mixin) { // should cache?? but, it is dynamic
+		return new UserCategory(List.of(SELF, BOT, OWNER, MOD).stream().filter(u -> u.inCategory(mixin)).findFirst().orElse(DEFAULT),
+								List.of(MYBB, PING_CENSORED, CENSORED, YAWN).stream().filter(u -> u.inCategory(mixin)).collect(Collectors.toSet()));
 	}
 
-	public static UserCategory getUserCategory(JDA jda, User user, Guild guild) {
-				return TRACKED_USERS.getOrDefault(user.getIdLong(),
-										  user.equals(jda.getSelfUser())		 ? UserCategory.SELF
-										: user.isBot()						 ? UserCategory.BOT
-										: user.equals(Config.get("ownerUser")) ? UserCategory.OWNER
-										: guild != null && DataBase.userIsMod(user.getIdLong(), guild.getIdLong()).get() ? UserCategory.MOD
-							   			: UserCategory.DEFAULT);
+	public boolean isPartOf(UserCategoryType key) {
+		return baseUserCategoryType == key || extraTypes.contains(key);
 	}
 
 	@Override
 	public String toString() {
-		return displayName;
+		return baseUserCategoryType + ", " + extraTypes.stream()
+													   .map(UserCategoryType::toString)
+													   .collect(Collectors.joining(", "));
 	}
 
 }

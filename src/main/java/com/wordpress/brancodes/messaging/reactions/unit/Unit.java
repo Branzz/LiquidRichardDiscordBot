@@ -77,7 +77,7 @@ public enum Unit {
 	}
 
 	private static ScaledDecimal convert(ScaledDecimal input, double conversionFactor) {
-		return new ScaledDecimal(input.getFull().multiply(new BigDecimal(conversionFactor)), Math.max(1, input.getFull().stripTrailingZeros().scale()));
+		return new ScaledDecimal(input.getFull().multiply(new BigDecimal(conversionFactor)), Math.max(1, input.getScale()));
 	}
 
 	private static String convertedWithInches(ScaledDecimal input, double scale) {
@@ -99,11 +99,6 @@ public enum Unit {
 	 */
 	public static ScaledDecimal inchesToFeet(String feet, String inches) {
 		return new ScaledDecimal(BigDecimal.valueOf(Double.parseDouble(feet) + (Double.parseDouble(inches) / 12)));
-	}
-
-	private static <T> T log(T t) {
-		LOGGER.info(t.toString());
-		return t;
 	}
 
 }

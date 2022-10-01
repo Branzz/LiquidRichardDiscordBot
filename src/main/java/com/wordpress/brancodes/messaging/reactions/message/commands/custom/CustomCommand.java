@@ -11,7 +11,7 @@ import com.wordpress.brancodes.messaging.reactions.message.commands.custom.types
 import com.wordpress.brancodes.messaging.reactions.message.commands.custom.types.obj.ClassType;
 import com.wordpress.brancodes.messaging.reactions.message.commands.custom.types.obj.Field;
 import com.wordpress.brancodes.messaging.reactions.message.commands.custom.types.obj.Method;
-import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
+import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
@@ -238,7 +238,7 @@ public class CustomCommand extends Reaction<Event> {
 	public static abstract class Builder<T extends CustomCommand, B extends Builder<T, B>> extends Reaction.Builder<T, B> { // could scale up to extending Reaction
 
 		public Builder(String name, String event, User creator, Guild guild, String text) {
-			super(name, UserCategory.DEFAULT, ReactionChannelType.GUILD);
+			super(name, UserCategoryType.DEFAULT, ReactionChannelType.GUILD);
 			object.event = events.get(event);
 			object.creator = creator;
 			object.guild = guild;
