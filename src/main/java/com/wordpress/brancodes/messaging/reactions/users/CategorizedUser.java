@@ -1,7 +1,7 @@
 package com.wordpress.brancodes.messaging.reactions.users;
 
 import com.wordpress.brancodes.database.DataBase;
-import com.wordpress.brancodes.util.Config;
+import com.wordpress.brancodes.bot.Config;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.HashMap;

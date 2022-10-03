@@ -1,5 +1,6 @@
 package com.wordpress.brancodes.messaging.reactions.unit;
 
+import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -17,8 +18,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.wordpress.brancodes.messaging.reactions.Reactions.apostrophes;
+import static com.wordpress.brancodes.messaging.reactions.Reactions.doubleQuotes;
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.*;
 import static com.wordpress.brancodes.messaging.reactions.unit.UnitSystem.*;
+import static com.wordpress.brancodes.util.JavaUtil.deepArrayMerge;
+import static java.util.stream.IntStream.concat;
 
 public enum Unit {
 	KG(MASS, METRIC, n -> convert(n, 2.2046226218487) + " lbs", n -> n, n -> n, 'k'),
@@ -26,7 +31,7 @@ public enum Unit {
 	M(LENGTH, METRIC, n -> convertedWithInches(n, 3.2808398950131), n -> n, n -> n, 'm'),
 	CM(LENGTH, METRIC, n -> convertedWithInches(n, .0328083989501), n -> convert(n, .01), n -> convert(n, 100), 'c'),
 	FT(LENGTH, IMPERIAL, n -> convert(n, 0.3048) + " m", n -> convert(n, 0.3048), n -> convert(n, 1 / 0.3048), 'f'),
-	IN(LENGTH, IMPERIAL, n -> convert(n, 2.54) + " cm", n -> convert(n, .0254), n -> convert(n, 1 / .0254), 'i'),
+	IN(LENGTH, IMPERIAL, n -> convert(n, 2.54) + " cm", n -> convert(n, .0254), n -> convert(n, 1 / .0254), (apostrophes + doubleQuotes + "i").toCharArray()),
 	LAZY(null, null, null, null, null)
 	;
 
@@ -39,8 +44,8 @@ public enum Unit {
 	final Function<ScaledDecimal, ScaledDecimal> fromNormal; // from baseUnitType.normal
 	final char[] shortestSymbol;
 
-	Unit(BaseUnitType baseUnitType, UnitSystem unitSystem, Function<ScaledDecimal, String> converter, Function<ScaledDecimal, ScaledDecimal> normalizer,
-		 Function<ScaledDecimal, ScaledDecimal> fromNormal, char... shortestSymbol) {
+	Unit(BaseUnitType baseUnitType, UnitSystem unitSystem, Function<ScaledDecimal, String> converter,
+		 Function<ScaledDecimal, ScaledDecimal> normalizer, Function<ScaledDecimal, ScaledDecimal> fromNormal, char... shortestSymbol) {
 		this.baseUnitType = baseUnitType;
 		this.unitSystem = unitSystem;
 		this.converter = converter;
@@ -55,9 +60,9 @@ public enum Unit {
 	private static final Map<Character, Unit> lookUpTable =
 			Arrays.stream(values())
 				  .flatMap(u -> new String(u.shortestSymbol)
-								 .chars()
-								 .flatMap(c -> IntStream.of(Character.toLowerCase(c), Character.toUpperCase(c)))
-								 .mapToObj(c -> Pair.of((char) c, u)))
+									  .chars()
+									  .flatMap(c -> IntStream.of(Character.toLowerCase(c), Character.toUpperCase(c)).distinct())
+									  .mapToObj(c -> Pair.of((char) c, u)))
 				  .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
 
 	public static Unit of(String name) {
@@ -87,6 +92,10 @@ public enum Unit {
 				Math.max(0, input.getFull().stripTrailingZeros().scale()),
 				RoundingMode.HALF_UP);
 		ScaledDecimal feet = new ScaledDecimal(converted, 0, RoundingMode.DOWN);
+		if (inches.toString().equals("12")) {
+			feet = feet.copy().setBigDecimal(b -> b.add(BigDecimal.ONE));
+			inches = inches.copy().setBigDecimal(ignored -> BigDecimal.ZERO);
+		}
 		if (feet.createScaled().compareTo(BigDecimal.ZERO) == 0)
 			return inches + "\"";
 		if (inches.createScaled().compareTo(BigDecimal.ZERO) == 0)
@@ -99,6 +108,10 @@ public enum Unit {
 	 */
 	public static ScaledDecimal inchesToFeet(String feet, String inches) {
 		return new ScaledDecimal(BigDecimal.valueOf(Double.parseDouble(feet) + (Double.parseDouble(inches) / 12)));
+	}
+
+	public static Map<BaseUnitType, double[][]> conversionFactorMatrix() {
+		return null; // TODO
 	}
 
 }

@@ -6,7 +6,6 @@ import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
 import com.wordpress.brancodes.messaging.chats.ChatScheduler;
 import com.wordpress.brancodes.messaging.chats.Chats;
-import com.wordpress.brancodes.util.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -25,7 +24,6 @@ import java.net.URL;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.Function;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;

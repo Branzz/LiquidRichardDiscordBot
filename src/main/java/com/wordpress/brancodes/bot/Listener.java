@@ -10,7 +10,6 @@ import com.wordpress.brancodes.messaging.reactions.message.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
 import com.wordpress.brancodes.util.CaseUtil;
-import com.wordpress.brancodes.util.Config;
 import com.wordpress.brancodes.util.MorseUtil;
 import com.wordpress.brancodes.util.Pair;
 import net.dv8tion.jda.api.entities.*;

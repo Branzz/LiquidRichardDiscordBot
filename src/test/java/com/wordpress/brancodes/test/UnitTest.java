@@ -15,6 +15,7 @@ public class UnitTest {
 
 	private static final String[] TEST_CASES =
 			{ "5'", "5.4'", "5'3", "5.4'3", "5.4'3.2", "5.'", "5'3.", "3\"", "3.3\"", ".3\"", // feet inch
+			  "5's", "5 foot", "5 foot 5", "5 foot 5's", "5 foot's", "5\"", "5''", "5''s",
 			  "150lbs 5'10", "5'10 5 inches 80kg", "180cm 152lbs", // bmi
 			  "161cm 25kg", "161cm 25.1kg", "161cm 25.2kg", "161cm 25.3kg", "161cm 25.4kg", // accuracy / rounding
 			};

@@ -3,9 +3,7 @@ package com.wordpress.brancodes.util;
 import com.wordpress.brancodes.messaging.reactions.unit.BMI;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -51,6 +49,49 @@ public class JavaUtil {
 	public static <T> T log(T t, Logger logger) {
 		logger.info(t.toString());
 		return t;
+	}
+
+
+	// (Character[]) Stream.of(IntStream.of('i'), apostrophes.chars(), doubleQuotes.chars())
+	// 				   .flatMapToInt(s -> s)
+	// 				   .mapToObj(i -> (char) i)
+	// 				   .toArray(Character[]::new)
+
+	/**
+	 * @param aT must provide at least one T for type checking
+	 * @param os array of T, T[], or Iterable<T>s
+	 * @return flatmap to T
+	 */
+	public static <T> T[] deepArrayMerge(T aT, Object... os) {
+		List<T> ts = new ArrayList<>();
+		ts.add(aT);
+		for (Object o : os) {
+			try {
+			 Iterable<T> tIter = (Iterable<T>) o;
+			 tIter.forEach(ts::add);
+			} catch (ClassCastException ignored1) {
+			 try {
+			  T[] tArr = (T[]) o;
+			  ts.addAll(Arrays.asList(tArr));
+			 } catch (ClassCastException ignored2) {
+			  try {
+			   T t = (T) o;
+			   ts.add(t);
+			  } catch (ClassCastException ignored3) {
+			   throw new IllegalArgumentException("argument must have only T and T[]");
+			  }
+			}
+		  }
+		}
+		return toArray(ts);
+	}
+
+	private static <T> T[] toArray(List<T> list) {
+		T[] toR = (T[]) java.lang.reflect.Array.newInstance(list.get(0).getClass(), list.size());
+		for (int i = 0; i < list.size(); i++) {
+			toR[i] = list.get(i);
+		}
+		return toR;
 	}
 
 }

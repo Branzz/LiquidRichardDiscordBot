@@ -91,7 +91,7 @@ public class UserMemberMixin implements User, Member {
 
 	@Override
 	public int getColorRaw() {
-		return 0;
+		return asMember().getColorRaw();
 	}
 
 	@Override

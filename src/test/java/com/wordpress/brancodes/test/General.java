@@ -1,5 +1,10 @@
 package com.wordpress.brancodes.test;
 
+import bran.tree.compositions.Definition;
+import bran.tree.compositions.expressions.LimitExpression;
+import bran.tree.compositions.expressions.values.Constant;
+import bran.tree.compositions.expressions.values.Variable;
+import bran.tree.compositions.sets.regular.SpecialSetType;
 import com.mifmif.common.regex.Generex;
 
 import java.math.BigDecimal;
@@ -7,6 +12,8 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static bran.tree.compositions.statements.Statement.forAll;
 
 public class General {
 
@@ -35,6 +42,23 @@ public class General {
 	}
 
 	public static void main(String[] args) {
+		char[] arr = {'a','c','e'};
+		new String(arr).chars().mapToObj(i -> (Character) (char) i);
+
+				// return forAll(Variable.of("\u03B5")).in(SpecialSetType.R).itHolds(e ->
+				// 	e.greater(Constant.ZERO)
+				//  	 .and(thereExists(Variable.of("\u03B4")).in(SpecialSetType.R).suchThat(d->
+				// 				d.greater(Constant.ZERO).and(
+				// 						forAll(Variable.of("x")).in(SpecialSetType.R).itHolds(x ->
+				// 						Constant.ZERO.less(ABS.ofS(x.minus(limitExp.approaching())))
+				// 									 .and(ABS.ofS(x.minus(limitExp.approaching())).less(d))
+				// 								.implies(ABS.ofS(limitExp.function().minus(limitExp.approached())).less(e))
+				// 					).proven())
+				// 			).proven())
+				// ).proven();
+
+		// System.out.println(Definition.LIMIT.of(((LimitExpression)
+		// 	Variable.of("x").approaches(Constant.ONE).of(Variable.of("x").squared()))));
 
 		// String doubleRegex = "[+-]?((((\\d+)(\\.)?((\\d+)?)" +
 		// 		"([eE][+-]?(\\d+))?)|(\\.(\\d+)([eE][+-]?(\\d+))?)|" +

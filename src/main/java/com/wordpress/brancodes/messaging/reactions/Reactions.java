@@ -4,6 +4,7 @@ import bran.parser.CompositionParser;
 import bran.tree.compositions.Composition;
 import bran.tree.compositions.expressions.Expression;
 import bran.tree.compositions.statements.Statement;
+import com.wordpress.brancodes.bot.Config;
 import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
@@ -114,6 +115,9 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 	}
 
 	private static final List<String> censoredWords = (List<String>) JSONReader.getData().get("censored_words");
+
+	public static final String apostrophes = "'\u2018\u2019";
+	public static final String doubleQuotes = "\"\u201C\u201D\u2033";
 
 	private static final @RegEx
 	String fullCensorBuffer = "[!@#$%^&*()\\[\\]/=\\-\\\\;',.{}?+|S_:\"\\s]*"; // >= 5
@@ -301,7 +305,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 				message.reply(truncate("You Are " + UserCategory.of(message.getMember()) + ".")).queue()
 		).build(),
 
-		new CommandBuilder("DM History", "^!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, PRIVATE).caseInsensitive().execute(message -> {
+		new CommandBuilder("DM History", "^!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, GUILD_AND_PRIVATE).caseInsensitive().execute(message -> {
 			String[] messageParts = message.getContentRaw().split("\\s+");
 			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
 				if (user.equals(message.getJDA().getSelfUser())) // TODO FAILURE
@@ -385,7 +389,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 
 		new MessageReactionBuilder("Auto Delete", "^?" + censoredWordsRegex + "$?", SELF, GUILD)
 				.disableLogging()
-				.whitelistGuilds(973797632436760606L, 722001554374131713L, GUILD_C)
+				.whitelistGuilds(973797632436760606L, GUILD_C)
 				.executeResponse((message, matcher) -> {
 			if (!message.isPinned()) { // TODO guild subscribed to this command
 				final String censoredWords = logWordCensor(message, matcher);
@@ -481,10 +485,10 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 		}).build(),
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
 		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
-					+ "(?<negs>-*)(?<!\\$)(?:(?<feetInch>(?<base>(?<feet>\\d+)(?:['\u2019]|\\s*(?:foot|feet|ft\\.?)\\s*))"
-					+ "(?<inch>(?<whole>\\d+)(?:\\.(?<inchDec1>\\d*))?|\\.(?<inchDec2>\\d+))?+)(?:[^Ss]|$)"
+					+ "(?<negs>-*)(?<!\\$)(?:(?<feetInch>(?<base>(?<feet>\\d+)(?:["+apostrophes+"]|\\s*(?:foot|feet|ft\\.?)\\s*))"
+					+ "(?:(?<inch>(?<whole>\\d+)(?:\\.(?<inchDec1>\\d*))?|\\.(?<inchDec2>\\d+))|[^"+apostrophes+"s]))"
 					+ "|(?<value>(?<valWhole>\\d+)(?:\\.(?<valDec1>\\d*))?|\\.(?<valDec2>\\d+))\\s*(?:(?:something|ish|~)\\s*)?" // 12 12. 12.34 .34 .00 .0200
-					+ "(?<unit>(kg|lb|meter|cm)s?([^\\w]+|$)|kilo([sg\\s]|$)\\w*|(in(\\.|ch)|pound)\\w*)?)"),
+					+ "(?<unit>(kg|lb|meter|cm)s?([^\\w]+|$)|kilo([sg\\s]|$)\\w*|(["+apostrophes+"]{2}|["+doubleQuotes+"]|in(\\.|ch)|pound)\\w*)?)"),
 			// 		    + "kgs?([^\\w]+|$)"
 			// + "|kilo([sg\\s]|$)\\w*"
 			// 		   + "|lbs?([^\\w]|$)"
@@ -494,7 +498,11 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 			// 	 + "|in(\\.|ch)\\w*)?)"),
 								   ////|feet([^\w]+[\w\W]*|$)
 							////|[\d]+\\s*'\\s*([\d]+(\.[\d]*)?)
-					DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().blacklistGuilds(GUILD_DW).executeResponse((message, matcher) -> { // TODO detect number without unit
+					DEFAULT, GUILD_AND_PRIVATE)
+				.caseInsensitive()
+				.blacklistGuilds(GUILD_DW)
+				.addMessageChannelCooldown(1_000L)
+				.executeResponse((message, matcher) -> { // TODO detect number without unit
 			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
 			if (matches.size() == 0) {
 				LOGGER.error("failed to convert " + message.getContentRaw());
@@ -518,7 +526,7 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 				message.reply(truncate(converted.toString())).queue();
 				return new ReactionResponse(conversionArrow.toString());
 			}
-		}).addMemberCooldown(3_000L).addMessageChannelCooldown(1_000L).build(),
+		}).build(),
 
 		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
 			if (message.getMentions()
@@ -579,22 +587,21 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 				image -> sendSpeechBubbleImage(message, image))
 			).helpPanel("Add Speech Bubble To Image").build(),
 
-		new MessageReactionBuilder("Harita", "^haritard$", DEFAULT, GUILD).caseInsensitive().execute(message -> {
+		new MessageReactionBuilder("Harita", "^haritard$", DEFAULT, GUILD)
+				.caseInsensitive()
+				.whitelistGuilds(GUILD_C)
+				.execute(message -> {
 			message.getChannel().sendMessage("https://media.discordapp.net/attachments/722001554944819202/965120982480224296/Screenshot_20220415-020148_Chrome.png.jpg").queue();
 			message.delete().queue();
 		}).build(),
 
 		new MessageReactionBuilder("Embed Fail", "https://(www\\.)?tenor\\.com/view/(.)+", DEFAULT, GUILD)
 				.blacklistGuilds(GUILD_C).executeStatus(
-				message -> {
-			if (!PermissionUtil.checkPermission(message.getMember(), Permission.MESSAGE_EMBED_LINKS)
-				|| !PermissionUtil.checkPermission(message.getChannel().asTextChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)) {
-					message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here.").queue();
-				return true;
-			} else {
-				return false;
-			}
-		}).build(),
+				message -> booleanReturnStatus(!PermissionUtil.checkPermission(message.getMember(), Permission.MESSAGE_EMBED_LINKS)
+								|| (message.getChannel() instanceof IMemberContainer
+									&& !PermissionUtil.checkPermission((IPermissionContainer) message.getChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)),
+					() -> message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here.").queue())
+		).build(),
 
 		new CommandBuilder("Angie", "^When( I|')s The Best Discord Girl'?s Birthday[?]?", DEFAULT, GUILD).caseInsensitive().executeStatus(message ->
 			booleanReturnStatus(message.getGuild().getIdLong() == GUILD_GS, () ->
@@ -1041,11 +1048,14 @@ public class Reactions { // TODO convert into singleton (?) or a Manager
 
 	public static void flushAutoDeleteQueue() {
 		// try catch ?
+		int shutdown = 0;
 		for (AuditableRestAction<Void> voidAuditableRestAction : autoDeleteQueue) {
 			try {
 				voidAuditableRestAction.complete();
+				shutdown++;
 			} catch (ErrorResponseException | RejectedExecutionException ignored) { }
 		}
+		System.out.printf("auto deleted %s/%s queued messages\n", shutdown, autoDeleteQueue.size());
 	}
 
 	private static final Deque<AuditableRestAction<Void>> autoDeleteQueue = new ArrayDeque<>();

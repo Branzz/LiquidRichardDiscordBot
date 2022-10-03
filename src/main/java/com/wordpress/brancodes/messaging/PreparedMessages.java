@@ -7,7 +7,7 @@ import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.messaging.reactions.*;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
-import com.wordpress.brancodes.util.Config;
+import com.wordpress.brancodes.bot.Config;
 import com.wordpress.brancodes.util.CaseUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -16,10 +16,8 @@ import net.dv8tion.jda.api.entities.User;
 
 import javax.annotation.RegEx;
 import java.awt.*;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -50,7 +48,7 @@ public class PreparedMessages {
 	private static EmbedBuilder addFieldsTo(EmbedBuilder embedBuilder) {
 		Stream.of(ReactionChannelType.values()).forEach(channelType -> {
 				// embedBuilder.addField("\u2550\u2550\u2550\u2550\u2550 " + channelType.toString() + " Commands" + " \u2550\u2550\u2550\u2550\u2550", "", false);
-				Map<UserCategoryType, Collection<Command>> channelCommands = Stream.of(UserCategoryType.values())
+				Map<UserCategoryType, String> channelCommands = Stream.of(UserCategoryType.values())
 						.collect(Collectors.toMap(Function.identity(),
 							userCategory -> Reactions.messageReactions
 								.stream()
@@ -60,15 +58,13 @@ public class PreparedMessages {
 								.filter(Command::visibleDescription)
 								.filter(cT -> cT.getChannelType() == channelType)
 								.filter(uC -> uC.getUserCategory() == userCategory)
-								.collect(toList())));
-				if (channelCommands.values().stream().mapToLong(Collection::size).sum() > 0) {
+								.map(c -> c.getName() + " - " + c.getDescription())
+								.collect(joining("\n"))));
+				if (channelCommands.values().stream().anyMatch(s -> s.length() > 0)) {
 					// embedBuilder.addField(channelType.toString() + " Commands:", "", false);
-					channelCommands.forEach((userCategory, commands) -> {
-						if (!commands.isEmpty())
-							embedBuilder.addField(
-									userCategory.toString() + " In " + channelType,
-									commands.stream().map(c -> c.getName() + " - " + c.getDescription()).collect(joining("\n")),
-									false);
+					channelCommands.forEach((userCategory, commandString) -> {
+						if (!commandString.isEmpty())
+							embedBuilder.addField(userCategory.toString() + " In " + channelType, commandString, false);
 					});
 				}
 		});

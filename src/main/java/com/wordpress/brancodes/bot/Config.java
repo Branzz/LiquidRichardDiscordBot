@@ -1,4 +1,4 @@
-package com.wordpress.brancodes.util;
+package com.wordpress.brancodes.bot;
 
 import net.dv8tion.jda.api.JDA;
 import org.slf4j.Logger;
