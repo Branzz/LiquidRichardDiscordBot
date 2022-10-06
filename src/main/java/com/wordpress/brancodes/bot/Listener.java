@@ -5,7 +5,7 @@ import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
 import com.wordpress.brancodes.messaging.reactions.message.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
@@ -120,7 +120,7 @@ public class Listener extends ListenerAdapter {
 	private void slashCommand(SlashCommandInteractionEvent event, ChannelType channelType, UserCategory userCategory) {
 		String name = event.getName();
 
-		SlashCommand slashCommand = (SlashCommand) Reactions.commandsByName.get(name);
+		SlashCommand slashCommand = (SlashCommand) ReactionManager.commandsByName.get(name);
 		boolean channelInRange = slashCommand.getChannelType().inRange(channelType);
 		boolean userInRange = userCategory.isPartOf(slashCommand.getUserCategory());
 
@@ -218,17 +218,17 @@ public class Listener extends ListenerAdapter {
 				 // .forEach(r -> logReactionResponse(message, r));
 		//
 		// System.out.println(channelType + " " + userCategory + " " + contentDisplay);
-		Reactions.getMessageReactions(ReactionChannelType.of(channelType), userCategory)
-				 .stream()
-				 .filter(reaction -> !reaction.isDeactivated())
-				 .map(reaction -> Pair.of(reaction, reaction.execute(message)))
-				 // .peek(p -> System.out.println(p.getKey() + " " + p.getValue().getLogResponse() + " " + p.getValue().status()))
-				 // .filter(response -> response.getValue().status()).findFirst() // method 1
-				 // .min(Comparator.comparing(r -> r.getValue().status())) // method 3
-				 .filter(r -> r.getValue().status() || r.getValue().hasLogResponse())
-				 .min(Comparator.comparing((Pair<MessageReaction, ReactionResponse> r) -> r.getValue().status())
+		ReactionManager.getMessageReactions(ReactionChannelType.of(channelType), userCategory)
+					   .stream()
+					   .filter(reaction -> !reaction.isDeactivated())
+					   .map(reaction -> Pair.of(reaction, reaction.execute(message)))
+					   // .peek(p -> System.out.println(p.getKey() + " " + p.getValue().getLogResponse() + " " + p.getValue().status()))
+					   // .filter(response -> response.getValue().status()).findFirst() // method 1
+					   // .min(Comparator.comparing(r -> r.getValue().status())) // method 3
+					   .filter(r -> r.getValue().status() || r.getValue().hasLogResponse())
+					   .min(Comparator.comparing((Pair<MessageReaction, ReactionResponse> r) -> r.getValue().status())
 								.thenComparing(r -> r.getValue().hasLogResponse()))
-				 .ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
+					   .ifPresent(reactionAndResponse -> logReactionResponse(message, reactionAndResponse.getKey(), reactionAndResponse.getValue()));
 
 				 // .stream()
 				 // .sorted(comparing(Listener::chainable))

@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.LENGTH;
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.MASS;
@@ -43,7 +41,9 @@ public class BMI { // unstable non-synchronously
 	ScaledDecimal potential;
 	ScaledDecimal potentialConverted;
 
-	static final double weightFrom = 0, weightTo = 400, heightFrom = .5, heightTo = 3;
+	boolean lazy = false;
+
+	static final double weightFrom = 0, lazyWeightFrom = 30, weightTo = 400, heightFrom = .5, heightTo = 3;
 
 	public BMI(Iterable<UnitMatch> matches) {
 		this.matches = matches;
@@ -86,6 +86,7 @@ public class BMI { // unstable non-synchronously
 		}
 		int laziesInRange = 0;
 		UnitMatch validLazy = null;
+		lazy = true;
 		if (heightCount == 1 && weightCount == 0) {
 			isWeight = true;
 			for (UnitMatch lazy : lazies) {
@@ -156,7 +157,7 @@ public class BMI { // unstable non-synchronously
 	}
 
 	private boolean inRange() {
-		return inRange(isWeight ? weightFrom : heightFrom, isWeight ? weightTo : heightTo);
+		return inRange(isWeight ? (lazy ? lazyWeightFrom : weightFrom) : heightFrom, isWeight ? weightTo : heightTo);
 	}
 
 	private boolean inRange(double from, double to) {

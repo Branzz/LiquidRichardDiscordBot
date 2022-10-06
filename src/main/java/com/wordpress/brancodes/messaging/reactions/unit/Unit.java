@@ -1,29 +1,21 @@
 package com.wordpress.brancodes.messaging.reactions.unit;
 
-import com.wordpress.brancodes.messaging.reactions.Reactions;
 import com.wordpress.brancodes.util.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.regex.MatchResult;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import static com.wordpress.brancodes.messaging.reactions.Reactions.apostrophes;
-import static com.wordpress.brancodes.messaging.reactions.Reactions.doubleQuotes;
+import static com.wordpress.brancodes.util.RegexUtil.apostrophes;
+import static com.wordpress.brancodes.util.RegexUtil.doubleQuotes;
 import static com.wordpress.brancodes.messaging.reactions.unit.BaseUnitType.*;
 import static com.wordpress.brancodes.messaging.reactions.unit.UnitSystem.*;
-import static com.wordpress.brancodes.util.JavaUtil.deepArrayMerge;
-import static java.util.stream.IntStream.concat;
 
 public enum Unit {
 	KG(MASS, METRIC, n -> convert(n, 2.2046226218487) + " lbs", n -> n, n -> n, 'k'),

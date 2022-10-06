@@ -1,7 +1,8 @@
 package com.wordpress.brancodes.main;
 
 import com.wordpress.brancodes.bot.LiquidRichardBot;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
+import com.wordpress.brancodes.messaging.reactions.Censoring;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
 import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
 
 import javax.security.auth.login.LoginException;
@@ -30,7 +31,7 @@ public class Main {
 //		if (args.length > 1)
 //			upsertCommands(new HashSet<>(List.of(args)));
 
-		Runtime.getRuntime().addShutdownHook(new Thread(Reactions::flushAutoDeleteQueue));
+		Runtime.getRuntime().addShutdownHook(new Thread(Censoring::flushAutoDeleteQueue));
 
 		try (InputStreamReader iReader = new InputStreamReader(System.in);
 			 BufferedReader bReader = new BufferedReader(iReader)) {
@@ -44,11 +45,11 @@ public class Main {
 			while (input[0].equalsIgnoreCase("upsert")) {
 				List<String> inputStrings = Arrays.asList(input);
 				Set<String> upsertCommands = new HashSet<>(inputStrings.subList(1, input.length - 1));
-				Reactions.reactions.stream()
-						.filter(r -> r instanceof SlashCommand)
-						.filter(r -> upsertCommands.contains(r.getName()))
-						.map(r -> (SlashCommand) r)
-						.forEach(s -> s.upsert(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")));
+				ReactionManager.reactions.stream()
+										 .filter(r -> r instanceof SlashCommand)
+										 .filter(r -> upsertCommands.contains(r.getName()))
+										 .map(r -> (SlashCommand) r)
+										 .forEach(s -> s.upsert(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")));
 				input = bReader.readLine().split("\\s+");
 			}
 

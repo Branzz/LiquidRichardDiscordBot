@@ -1,7 +1,7 @@
 package com.wordpress.brancodes.database;
 
 import com.wordpress.brancodes.messaging.PreparedMessages;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +63,7 @@ public class DataBase {
 	public static Data<Boolean> userIsMod(final Long userID, final Long guildID) {
 		return new Data<>(
 			(guildID != null && userID != null)
-			&& (guildID == Reactions.GUILD_C
+			&& (guildID == ReactionManager.GUILD_C
 				&& (userID == 1006323394997919774L || userID == 904203586551054376L || userID == 956135678893252628L
 					|| userID == 928336417514479646L || userID == 936433911486087208L)
 			|| guildID == 973797632436760606L && (userID == 1006323394997919774L)),

@@ -2,7 +2,7 @@ package com.wordpress.brancodes.test;
 
 import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
 import com.wordpress.brancodes.test.proxy.TesterMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ public class UnitTest {
 			};
 
 	public static void test() {
-		final MessageReaction convertUnit = (MessageReaction) Reactions.commandsByName.get("Convert Units");
+		final MessageReaction convertUnit = (MessageReaction) ReactionManager.commandsByName.get("Convert Units");
 		Arrays.stream(TEST_CASES).map(testCase -> new TesterMessage(testCase, false)).map(convertUnit::execute).forEachOrdered(ReactionResponse::logResponse);
 	}
 

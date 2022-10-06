@@ -3,12 +3,13 @@ package com.wordpress.brancodes.messaging;
 import com.mifmif.common.regex.Generex;
 import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.messaging.reactions.message.commands.Command;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
 import com.wordpress.brancodes.messaging.reactions.*;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
 import com.wordpress.brancodes.bot.Config;
 import com.wordpress.brancodes.util.CaseUtil;
+import com.wordpress.brancodes.util.JDAUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -50,7 +51,7 @@ public class PreparedMessages {
 				// embedBuilder.addField("\u2550\u2550\u2550\u2550\u2550 " + channelType.toString() + " Commands" + " \u2550\u2550\u2550\u2550\u2550", "", false);
 				Map<UserCategoryType, String> channelCommands = Stream.of(UserCategoryType.values())
 						.collect(Collectors.toMap(Function.identity(),
-							userCategory -> Reactions.messageReactions
+							userCategory -> ReactionManager.messageReactions
 								.stream()
 								.filter(r -> !r.isDeactivated())
 								.filter(c -> c instanceof Command)
@@ -83,15 +84,15 @@ public class PreparedMessages {
 	}
 
 	public static void reply(Message message, Long guildID, String request) {
-		Reactions.reply(message, getMessage(guildID, request));
+		JDAUtil.reply(message, getMessage(guildID, request));
 	}
 
 	public static void reply(Message message, String request) {
-		Reactions.reply(message, getMessage(message.getGuild() == null ? null : message.getGuild().getIdLong(), request));
+		JDAUtil.reply(message, getMessage(message.getGuild() == null ? null : message.getGuild().getIdLong(), request));
 	}
 
 	public static void replyEmbedMessage(Message message, String request) {
-		Reactions.reply(message, getEmbedMessage(request));
+		JDAUtil.reply(message, getEmbedMessage(request));
 	}
 
 	/**

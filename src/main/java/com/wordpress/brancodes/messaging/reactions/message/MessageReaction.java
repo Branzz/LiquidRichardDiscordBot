@@ -7,6 +7,7 @@ import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
+import com.wordpress.brancodes.util.RegexUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -19,10 +20,9 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
-import static com.wordpress.brancodes.messaging.reactions.Reactions.truncateEnd;
+import static com.wordpress.brancodes.util.JavaUtil.truncateEnd;
 
 public class MessageReaction extends Reaction<Message> {
 
@@ -87,22 +87,6 @@ public class MessageReaction extends Reaction<Message> {
 																			  .toString()
 																			  .replaceAll("\\\\", "\\\\\\\\")
 																			  .replaceAll("\\*", "\\\\*")), true);
-	}
-
-	public static Matcher getMatcher(@RegEx String regex, String input) {
-		return getMatcherFlags(regex, input, Pattern.UNICODE_CHARACTER_CLASS);
-	}
-
-	public static Matcher getMatcherFlags(@RegEx String regex, String input, int flags) {
-		return Pattern.compile(regex, flags).matcher(input);
-	}
-
-	public static Matcher getMatcherCaseInsensitive(@RegEx String regex) {
-		return getMatcherFlags(regex, "", Pattern.UNICODE_CHARACTER_CLASS | Pattern.CASE_INSENSITIVE);
-	}
-
-	public static Matcher getMatcher(@RegEx String regex) {
-		return getMatcher(regex, "");
 	}
 
 	public Generex getGenerex() {
@@ -261,7 +245,7 @@ public class MessageReaction extends Reaction<Message> {
 					return reactionResponse;
 				} : preExecuteMatcherResponse;
 			}
-			object.matcher = caseInsensitive ? getMatcherCaseInsensitive(regex) : getMatcher(regex);
+			object.matcher = caseInsensitive ? RegexUtil.getMatcherCaseInsensitive(regex) : RegexUtil.getMatcher(regex);
 			return object;
 		}
 

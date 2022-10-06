@@ -1,13 +1,19 @@
 package com.wordpress.brancodes.util;
 
-import com.wordpress.brancodes.messaging.reactions.unit.BMI;
+import net.dv8tion.jda.api.entities.ISnowflake;
+import net.dv8tion.jda.api.requests.RestAction;
 import org.slf4j.LoggerFactory;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.wordpress.brancodes.util.JDAUtil.IDMatcher;
+import static java.util.stream.Collectors.toList;
 
 public class JavaUtil {
 
@@ -92,6 +98,96 @@ public class JavaUtil {
 			toR[i] = list.get(i);
 		}
 		return toR;
+	}
+
+	private static String substring(String string, int fromEndIndex) {
+		return string.substring(0, string.length() - fromEndIndex);
+	}
+
+	public final static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
+
+	public static String timeStampOf(final OffsetDateTime date) {
+		return dateTimeFormatter.format(date);
+	}
+
+	public static String truncate(String text) {
+		return truncateMiddle(text, 2000);
+	}
+
+	public static String truncate(String[] words, int maxSize) { // failure
+		int joinedLength = Arrays.stream(words).mapToInt(String::length).sum() + (words.length - 1) * 2;
+		if (joinedLength <= maxSize)
+			return String.join(", ", words); // TODO truncate this just in case size is wrong? it shouldn't
+		List<String> wordsByLength = Arrays.stream(words)
+										   .sorted(Comparator.comparing(String::length).reversed())
+										   .collect(toList());
+		int totalLength = joinedLength;
+		int ind = 0;
+		while (totalLength > maxSize) {
+			int wordLength = wordsByLength.get(ind).length();
+			if (wordLength < 7)
+				return truncateMiddle(String.join(", ", words), maxSize);
+			/*
+			totalLength aaaxxxxx
+			wordLength  aaa
+			take out between
+			(x {1 to wL+7}) >= tL - maxSize
+			dif = tL - maxSize;
+			if (dif > wL+7)
+			 */
+			wordsByLength.set(ind, truncateMiddle(wordsByLength.get(ind), wordLength - maxSize));
+			totalLength -= wordLength + 7;
+			ind++;
+		}
+		return truncateEnd(String.join(", ", wordsByLength), maxSize);
+	}
+
+	public static String truncateMiddle(String text, int maxSize) {
+		return text.length() > maxSize ? text.substring(0, maxSize / 2 - 1) + "..." + text.substring(text.length() - maxSize / 2 - 2) : text;
+	}
+
+	public static String truncateEnd(String text, int maxSize) {
+		return text.length() > maxSize ? text.substring(0, maxSize - 3) + "..." : text;
+	}
+
+	/**
+	 * @param tag the name of a server, channel, category, message, role, user, or emoji
+	 * @param <T>
+	 * @return
+	 */
+	public static <T extends ISnowflake> T tryGet(String tag, Function<String, T> getByID, RestAction<T> retrieveByID,
+												  Function<String, T> getByName) {
+		if (IDMatcher.reset(tag).matches()) {
+			return Optional.ofNullable(getByID.apply(tag))
+					.or(() -> Optional.ofNullable(retrieveByID.complete()))
+					.orElse(getByName.apply(tag));
+		} else {
+			return getByName.apply(tag);
+		}
+	}
+
+	/**
+	 * {@link Optional#ifPresentOrElse(Consumer, Runnable)} with a return type
+	 */
+	public static <T, R> R presentOrElseReturn(Optional<T> optional, Function<? super T, R> action, Supplier<R> emptySupplier) {
+		if (optional.isPresent()) {
+			return action.apply(optional.get());
+		} else {
+			return emptySupplier.get();
+		}
+	}
+
+	public static <T> boolean presentOrElseReturnStatus(Optional<T> optional, Consumer<? super T> action) {
+		return presentOrElseReturn(optional, t -> { action.accept(t); return true; }, () -> false);
+	}
+
+	public static boolean booleanReturnStatus(boolean present, Runnable action) {
+		if (present) {
+			action.run();
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }

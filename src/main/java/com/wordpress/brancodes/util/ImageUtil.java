@@ -1,7 +1,6 @@
 package com.wordpress.brancodes.util;
 
 import com.wordpress.brancodes.main.Main;
-import com.wordpress.brancodes.messaging.reactions.Reactions;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageEmbed.AuthorInfo;
@@ -143,7 +142,7 @@ public class ImageUtil {
 		AtomicReference<Attachment> optionalAttachment = new AtomicReference<>();
 		try {
 			message.getChannel().getIterableHistory().takeUntilAsync(10, m ->
-				  Reactions.presentOrElseReturnStatus(getFirstAttachment(m), optionalAttachment::set)).get();
+				  JavaUtil.presentOrElseReturnStatus(getFirstAttachment(m), optionalAttachment::set)).get();
 		}
 		catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();

@@ -2,8 +2,8 @@ package com.wordpress.brancodes.messaging.reactions.unit;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.function.Function;
 import java.util.regex.MatchResult;
+
 // keep copy of original MatchResult ? (potential memory leak)
 // (or does that allow users to ruin the purpose of this class)
 public class UnitMatch {
