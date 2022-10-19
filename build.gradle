@@ -6,6 +6,7 @@ group 'com.wordpress.brancodes'
 version '0.0.2'
 //mainClassName = 'com.wordpress.brancodes.main.Main'
 sourceCompatibility = JavaVersion.VERSION_14
+targetCompatibility = JavaVersion.VERSION_14
 
 repositories {
     mavenCentral()
@@ -38,4 +39,3 @@ dependencies {
    // testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
 }
-targetCompatibility = JavaVersion.VERSION_14

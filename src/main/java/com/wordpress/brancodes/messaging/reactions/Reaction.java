@@ -98,7 +98,7 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 
 	/**
 	 * Template inheriting class:
-	 * <pre>
+	 * <pre> // TODO new lines
 	 * {@code
 	 * public static final class ReactionBuilder extends Builder<Reaction, ReactionBuilder> {
 	 *

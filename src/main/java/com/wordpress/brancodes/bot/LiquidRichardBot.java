@@ -119,7 +119,6 @@ public class LiquidRichardBot {
 		LOGGER.info("Commands: {}", jda.retrieveCommands().complete().stream().map(c -> c.getName() + " " + c.getId()).collect(joining(", ")));
 		// jda.getPrivateChannels().forEach(System.out::println);
 
-//		setName("Retired Unit");
 //		TextChannel channel = jda.getTextChannelById(907045483476836412L);
 //		if (channel != null)
 //			channel.getHistoryAfter(990030713199919154L, 100).queue(s ->

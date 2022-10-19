@@ -2,10 +2,9 @@ package com.wordpress.brancodes.bot;
 
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
-import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
-import com.wordpress.brancodes.messaging.reactions.ReactionManager;
+import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.message.commands.Command;
 import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategory;
