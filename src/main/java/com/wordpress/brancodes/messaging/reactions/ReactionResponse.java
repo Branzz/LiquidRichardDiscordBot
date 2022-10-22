@@ -30,7 +30,6 @@ public class ReactionResponse {
 		this.logResponse = null;
 	}
 
-
 	public ReactionResponse(boolean status, final String logResponse) { // TODO
 		this.status = status;
 		this.logResponse = logResponse;

@@ -387,7 +387,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 					membersWithOnlyRole.stream()
 								 .filter(member -> !recentMembers.contains(member))
 								 .forEach(nonRecentMembers::add);
-					nonRecentMembers.forEach(member -> member.kick("PRUNE (HASN'T TALKED IN 2 WEEKS)").queue());
+					// nonRecentMembers.forEach(member -> member.kick("PRUNE (HASN'T TALKED IN 2 WEEKS)").queue());
 					System.out.printf("ALL USERS (%d):\n%s\nRECENT USERS(%d):\n%s\nNON RECENT USERS(%d)\n%s\n",
 									  guildMembers.size(),
 									  guildMembers.stream().map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")),
@@ -419,6 +419,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				.caseInsensitive()
 				.blacklistGuilds(GUILD_DW)
 				.addMessageChannelCooldown(1_000L)
+				.disableLogging()
 				.executeResponse((message, matcher) -> { // TODO detect number without unit
 			List<UnitMatch> matches = matcher.reset().results().map(UnitMatch::new).collect(toList());
 			if (matches.size() == 0) {
@@ -516,7 +517,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				.blacklistGuilds(GUILD_C).executeStatus(
 				message -> JavaUtil.booleanReturnStatus(!PermissionUtil.checkPermission(message.getMember(), Permission.MESSAGE_EMBED_LINKS)
 														|| (message.getChannel() instanceof IMemberContainer
-									&& !PermissionUtil.checkPermission((IPermissionContainer) message.getChannel(), message.getMember(), Permission.MESSAGE_EMBED_LINKS)),
+									&& !PermissionUtil.checkPermission(JDAUtil.toPermissionContainer(message.getChannel()), message.getMember(), Permission.MESSAGE_EMBED_LINKS)),
 														() -> message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here.").queue())
 		).build(),
 
@@ -639,7 +640,10 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				message.getChannel().sendMessage("https://cdn.discordapp.com/attachments/968670122082455623/969000484717330532/ambadeblow.mov").queue()
 		).build(),
 
-		new MessageReactionBuilder("Reddit", "(reddit.com/|\\s+|/|^)r/[\\w\\d]+", DEFAULT, GUILD).caseInsensitive().execute(message ->
+		new MessageReactionBuilder("Reddit", "(reddit.com/|\\s+|/|^)r/[\\w\\d]+", DEFAULT, GUILD)
+				.caseInsensitive()
+				.disableLogging()
+				.execute(message ->
 					 message.addReaction(Emoji.fromCustom("redditor", 953332619687395338L, false)).queue()
 		).build(),
 
@@ -820,7 +824,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			List<String> inputStrings = Arrays.asList(matcher.group(1).split("\\s+"));
 			if (inputStrings.size() <= 1)
 				return new ReactionResponse(false, "you must provide a command name and \"true\" at the end for it to be upserted globally");
-			Set<String> upsertCommands = new HashSet<>(inputStrings.subList(1, inputStrings.size() - 1));
+			Set<String> upsertCommands = new HashSet<>(inputStrings.subList(0, inputStrings.size() - 1));
 			return getSlashCommands(upsertCommands).stream()
 											.map(s -> s.upsert(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")))
 											.reduce(ReactionResponse::combine)
@@ -839,6 +843,27 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				.execute(event ->
 					event.getInteraction().reply("Hope You Die By " + CaseUtil.properCase(event.getOption("cause").getAsString())).queue()
 		).build(),
+		new SlashCommandBuilder("trig", "Evaluate Trig Expression.", DEFAULT, GUILD_AND_PRIVATE)
+				.createSubcommandBranch(new SubcommandData("info", "Show Details."),
+						event -> event.reply("Input Sin, Cos, Or Tan And A Number As Its Argument To Get A Calculation.").queue())
+				.createSubcommandBranch(new SubcommandData("calc", "Execute Trig Function.")
+								.addOptions(new OptionData(OptionType.STRING, "func", "function", true)
+													.addChoice("sin", "sin")
+													.addChoice("cos", "cos")
+													.addChoice("tan", "tan"))
+								.addOption(OptionType.NUMBER, "arg", "valued to be calculated upon", true),
+						event -> {
+							double arg = event.getOption("arg").getAsDouble();
+							double res = switch (event.getOption("func").getAsString()) {
+								case "sin" -> Math.sin(arg);
+								case "cos" -> Math.cos(arg);
+								case "tan" -> Math.tan(arg);
+								default -> 0;
+							};
+							event.reply(String.valueOf(res)).queue();})
+				.subcommandExecuter(event -> LOGGER.error("bad subcommand naming for Custom Command"))
+				.build(),
+
 		((Supplier<SlashCommand>) () -> {
 			final List<Command.Choice> eventsToOptions = CustomCommand.events.keySet().stream()
 							.map(event -> new Command.Choice(CaseUtil.splitNoSpaceCase(event), event)).collect(toList());
@@ -854,7 +879,6 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				.addField("DESC_OPTION", "description")
 				.addField("EVENT_OPTION", "event")
 				.addField("CODE_OPTION", "code")
-
 				.createSubcommandBranch(new SubcommandData(names.get("CREATE_NAME"), "Create A Command")
 												.addOption(OptionType.STRING, names.get("NAME_OPTION"), "name of your command", true)
 												.addOptions(new OptionData(OptionType.STRING, names.get("EVENT_OPTION"), "events", true)
@@ -894,7 +918,6 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 
 				.createSubcommandBranch(new SubcommandData(names.get("INFO_NAME"), "Details On Usage"),
 						event -> event.getInteraction().reply((String) JSONReader.getData().get("custom_command_info")).queue())
-
 				.subcommandExecuter(event -> LOGGER.error("bad subcommand naming for Custom Command"))
 			.build();
 		}).get(),
@@ -923,6 +946,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 
 	@NotNull
 	private static Set<SlashCommand> getSlashCommands(Set<String> upsertCommands) {
+		upsertCommands.forEach(System.out::println);
 		return ReactionManager.reactions.stream()
 										.filter(r -> r instanceof SlashCommand)
 										.filter(r -> upsertCommands.contains(r.getName()))

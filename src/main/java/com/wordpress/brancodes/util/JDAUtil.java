@@ -2,6 +2,7 @@ package com.wordpress.brancodes.util;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,14 @@ public class JDAUtil {
 
 	public static void logMissingChannelPermissions(final TextChannel channel) {
 		LOGGER.info("Tried to do command in {} in {}, but is missing permissions", channel, channel.getGuild());
+	}
+
+	public static Channel reduceThreadChannels(MessageChannelUnion channel) {
+		return channel instanceof ThreadChannel ? channel.asThreadChannel().getParentChannel() : channel;
+	}
+
+	public static IPermissionContainer toPermissionContainer(MessageChannelUnion channel) {
+		return (IPermissionContainer) (channel instanceof ThreadChannel ? channel.asThreadChannel().getParentChannel() : channel);
 	}
 
 }

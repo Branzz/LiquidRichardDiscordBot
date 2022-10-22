@@ -36,10 +36,10 @@ When worked on: March 2021 - April 2021, various times after to update
 ## Example usage
 
 To add a command that just says "Hi." back to someone when they say "Hi",
-you would call addCommand in [Reactions.java](src/main/java/com/wordpress/brancodes/messaging/reactions/Reactions.java):
+you would call addCommand in [ReactionManager.java](src/main/java/com/wordpress/brancodes/messaging/reactions/ReactionManager.java) with
 ```java
 new CommandBuilder("Hello",             // unique name
-                    "^hi\\s",            // regex to activate it
+                    "^hi\\s",           // regex to activate it
                     DEFAULT,            // who can use it (here, anybody can)
                     GUILD_AND_PRIVATE)  // where it can be used
        .execute(message -> reply(message, "Hi.")) // the response code
@@ -47,9 +47,31 @@ new CommandBuilder("Hello",             // unique name
        .deniable()                      // randomly choose to ignore their greeting
        .deactivated()                   // command is not on by default
        .caseInsensitive()               // like [Hh][Ii]
+       .addMemberCooldown(3000L)        // 3 second cool down per person
        .build()
 ```
-
+or, for a slash command,
+```java
+new SlashCommandBuilder("trig", "Evaluate Trig Expression.", DEFAULT, GUILD_AND_PRIVATE)
+    .createSubcommandBranch(new SubcommandData("info", "Show Details."),
+        event -> event.reply("Input Sin, Cos, Or Tan And A Number As Its Argument To Get A Calculation.").queue())
+    .createSubcommandBranch(new SubcommandData("calc", "Execute Trig Function.")
+    .addOptions(new OptionData(OptionType.STRING, "func", "function", true)
+    .addChoice("sin", "sin")
+    .addChoice("cos", "cos")
+    .addChoice("tan", "tan"))
+    .addOption(OptionType.NUMBER, "arg", "valued to be calculated upon", true),
+        event -> {
+            double arg = event.getOption("arg").getAsDouble();
+            double res = switch (event.getOption("func").getAsString()) {
+                case "sin" -> Math.sin(arg);
+                case "cos" -> Math.cos(arg);
+                case "tan" -> Math.tan(arg);
+                default -> 0;
+            };
+            event.reply(String.valueOf(res)).queue();})
+    .build(),
+```
 To add a periodic message that says "Good morning" every day plus or minus an hour,
 you would add this to the list of Chats in Chats.java:
 

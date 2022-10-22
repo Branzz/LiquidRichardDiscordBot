@@ -43,7 +43,7 @@ public class UserCategory {
 	}
 
 	public boolean isPartOf(UserCategoryType key) {
-		return baseUserCategoryType == key || extraTypes.contains(key);
+		return key.inRange(baseUserCategoryType) || extraTypes.contains(key);
 	}
 
 	@Override

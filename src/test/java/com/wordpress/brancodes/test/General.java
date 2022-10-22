@@ -1,19 +1,8 @@
 package com.wordpress.brancodes.test;
 
-import bran.tree.compositions.Definition;
-import bran.tree.compositions.expressions.LimitExpression;
-import bran.tree.compositions.expressions.values.Constant;
-import bran.tree.compositions.expressions.values.Variable;
-import bran.tree.compositions.sets.regular.SpecialSetType;
-import com.mifmif.common.regex.Generex;
-
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static bran.tree.compositions.statements.Statement.forAll;
 
 public class General {
 
@@ -42,10 +31,10 @@ public class General {
 	}
 
 	public static void main(String[] args) {
-		char[] arr = {'a','c','e'};
-		new String(arr).chars().mapToObj(i -> (Character) (char) i);
+		// char[] arr = {'a','c','e'};
+		// new String(arr).chars().mapToObj(i -> (Character) (char) i);
 
-				// return forAll(Variable.of("\u03B5")).in(SpecialSetType.R).itHolds(e ->
+		// return forAll(Variable.of("\u03B5")).in(SpecialSetType.R).itHolds(e ->
 				// 	e.greater(Constant.ZERO)
 				//  	 .and(thereExists(Variable.of("\u03B4")).in(SpecialSetType.R).suchThat(d->
 				// 				d.greater(Constant.ZERO).and(
@@ -191,7 +180,7 @@ public class General {
 		// 			 sortedSubset);
 		// System.out.println(Arrays.toString(sortedSubset));
 
-		System.out.println(Double.doubleToLongBits(-0.0) == Double.doubleToLongBits(0.0));
+		// System.out.println(Double.doubleToLongBits(-0.0) == Double.doubleToLongBits(0.0));
 	}
 
 	static <T> void sortSubArray(T[] sorted, T[] subset, T[] sortedSubset) { // subset.length == sortedSubset.length
@@ -270,6 +259,26 @@ public class General {
 			}
 			System.out.printf("(%d, %d) %d\n", x, y, d);
 		return d!=0||x==0&&y==0;
+	}
+
+	public static void hiddenText() {
+		/*
+		 * +0, -0, +INF, -INF, NaN
+		 */
+
+		String s = " !;:iIjt|l.',";
+		String y = "";
+		int count = 1;
+		// for (char c : "l|Ijii||lj|iijI|Il|iiIl||jj|I|".toCharArray())
+			//		for (int i = 0; i < 26; i += 2)
+			//			for (int j = 1; j < 26; j += 2)
+			//				y += (char) ('a' + i) + "oo" + (char) ('a' + j) + ("\n");
+			for (int i = 0; i < 399; i++)
+				y += "||" + s.charAt((int) (s.length() * Math.random())) + "||" + (count++ % 30 == 0 ? "\n" : "");
+		//		for (int i = 200; i < 2000; i++)
+		//			y += (char) i;
+		System.out.println(y);
+
 	}
 
 	public static <T> void explanationOfOrChainControlFlow(Supplier<T>[] optionalGetters) {

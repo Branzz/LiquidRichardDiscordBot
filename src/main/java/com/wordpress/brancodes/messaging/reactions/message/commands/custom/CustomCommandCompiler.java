@@ -95,6 +95,12 @@ public class CustomCommandCompiler {
 			return new CustomCommandCompileErrorException("Unexpected Token " + token.tokenType + " At " + token.from);
 		}
 
+		public static void main(String[] args) {
+
+		}
+
+
+
 		private Expressions nextExpressions() {
 //			TokenPosition expecting;
 			Expressions expressions = new Expressions();

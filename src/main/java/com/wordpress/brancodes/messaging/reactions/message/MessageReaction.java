@@ -250,13 +250,13 @@ public class MessageReaction extends Reaction<Message> {
 		}
 
 		private void autoCreateGenerexString() {
-			int lastLeftParenInd = -1; // TODO
-			StringBuilder str = new StringBuilder();
-			for (int i = 0; i < regex.length(); i++) {
-				if (regex.charAt(i) == '(')
-					lastLeftParenInd = i;
-			}
-			object.generexString = str.toString();
+			// int lastLeftParenInd = -1; // TODO
+			// StringBuilder str = new StringBuilder();
+			// for (int i = 0; i < regex.length(); i++) {
+			// 	if (regex.charAt(i) == '(')
+			// 		lastLeftParenInd = i;
+			// }
+			// object.generexString = str.toString();
 		}
 
 	}
