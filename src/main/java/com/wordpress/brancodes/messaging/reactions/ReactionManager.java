@@ -445,7 +445,7 @@ public class ReactionManager {
 				message.reply(JavaUtil.truncate(converted.toString())).queue();
 				return new ReactionResponse(conversionArrow.toString());
 			}
-		}).build(),
+		}).examples("120 lbs", "5.2\'0.3\"", "2ish foot 3.56", "10 kilograms").build(),
 
 		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).executeStatus(message -> {
 			if (message.getMentions()
@@ -708,7 +708,7 @@ public class ReactionManager {
 				response = "`" + e.getMessage() + '`';
 			}
 			message.reply(response).queue();
-		}).caseInsensitive().build(),
+		}).caseInsensitive().docs("Find the domain of an expression").build(),
 		// new CommandBuilder("Range", "^Range(.+)$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
 		// 	message.reply(String.valueOf(ExpressionParser.parseExpression(matcher.group(1)).range())).queue();
 		// }).caseInsensitive().build(),
@@ -726,7 +726,7 @@ public class ReactionManager {
 				response = "`" + e.getMessage() + '`';
 			}
 			message.reply(response).queue();
-		}).caseInsensitive().build(),
+		}).caseInsensitive().docs("Find a math derivative").build(),
 		new CommandBuilder("Inverse", "Inverse(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
@@ -743,7 +743,7 @@ public class ReactionManager {
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().build(),
-		new CommandBuilder("Truth", "Truth(.+)", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
+		new CommandBuilder("Truth", "Statement\\s+Truth(.+)", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition parse = CompositionParser.parse(matcher.group(1));
@@ -754,7 +754,7 @@ public class ReactionManager {
 				response = "`" + e.getMessage() + '`';
 			}
 			message.reply(response).queue();
-		}).caseInsensitive().deactivated().build(),
+		}).caseInsensitive().deactivated().docs("Find the truthness of a statement (can use Evaluate)").build(),
 		new CommandBuilder("Truth Table", "Truth\\s+Table`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
@@ -779,7 +779,7 @@ public class ReactionManager {
 			}
 			 message.reply(response).queue();
 			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
-		}).caseInsensitive().build(),
+		}).caseInsensitive().docs("Simplify a math expression or statement").build(),
 		new CommandBuilder("Random", "Random\\s*(\\d+)", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
 			String response;
 //			try {

@@ -1,22 +1,22 @@
-## Reactions and Command docs
-### Shut Down
-Shut Me Off
+## Reactions and Commands Docs
+Reaction: something that can be checked and triggered if matched,it is not necessarily a message, so one could have commands that require voice activation theoretically.
+
+Message Reaction: a reaction explicitly for messages, but without command features like being on the help panel.
+
+The docs beyond this template were auto-generated and omits internal Owner commands
+
+### Template Command
+Help Panel Description (if there's none, I won't be on the help panel)
 #### User
-Bot Owner
+The user category that can use this command
 #### Location
-Guild And DM
-#### Docs
-Complete the queued auto-deletes, then shut down the bot and the server
+Where this command can be used
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(((Turn)?\\s\*Off)|(Shut\\s\*(Down|Off|Up))))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(((Turn)?\\s\*Off)|(Shut\\s\*(Down|Off|Up)))\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
-### Restart
-Restart Me
-#### User
-Bot Owner
-#### Location
-Guild And DM
-#### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Restart)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Restart\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+When this regular expression matches a message, the command runs (with possible extra checks)
+#### Cooldown
+The amount of time a certain thing is locked. 3 Seconds For Message Channels means this command can't be ran in each message channel until after 3 seconds, but two could have it ran at once
+#### Example
+This is an example message that would call the command
 ### Help
 Help On Commands (This Panel)
 #### User
@@ -87,20 +87,6 @@ Leave its current voice channel in that guild
 !di
 #### RegEx
 !di|Disconnect\\.?
-### Servers
-#### User
-Bot Owner
-#### Location
-DM
-#### RegEx
-!v\\s\*
-### Get Channels
-#### User
-Bot Owner
-#### Location
-Guild
-#### RegEx
-!c\\s\*
 ### Get Commands
 #### User
 Moderator
@@ -121,13 +107,6 @@ Moderator
 Guild
 #### RegEx
 !dc\\s+([\\W\\w]+)
-### Enable Command
-#### User
-Bot Owner
-#### Location
-Guild
-#### RegEx
-!ec\\s+([\\W\\w]+)
 ### Get Role
 #### User
 Public
@@ -135,13 +114,6 @@ Public
 Guild
 #### RegEx
 (!r)|((?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*))
-### DM History
-#### User
-Bot Owner
-#### Location
-Guild And DM
-#### RegEx
-!h\\s+\\d{1,20}\\s+\\d+\\s\*
 ### Nick All
 #### User
 Moderator
@@ -249,6 +221,14 @@ Public
 Guild And DM
 #### Cooldown
 1 Seconds For Message Channels
+#### Example
+120 lbs
+#### Example
+5.2'0.3"
+#### Example
+2ish foot 3.56
+#### Example
+10 kilograms
 #### RegEx
 (?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})(?<negs>-\*)(?<!\\$)(?:(?<feetInch>(?<base>(?<feet>\\d+)(?:['‘’]|\\s\*(?:foot|feet|ft\\.?)\\s\*))(?:(?<inch>(?<whole>\\d+)(?:\\.(?<inchDec1>\\d\*))?|\\.(?<inchDec2>\\d+))|[^'‘’s]))|(?<value>(?<valWhole>\\d+)(?:\\.(?<valDec1>\\d\*))?|\\.(?<valDec2>\\d+))\\s\*(?:(?:something|ish|~)\\s\*)?(?<unit>(kg|lb|meter|cm)s?([\\W]+|$)|kilo([sg\\s]|$)\\w\*|(['‘’]{2}|["“”″]|in(\\.|ch)|pound)\\w\*)?)
 ### Delete Ping
@@ -316,26 +296,6 @@ Guild
 ‎
 #### RegEx
 (?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+(The|A|An)\\s+(Mod|Moderator)s?\\s\*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]\*\\s\*)|(((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+(The|A|An)\\s+(Mod|Moderator)s?\\s\*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]\*\\s\*\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
-### Give Mod
-Give Moderator To User
-#### User
-Bot Owner
-#### Location
-Guild
-#### Deactivated
-‎
-#### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((((Make|Set|Give)\\s\*)@.{1,32}\\s\*(A\\s+)?(Mod|Moderator))|(((Make|Set|Give)\\s\*)?(Mod|Moderator)\\s+@.{1,32})))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((((Make|Set|Give)\\s\*)@.{1,32}\\s\*(A\\s+)?(Mod|Moderator))|(((Make|Set|Give)\\s\*)?(Mod|Moderator)\\s+@.{1,32}))\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
-### Remove Mod
-Remove A Moderator
-#### User
-Bot Owner
-#### Location
-Guild
-#### Deactivated
-‎
-#### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(((Remove|Re Move|Take)\\s\*@.{1,32}\\s\*('?s\\s+)?(Mod|Moderator))|(((Remove|Re Move|Take)\\s\*)?(Mod|Moderator)\\s\*@.{1,32})))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(((Remove|Re Move|Take)\\s\*@.{1,32}\\s\*('?s\\s+)?(Mod|Moderator))|(((Remove|Re Move|Take)\\s\*)?(Mod|Moderator)\\s\*@.{1,32}))\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Main Channel
 Set Main Channel
 #### User
@@ -423,6 +383,8 @@ Evaluate`\*+(.+)`\*+
 Public
 #### Location
 Guild And DM
+#### Docs
+Find the domain of an expression
 #### RegEx
 Domain(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`\*+(.+)`\*+
 ### Derive
@@ -430,6 +392,8 @@ Domain(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`\*+(.+)`\*+
 Public
 #### Location
 Guild And DM
+#### Docs
+Find a math derivative
 #### RegEx
 Deriv(e|ative)(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`\*+(.+)`\*+
 ### Inverse
@@ -444,10 +408,12 @@ Inverse(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`\*+(.+)`\*+
 Public
 #### Location
 Guild And DM
+#### Docs
+Find the truthness of a statement (can use Evaluate)
 #### Deactivated
 ‎
 #### RegEx
-Truth(.+)
+Statement\\s+Truth(.+)
 ### Truth Table
 #### User
 Public
@@ -460,6 +426,8 @@ Truth\\s+Table`\*+(.+)`\*+
 Public
 #### Location
 Guild And DM
+#### Docs
+Simplify a math expression or statement
 #### RegEx
 Simpl(if)?y`\*+(.+)`\*+
 ### Random
@@ -483,20 +451,6 @@ User On MyBB
 Guild And DM
 #### RegEx
 ^Pimp Repost\\s+(.+)
-### Upsert Slash
-#### User
-Bot Owner
-#### Location
-Guild And DM
-#### RegEx
-^!us\\s+(.+)$
-### Delete Slash
-#### User
-Bot Owner
-#### Location
-Guild And DM
-#### RegEx
-^!ds\\s+(.+)$
 ### kill
 #### User
 Public

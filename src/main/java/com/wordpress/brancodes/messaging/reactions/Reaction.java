@@ -27,6 +27,8 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 	protected boolean guildFiltering;
 	protected Set<Long> guildList;
 	protected boolean whitelist;
+
+
 	protected String docs;
 	protected String[] examples;
 
@@ -79,6 +81,10 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 
 	public boolean guildAllowed(long guildId) {
 		return !guildFiltering || (whitelist == guildList.contains(guildId));
+	}
+
+	public String getDocs() {
+		return docs;
 	}
 
 	protected EmbedBuilder getMessageEmbed() {
