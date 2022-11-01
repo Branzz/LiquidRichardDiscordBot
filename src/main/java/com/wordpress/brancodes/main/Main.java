@@ -2,8 +2,6 @@ package com.wordpress.brancodes.main;
 
 import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.messaging.reactions.Censoring;
-import com.wordpress.brancodes.messaging.reactions.ReactionManager;
-import com.wordpress.brancodes.messaging.reactions.message.commands.SlashCommand;
 
 import javax.security.auth.login.LoginException;
 import java.io.BufferedReader;
@@ -28,6 +26,8 @@ public class Main {
 //			upsertCommands(new HashSet<>(List.of(args)));
 
 		Runtime.getRuntime().addShutdownHook(new Thread(Censoring::flushAutoDeleteQueue));
+
+		DocsGenerator.generateMdDocs();
 
 		try (InputStreamReader iReader = new InputStreamReader(System.in);
 			 BufferedReader bReader = new BufferedReader(iReader)) {

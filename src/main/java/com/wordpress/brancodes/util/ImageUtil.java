@@ -159,4 +159,14 @@ public class ImageUtil {
 		return exists ? optional : Optional.empty();
 	}
 
+	public static Optional<Attachment> findImage(Message message) {
+		return getFirstImage(message) // will users ever be able to send embeds? ImageUtil.getFirstEmbed
+				.or(() -> getFirstSticker(message)
+				.or(() -> getFirstEmote(message)
+				.or(() -> getFirstMessageLink(message)
+				.or(() -> Optional.ofNullable(message.getReferencedMessage()).flatMap(ImageUtil::getFirstAttachment)
+				.or(() -> getMentionedMemberPFP(message)
+				.or(() -> searchFirstAttachment(message)))))));
+	}
+
 }

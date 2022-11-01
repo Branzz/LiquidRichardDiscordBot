@@ -84,8 +84,8 @@ public class DataBase {
 	}
 
 	public static Map<Long, Long> guildAutoDeleteChannelMap = Map.of(
-			907042440924528662L, 920653763130310706L,
-			973797632436760606L, 1001374877539893298L
+			907042440924528662L, 920653763130310706L
+			// 973797632436760606L, 1001374877539893298L
 	);
 
 	public static Data<Long> autodeleteChannelId(@Nullable final Long guildID) {

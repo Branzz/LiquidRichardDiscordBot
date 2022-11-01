@@ -10,6 +10,7 @@ import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
 import java.awt.*;
 import java.security.InvalidParameterException;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -26,6 +27,8 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 	protected boolean guildFiltering;
 	protected Set<Long> guildList;
 	protected boolean whitelist;
+	protected String docs;
+	protected String[] examples;
 
 	// TODO could use AbstractMathLibrary's modular LogicStatements
 	//  to replace enforcement of super calls by ANDing each part to
@@ -84,6 +87,12 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 													  .addField("User", userCategoryType.toString(), true)
 													  .addField("Location", channelCategory.toString(), true);
 		cooldownPools.forEach(pool -> embedBuilder.addField("Cooldown", pool.toString(), false));
+		if (docs != null)
+			embedBuilder.addField("Docs", docs, false);
+		if (examples != null)
+			Arrays.stream(examples).forEach(ex -> embedBuilder.addField("Example", ex, false));
+		if (isDeactivated())
+			embedBuilder.addField("Deactivated", "", false);
 		return embedBuilder;
 	}
 
@@ -159,6 +168,16 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 
 		protected B addCooldown(CooldownPool cooldownPool) {
 			object.cooldownPools.add(cooldownPool);
+			return thisObject;
+		}
+
+		protected B docs(String docs) {
+			object.docs = docs;
+			return thisObject;
+		}
+
+		protected B examples(String... examples) {
+			object.examples = examples;
 			return thisObject;
 		}
 

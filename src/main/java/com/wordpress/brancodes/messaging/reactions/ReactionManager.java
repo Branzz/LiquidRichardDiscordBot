@@ -9,7 +9,6 @@ import com.wordpress.brancodes.bot.LiquidRichardBot;
 import com.wordpress.brancodes.database.DataBase;
 import com.wordpress.brancodes.main.Main;
 import com.wordpress.brancodes.messaging.PreparedMessages;
-import com.wordpress.brancodes.messaging.chats.Chats;
 import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.message.MessageReaction.MessageReactionBuilder;
 import com.wordpress.brancodes.messaging.reactions.message.commands.Command.CommandBuilder;
@@ -35,6 +34,7 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -44,6 +44,7 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.entities.emoji.CustomEmojiImpl;
+import net.dv8tion.jda.internal.entities.emoji.UnicodeEmojiImpl;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -63,18 +64,16 @@ import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.SUCCESS;
-import static com.wordpress.brancodes.messaging.reactions.message.commands.Command.getCommandRegex;
+import static com.wordpress.brancodes.util.RegexUtil.getCommandRegex;
+import static com.wordpress.brancodes.util.RegexUtil.objectPronunsPart;
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategoryType.*;
-import static com.wordpress.brancodes.util.ImageUtil.*;
+import static com.wordpress.brancodes.util.ImageUtil.sendSpeechBubbleImage;
 import static java.util.stream.Collectors.*;
 
-public class ReactionManager { // TODO convert into singleton (?) or a Manager
-
-	// TODO awkward encapsulation and property ordering
+public class ReactionManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReactionManager.class);
 
-	public static int qCount = 0;
 	final static boolean reactionQuestions = false;
 
 	private static final CustomEmoji[] YAWN_EMOJIS = Arrays.stream(new String[] { "yawn~1:864990663438106624", "yawn~2:864990672209444864",
@@ -86,9 +85,9 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 
 
 	public static List<Reaction> reactions;
-	public static List<MessageReaction> messageReactions;
+	public static List<MessageReaction> messageReactions; // TODO to Unmodifiable?
 
-	public static Map<String, Reaction> commandsByName;
+	public static Map<String, Reaction> reactionsByName;
 
 	static final String aaveRegex = "(^|\\s)" + ((List<String>) JSONReader.getData().get("aave_terms"))
 			.stream()
@@ -114,7 +113,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				Main.reset();
 				System.exit(0);
 			});
-		}).helpPanel("Shut Me Off").build(),
+		}).helpPanel("Shut Me Off").docs("Complete the queued auto-deletes, then shut down the bot and the server").build(),
 		new CommandBuilder("Restart", getCommandRegex("Restart"), OWNER, GUILD_AND_PRIVATE).execute(message -> {
 			message.getJDA().cancelRequests();
 			message.getChannel()
@@ -122,11 +121,11 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 					.complete();
 			Main.reset();
 		}).helpPanel("Restart Me").build(),
-		new CommandBuilder("Help", getCommandRegex("Help(\\s+(Me|Him|Her|Them|It|Every(\\s+One)?)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"),
-								   DEFAULT, GUILD_AND_PRIVATE).execute(message ->
+		new CommandBuilder("Help", getCommandRegex("Help(\\s+" + objectPronunsPart + "(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?"),
+								   DEFAULT, GUILD_AND_PRIVATE).deniable().addMessageChannelCooldown(10_000L).execute(message ->
 				PreparedMessages.replyEmbedMessage(message, "help")
-		).helpPanel("Help On Commands (This Panel)").deniable().addMessageChannelCooldown(10_000L).build(),
-		new CommandBuilder("Say In", "^!s\\s*(\\d{18,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((message, matcher) -> {
+		).helpPanel("Help On Commands (This Panel)").docs("Send compilation of any commands that have a help panel option by sections of \"(Role) in (Channel)\"").build(),
+		new CommandBuilder("Say In", "!s\\s*(\\d{18,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).caseInsensitive().matchFull().executeStatus((message, matcher) -> {
 			final TextChannel textChannelById = message.getJDA().getTextChannelById(matcher.group(1));
 			if (textChannelById == null) {
 				JDAUtil.reply(message, "I Was Not Able To Find That Channel \"" + matcher.group(1) + "\".");
@@ -138,7 +137,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				return true;
 			}
 		}).build(),
-		new CommandBuilder("Say Here", "^!s[\\S\\s]+", MOD, GUILD).caseInsensitive().execute(message -> {
+		new CommandBuilder("Say Here", "!s[\\S\\s]+", MOD, GUILD).caseInsensitive().matchFull().execute(message -> {
 			String response = JavaUtil.truncate(message.getContentRaw().substring(2));
 			message.delete().queue();
 			if (message.getMessageReference() != null) {
@@ -146,7 +145,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			} else {
 				JDAUtil.reply(message, response);
 			}
-		}).build(),
+		}).docs("Send a matching message").build(),
 		new CommandBuilder("Say Proper", "^!p[\\S\\s]+", MOD, GUILD).caseInsensitive().execute(message -> {
 			String response = JavaUtil.truncate(CaseUtil.properCase(message.getContentRaw().substring(2)));
 			message.delete().queue();
@@ -155,7 +154,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			} else {
 				JDAUtil.reply(message, response);
 			}
-		}).build(),
+		}).docs("Send matching message converted to Proper Case").build(),
 		new CommandBuilder("DM", "^!d\\s*(\\d{17,20})(\\D[\\S\\s]+)", MOD, GUILD_AND_PRIVATE).caseInsensitive().execute((message, matcher) ->  // (@?.{2,32})#(\d{4})
 				message.getJDA().retrieveUserById(matcher.group(1)).queue(
 						/*success*/    user -> user.openPrivateChannel().queue(privateChannel ->
@@ -164,7 +163,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 									LOGGER.info("Sent " + matcher.group(2) + " To " + getUserName(user) + " By " + getUserName(message.getAuthor()));
 								})),
 						/*failure*/    user -> message.reply(JavaUtil.truncate(PreparedMessages.getMessage("negative") + " Failed To Find User.")).queue())
-		).build(),
+		).docs("Send message to user").examples("!D 885535338415556989 Yo").build(),
 		new CommandBuilder("Join Voice", "^!j\\s*(\\d{18,20})[\\S\\s]*", MOD, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((message, matcher) -> {
 			VoiceChannel voiceChannel = message.getJDA().getVoiceChannelById(matcher.group(1));
 			if (voiceChannel == null) {
@@ -174,35 +173,35 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
 			return true;
 			// reply(message, PreparedMessages.getMessage("positive") + " Will Attempt To Join.");
-		}).build(),
-		new CommandBuilder("Disconnect", "^!di|Disconnect\\.?", MOD, GUILD).caseInsensitive().executeStatus((Message message) -> {
+		}).docs("Join a voice channel by ID").examples("!J 439422552544123982").build(),
+		new CommandBuilder("Disconnect", "!di|Disconnect\\.?", MOD, GUILD).caseInsensitive().matchFull().executeStatus((Message message) -> {
 			final AudioManager audioManager = message.getGuild().getAudioManager();
 			if (audioManager.isConnected()) {
 				audioManager.closeAudioConnection();
 				return true;
 			}
 			return false;
-		}).build(),
+		}).docs("Leave its current voice channel in that guild").examples("!di").build(),
 
-		new CommandBuilder("Servers", "^!v\\s*", OWNER, PRIVATE).caseInsensitive().execute(message ->
+		new CommandBuilder("Servers", "!v\\s*", OWNER, PRIVATE).caseInsensitive().matchFull().execute(message ->
 				message.reply(JavaUtil.truncate("`" + message.getJDA().getGuilds().stream().map(Guild::getName).collect(joining("\n")) + "`")).queue()).build(),
-		new CommandBuilder("Get Channels", "^!c\\s*", OWNER, GUILD).caseInsensitive().execute(message -> {
+		new CommandBuilder("Get Channels", "!c\\s*", OWNER, GUILD).caseInsensitive().matchFull().execute(message ->
 			System.out.printf("Channels in %s: %s\n", message.getGuild(),
 					message.getGuild()
 							.getTextChannels()
 							.stream()
 							.map(c -> c.getName() + ":" + JDAUtil.hasPermission(c, Permission.VIEW_CHANNEL))
-							.collect(joining(", ")));
-		}).build(),
+							.collect(joining(", ")))
+		).build(),
 
-		new CommandBuilder("Get Commands", "(^!m)|(" + getCommandRegex("(Get|Tell|Show|Give)\\s+(Me\\s+)?((Every|All)\\s+)?(The\\s+)?Commands") + ")",
-						   MOD, GUILD_AND_PRIVATE).caseInsensitive().execute(message -> {
+		new CommandBuilder("Get Commands", "!m|" + getCommandRegex("(Get|Tell|Show|Give)\\s+" + objectPronunsPart + "?((Every|All)\\s+)?(The\\s+)?Commands"),
+						   MOD, GUILD_AND_PRIVATE).caseInsensitive().matchFull().execute(message -> {
 			Map<Boolean, String> deactivatedGroupReactions = reactions.stream()//.filter(r -> r instanceof Command)
 					.collect(groupingBy(Reaction::isDeactivated, mapping(Reaction::getName, joining(", ", "", "."))));
 			message.reply(JavaUtil.truncate("All Commands: " + deactivatedGroupReactions.get(false) + "\nDeactivated:\n" + deactivatedGroupReactions.get(true))).queue();
-		}).build(),
+		}).docs("Show all the commands").examples("Yo Pimp Show Us All The Commands", "Pimp Get Commands").build(),
 
-		new CommandBuilder("Disable Command", "^!dc\\s+([\\W\\w]+)", MOD, GUILD).caseInsensitive().executeResponse((message, matcher) ->
+		new CommandBuilder("Disable Command", "!dc\\s+([\\W\\w]+)", MOD, GUILD).caseInsensitive().matchFull().executeResponse((message, matcher) ->
 				parseCommand(message, command -> {
 					if (command.getName().equals("Disable Command"))
 						return;
@@ -210,19 +209,19 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 					message.reply(JavaUtil.truncate(PreparedMessages.getMessage(message.getGuild().getIdLong(), "positive") + " Disabled " + command)).queue();
 				}, matcher.group(1))
 		).build(),
-		new CommandBuilder("Enable Command", "^!ec\\s+([\\W\\w]+)", OWNER, GUILD).caseInsensitive().executeResponse((message, matcher) ->
+		new CommandBuilder("Enable Command", "!ec\\s+([\\W\\w]+)", OWNER, GUILD).caseInsensitive().matchFull().executeResponse((message, matcher) ->
 				parseCommand(message, command -> {
 					command.activate();
 					message.reply(JavaUtil.truncate(PreparedMessages.getMessage(message.getGuild().getIdLong(), "positive") + " Enabled " + command)).queue();
 				}, matcher.group(1))
 		).build(),
 
-		new CommandBuilder("Get Role", "(^!r)|(" + getCommandRegex("((Get|Tell|Show|Give)\\s+(Me\\s+)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)") + ")",
-						   DEFAULT, GUILD).caseInsensitive().execute(message ->
+		new CommandBuilder("Get Role", "(!r)|(" + getCommandRegex("((Get|Tell|Show|Give)\\s+" + objectPronunsPart + "?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)") + ")",
+						   DEFAULT, GUILD).caseInsensitive().matchFull().execute(message ->
 				message.reply(JavaUtil.truncate("You Are " + UserCategory.of(message.getMember()) + ".")).queue()
 		).build(),
 
-		new CommandBuilder("DM History", "^!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, GUILD_AND_PRIVATE).caseInsensitive().execute(message -> {
+		new CommandBuilder("DM History", "!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, GUILD_AND_PRIVATE).matchFull().caseInsensitive().execute(message -> {
 			String[] messageParts = message.getContentRaw().split("\\s+");
 			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
 				if (user.equals(message.getJDA().getSelfUser())) // TODO FAILURE
@@ -244,7 +243,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			});
 		}).build(),
 
-		new CommandBuilder("Nick All", "^Nick\\s+\"([\\w]{2,32})\"\\s[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
+		new CommandBuilder("Nick All", "Nick\\s*\"([\\w]{2,32})\"[\\s\\S]+", MOD, GUILD).matchFull().executeStatus((message, matcher) -> {
 			message.getMentions().getMembers().forEach(member -> { // TODO bad return status... needs to wait for queue?
 				try {
 					member.modifyNickname(matcher.group(1)).queue();
@@ -253,9 +252,9 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				}
 			});
 			return true;
-		}).build(),
+		}).docs("Give nick name to all mentioned members").examples("Nick \"Spammers\" @THEg#1534 @bottttt#9999").build(),
 
-		new CommandBuilder("Kick All", "^Kick[\\s\\S]+", MOD, GUILD).executeStatus((message, matcher) -> {
+		new CommandBuilder("Kick All", "Kick[\\s\\S]+", MOD, GUILD).matchFull().executeStatus((message, matcher) -> {
 			message.getMentions().getMembers().forEach(member -> { // TODO bad return status... needs to wait for queue? (if found nobody?)
 				try {
 					member.kick().queue();
@@ -263,17 +262,19 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				}
 			});
 			return true;
-		}).build(),
+		}).docs("Kick all mentioned members").examples("Kick @hijkl89#1508 @conor#0009 @aoeu#4035").build(),
 
-		new CommandBuilder("Info", getCommandRegex("(Tell\\s+Me(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?") + "$",
-								   MOD, GUILD)
+		new CommandBuilder("Info", getCommandRegex("(Tell\\s+" + objectPronunsPart + "(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?"),
+								   MOD, GUILD).matchFull()
 				.executeResponse((message, matcher) -> parseCommand(message, command -> JDAUtil.reply(message, command.toFullString()), matcher.group(18), matcher.group(19)))
 				.andChainable()
 				.helpPanel("Guide On Activating A Command")
+				.docs("Send info about a command, i.e. its required role, location, RegEx (the message that activates it), any cooldowns, and info from the help panel, docs, or examples")
+				.examples("Ok Pimp, Tell Me About The Greeting Command. Thanks.", "Pimp Define Command Info")
 				.build(),
 
-		new CommandBuilder("Example", getCommandRegex("(Tell|Show|Give)\\s+(Me\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)") + "$",
-								   DEFAULT, GUILD_AND_PRIVATE)
+		new CommandBuilder("Example", getCommandRegex("(Tell|Show|Give)\\s+(" + objectPronunsPart + "\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)"),
+								   DEFAULT, GUILD_AND_PRIVATE).matchFull()
 				.executeResponse((message, matcher) -> parseCommand(message, command -> message.reply(JavaUtil.truncate(command.getGenerex().random())).queue(), matcher.group(22), matcher.group(23)))
 				.andChainable()
 				.helpPanel("Give Example On How To Activate A Command").build(),
@@ -298,13 +299,13 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			return true;
 		})).deactivated().build(),
 
-		new MessageReactionBuilder("Greeting", "^(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
-												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*$",
-							DEFAULT, GUILD_AND_PRIVATE).execute(message ->
+		new MessageReactionBuilder("Greeting", "(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
+												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*",
+							DEFAULT, GUILD_AND_PRIVATE).matchFull().execute(message ->
 				JDAUtil.reply(message.getChannel().asTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
 		).addMessageChannelCooldown(5_000L).build(),
 
-		new MessageReactionBuilder("Auto Delete", "^?" + Censoring.censoredWordsRegex + "$?", SELF, GUILD)
+		new MessageReactionBuilder("Auto Delete", "^?" + Censoring.censoredWordsRegex + "$?", SELF, GUILD) // TODO ^ $ ??
 				.disableLogging()
 				.whitelistGuilds(973797632436760606L, GUILD_C)
 				.executeResponse((message, matcher) -> {
@@ -318,12 +319,12 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				return FAILURE;
 		}).build(),
 
-		new MessageReactionBuilder("Censor Japanese", "[\\s\\S]*[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024][\\s\\S]*", DEFAULT, GUILD)
+		new MessageReactionBuilder("Censor Japanese", "[\u4E00-\u9FA0\u3041-\u3094\u30A1-\u30F4\u30FC\u3005\u3006\u3024]", DEFAULT, GUILD)
 				.whitelistGuilds(GUILD_C).execute(message ->
 				message.delete().queue()
 		).build(),
 
-		new CommandBuilder("Purge All", getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), MOD, GUILD).execute(message -> {
+		new CommandBuilder("Purge All", getCommandRegex("Purge(\\s+(Every)\\s+(Chat|Channel))?"), MOD, GUILD).matchFull().execute(message -> {
 	//			message.reply(truncate(PreparedMessages.getMessage("positive"))).queue();
 			final AtomicLong count = new AtomicLong(0L);
 			message.getGuild().getChannels().forEach(channel -> {
@@ -339,7 +340,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 					);
 				}
 			});
-			message.reply(JavaUtil.truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue();
+			message.reply(JavaUtil.truncate(PreparedMessages.getMessage("positive"))).queue();
 		}).helpPanel("Purge Censor All Channels").build(),
 
 		new CommandBuilder("Purge Current", getCommandRegex("Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here)"), MOD, GUILD).execute(message -> {
@@ -356,7 +357,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			message.reply(JavaUtil.truncate(PreparedMessages.getMessage("positive") + " Deleted " + count + " Messages.")).queue();
 		}).helpPanel("Purge Censor Current Channel").build(),
 
-		new CommandBuilder("Prune", "^prune", MOD, GUILD).caseInsensitive().executeResponse(commandMessage -> {
+		new CommandBuilder("Prune", "pimp\\s+prune", MOD, GUILD).caseInsensitive().matchFull().executeResponse(commandMessage -> {
 			commandMessage.getGuild().loadMembers().onSuccess(guildMembers -> {
 				final Map<Long, Role> roles = commandMessage.getGuild().getRoles().stream().collect(toMap(Role::getIdLong, Function.identity()));
 				final Set<Role> needsAnyOfRole = Stream.of(907451275807981638L)
@@ -405,7 +406,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 					+ "(?<negs>-*)(?<!\\$)(?:(?<feetInch>(?<base>(?<feet>\\d+)(?:[" + RegexUtil.apostrophes + "]|\\s*(?:foot|feet|ft\\.?)\\s*))"
 					+ "(?:(?<inch>(?<whole>\\d+)(?:\\.(?<inchDec1>\\d*))?|\\.(?<inchDec2>\\d+))|[^" + RegexUtil.apostrophes + "s]))"
 					+ "|(?<value>(?<valWhole>\\d+)(?:\\.(?<valDec1>\\d*))?|\\.(?<valDec2>\\d+))\\s*(?:(?:something|ish|~)\\s*)?" // 12 12. 12.34 .34 .00 .0200
-					+ "(?<unit>(kg|lb|meter|cm)s?([^\\w]+|$)|kilo([sg\\s]|$)\\w*|([" + RegexUtil.apostrophes + "]{2}|[" + RegexUtil.doubleQuotes + "]|in(\\.|ch)|pound)\\w*)?)"),
+					+ "(?<unit>(kg|lb|meter|cm)s?([\\W]+|$)|kilo([sg\\s]|$)\\w*|([" + RegexUtil.apostrophes + "]{2}|[" + RegexUtil.doubleQuotes + "]|in(\\.|ch)|pound)\\w*)?)"),
 			// 		    + "kgs?([^\\w]+|$)"
 			// + "|kilo([sg\\s]|$)\\w*"
 			// 		   + "|lbs?([^\\w]|$)"
@@ -446,7 +447,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 		}).build(),
 
-		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).execute(message -> {
+		new MessageReactionBuilder("Delete Ping", ".*", PING_CENSORED, GUILD_AND_PRIVATE).executeStatus(message -> {
 			if (message.getMentions()
 					   .getMentions(MentionType.USER)
 					   .stream()
@@ -454,13 +455,16 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				message.delete().queue();
 			} else {
 				final Message referenceMessage = message.getReferencedMessage();
-				if (referenceMessage != null &&
-						referenceMessage.getAuthor().getIdLong() == 849711011456221285L)
+				if (referenceMessage != null && referenceMessage.getAuthor().getIdLong() == 849711011456221285L)
 					message.delete().queue();
+				else {
+					return false;
+				}
 			}
+			return true;
 		}).deactivated().build(),
 
-		new CommandBuilder("Birthday", "It'?s Time To Celebrate\\.?", DEFAULT, GUILD).caseInsensitive().executeStatus(message -> {
+		new CommandBuilder("Birthday", "It'?s Time To Celebrate\\.?", DEFAULT, GUILD).caseInsensitive().matchFull().executeStatus(message -> {
 			AudioManager audioManager = message.getGuild().getAudioManager();
 			if (!audioManager.isConnected()) {
 				GuildVoiceState guildVoiceState = message.getMember().getVoiceState();
@@ -492,18 +496,23 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			// audioManager.closeAudioConnection();
 		}).helpPanel("Celebrate The Princess's Birthday").deniable().build(),
 
-		new CommandBuilder("Speech Bubble", "^(speech\\s*bubble|sb)", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
-																																		  (message.getGuild().getIdLong() != GUILD_GS || message.getChannel().getIdLong() == 910004207610904673L)
-																																		  && JavaUtil.presentOrElseReturnStatus(
-					getFirstImage(message) // will users ever be able to send embeds? ImageUtil.getFirstEmbed
-					.or(() -> getFirstSticker(message)
-					.or(() -> getFirstEmote(message)
-					.or(() -> getFirstMessageLink(message)
-					.or(() -> Optional.ofNullable(message.getReferencedMessage()).flatMap(ImageUtil::getFirstAttachment)
-					.or(() -> getMentionedMemberPFP(message)
-					.or(() -> searchFirstAttachment(message))))))),
-				image -> sendSpeechBubbleImage(message, image))
-			).helpPanel("Add Speech Bubble To Image").build(),
+		new CommandBuilder("As Image", "^(pimp\\s*image|pi$)", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
+				JavaUtil.presentOrElseReturnStatus(
+					ImageUtil.findImage(message),
+				image -> message.getChannel().sendMessage(image.getProxyUrl()).queue()))
+			.helpPanel("Add Speech Bubble To Image")
+			.docs("Resend any image, predicted in order by (if multiple: the first of):"
+				  + "attachment, sticker, emote, (same search, but on a) message link, (same search, but on the) replied message, pfp of referenced member, most recent attachment in chat")
+			.build(),
+
+		new CommandBuilder("Speech Bubble", "^(speech\\s*bubble|sb$)", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
+				(message.getGuild().getIdLong() != GUILD_GS || message.getChannel().getIdLong() == 910004207610904673L)
+				&& JavaUtil.presentOrElseReturnStatus(
+					ImageUtil.findImage(message),
+				image -> sendSpeechBubbleImage(message, image)))
+			.helpPanel("Add Speech Bubble To Image").docs("See \"As Image\" docs, but adds scaled transparent speech bubble")
+			.examples("Speech Bubble", "sb")
+			.build(),
 
 		new MessageReactionBuilder("Harita", "^haritard$", DEFAULT, GUILD)
 				.caseInsensitive()
@@ -519,12 +528,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 														|| (message.getChannel() instanceof IMemberContainer
 									&& !PermissionUtil.checkPermission(JDAUtil.toPermissionContainer(message.getChannel()), message.getMember(), Permission.MESSAGE_EMBED_LINKS)),
 														() -> message.reply("Nice Embed Fail. And Before You Ask Why: We Don't Want To See Your Shitty Spam Gifs Here.").queue())
-		).build(),
-
-		new CommandBuilder("Angie", "^When( I|')s The Best Discord Girl'?s Birthday[?]?", DEFAULT, GUILD).caseInsensitive().executeStatus(message ->
-			JavaUtil.booleanReturnStatus(message.getGuild().getIdLong() == GUILD_GS, () ->
-					Chats.getBdayMessage(message.getChannel().asTextChannel()).queue())
-		).build(),
+		).build(), // TODO to pr
 
 		new CommandBuilder("Get Mods", getCommandRegex("(The|A|An)\\s+(Mod|Moderator)s?\\s*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]*\\s*",
 															   "((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+"), MOD, GUILD).execute(message ->
@@ -570,7 +574,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 		}).helpPanel("Set Main Channel").deniable().deactivated().build(),
 
-		new CommandBuilder("Change Log", "^!l\\s+([\\w\\d]+)$", OWNER, GUILD_AND_PRIVATE).executeStatus((message, matcher) -> {
+		new CommandBuilder("Change Log", "!l\\s+([\\w\\d]+)", OWNER, GUILD_AND_PRIVATE).matchFull().executeStatus((message, matcher) -> {
 			String channel = matcher.group(1);
 			if (channel.equalsIgnoreCase("console")) {
 				Main.getBot().setConsoleIDE();
@@ -585,7 +589,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				} else
 					return false;
 			}
-		}).build(),
+		}).docs("Change where the log output is channeled").build(),
 
 		// new CommandBuilder("Censor Target", ".*" + censorChainRegex("special, words", "[\\s.,]*") + ".*",
 		// 						   CENSORED, GUILD).executeStatus(message -> // TODO censor optimizer
@@ -605,20 +609,6 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 						CaseUtil.properCase(message.getAuthor().getName()),
 						CaseUtil.properCase(matcher.reset().results().findFirst().get().group()))))
 		).deactivated().build(),
-		new MessageReactionBuilder("Welcome", "hey[\\w\\W]+", BOT, GUILD).executeStatus((message) -> {
-					if (message.getMember().getIdLong() == 155149108183695360L
-							&& message.getGuild().getIdLong() == GUILD_C) {
-						Optional<Member> member = message.getMentions().getMembers().stream().findFirst();
-						if (member.isEmpty())
-							return false;
-						else {
-							JDAUtil.reply(message, "Hello " + member.get().getAsMention() + " .");
-							return true;
-						}
-					} else
-						return false;
-				}
-		).deactivated().build(),
 		new MessageReactionBuilder("Me&Whom", "(me\\s*and\\s*who)[^Mm][.,;:!?\\s]", DEFAULT, GUILD).caseInsensitive().execute(message -> {
 			JDAUtil.reply(message, "Me And Whom.*");
 		}).deactivated().build(),
@@ -633,12 +623,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 //					message.addReaction("U+1F971").queue();
 				JDAUtil.logMissingChannelPermissions(message.getChannel().asTextChannel());
 			}
-		}).build(),
-
-		new MessageReactionBuilder("Blow", "^(i'?m [a']bout to (nut|blow)[.!]*|ambadeblow)$", DEFAULT, GUILD)
-				.caseInsensitive().whitelistGuilds(GUILD_GS).execute(message ->
-				message.getChannel().sendMessage("https://cdn.discordapp.com/attachments/968670122082455623/969000484717330532/ambadeblow.mov").queue()
-		).build(),
+		}).docs("Yawn").build(),
 
 		new MessageReactionBuilder("Reddit", "(reddit.com/|\\s+|/|^)r/[\\w\\d]+", DEFAULT, GUILD)
 				.caseInsensitive()
@@ -647,14 +632,20 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 					 message.addReaction(Emoji.fromCustom("redditor", 953332619687395338L, false)).queue()
 		).build(),
 
-		new MessageReactionBuilder("Emoji Reaction", "^Pimp\\s+(.+)$", MOD, GUILD).executeResponse((message, matcher) -> {
+		new MessageReactionBuilder("Emoji Reaction", "Pimp\\s+(.+)", MOD, GUILD).matchFull().executeResponse((message, matcher) -> {
 			Message referencedMessage = message.getReferencedMessage();
 			if (referencedMessage == null) {
 				return new ReactionResponse(false, "need to reply to a message");
 			}
-			referencedMessage.addReaction(Emoji.fromFormatted(matcher.group(1))).queue();
+			final String code = matcher.group(1);
+			final EmojiUnion emoji = Emoji.fromFormatted(code);
+			if (emoji instanceof UnicodeEmojiImpl && !(code.startsWith("U+") || code.startsWith("u+"))) {
+				return new ReactionResponse(false, "bad emoji");
+			}
+			message.delete().queue();
+			referencedMessage.addReaction(emoji).queue();
 			return SUCCESS;
-		}).build(),
+		}).docs("Add emoji to referenced message").build(),
 
 		new MessageReactionBuilder("Questions",
 							// "^(" +
@@ -666,7 +657,11 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 		//	  + "|([Rr][Ee][Aa][Ll]+[Yy]+[.?;:\\s]*))\\?",  // Hey Pimp, Can You Help Me
 
 		"^((((wh(ich|o+|a+t|ere|en+|y+))|ho+w)('?s|is|are)?([\\s+].*|[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s])?)|(real+y+[.?;:\\s]*))",
-							DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().execute(message -> {
+							DEFAULT, GUILD_AND_PRIVATE)
+				.caseInsensitive()
+				.addGuildCooldown(10_000_000L)
+				.deactivated()
+				.execute(message -> {
 			// if (!message.getContentRaw().matches("[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*[Ww][Hh][Aa][Tt][.?]*\\s+([Aa][Nn]?[^?]*|[Tt][Hh][Ee]"
 												 // + "\\s+([Ff][Uu]?[Cc]?[Kk]?|[Hh][Ee]+[Ll]+))[,;:<>&^%$#@!{}\\[\\]=/\\-.*+()_\\s]*")) {
 				// qCount++;
@@ -680,8 +675,9 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				} else
 					JDAUtil.reply(message, "Not Here To Answer Questions.");
 			// }
-		}).addGuildCooldown(10_000_000L).deactivated().build(),
-		new CommandBuilder("Evaluate", "^Evaluate`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		}).docs("Detect when user asks a question").build(),
+
+		new CommandBuilder("Evaluate", "Evaluate`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition comp = CompositionParser.parse(matcher.group(1));
@@ -698,7 +694,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().build(),
-		new CommandBuilder("Domain", "^Domain(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		new CommandBuilder("Domain", "Domain(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition comp = CompositionParser.parse(matcher.group(5));
@@ -716,7 +712,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 		// new CommandBuilder("Range", "^Range(.+)$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
 		// 	message.reply(String.valueOf(ExpressionParser.parseExpression(matcher.group(1)).range())).queue();
 		// }).caseInsensitive().build(),
-		new CommandBuilder("Derive", "^Deriv(e|ative)(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		new CommandBuilder("Derive", "Deriv(e|ative)(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition comp = CompositionParser.parse(matcher.group(6));
@@ -731,7 +727,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().build(),
-		new CommandBuilder("Inverse", "^Inverse(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		new CommandBuilder("Inverse", "Inverse(\\s+((And\\s+)?(Then\\s+)?)?Simplify)?`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition parse = CompositionParser.parse(matcher.group(5));
@@ -747,7 +743,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().build(),
-		new CommandBuilder("Truth", "^Truth(.+)$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		new CommandBuilder("Truth", "Truth(.+)", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition parse = CompositionParser.parse(matcher.group(1));
@@ -759,7 +755,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().deactivated().build(),
-		new CommandBuilder("Truth Table", "^Truth\\s+Table`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		new CommandBuilder("Truth Table", "Truth\\s+Table`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			try {
 				Composition parse = CompositionParser.parse(matcher.group(1));
@@ -771,10 +767,10 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().build(),
-		new CommandBuilder("Simplify", "^Simpl(if)?y`*+(.+)`*+$", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
+		new CommandBuilder("Simplify", "Simpl(if)?y`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			String input = matcher.group(2);
-			if (input.matches("[\\d\\w\\s',.\"?!]+"))
+			if (input.matches("[\\w\\s',.\"?!]+"))
 				return;
 			try {
 				response = CompositionParser.parse(input).simplified().toString();
@@ -862,6 +858,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 							};
 							event.reply(String.valueOf(res)).queue();})
 				.subcommandExecuter(event -> LOGGER.error("bad subcommand naming for Custom Command"))
+				.docs("This is just a test slash command")
 				.build(),
 
 		((Supplier<SlashCommand>) () -> {
@@ -934,7 +931,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 				return event -> {
 
 				};
-			}).build()
+			}).deactivated().build()
 		);
 
 	  messageReactions =
@@ -965,7 +962,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			LOGGER.error("Command Info - probable regex group number misplacement encountered");
 			return FAILURE;
 		}
-		Reaction reaction = commandsByName.get(commandName);
+		Reaction reaction = reactionsByName.get(commandName);
 		if (reaction == null) {
 			return FAILURE.onFailureReply(message.getChannel().asTextChannel().sendMessage(JavaUtil.truncate("That Command Doesn't Exist.")));
 		} else {
@@ -998,7 +995,7 @@ public class ReactionManager { // TODO convert into singleton (?) or a Manager
 			reactionsByCategoryChannel(SlashCommand.class);
 
 	static {
-		commandsByName = reactions.stream().collect(toMap(Reaction::getName, Function.identity()));
+		reactionsByName = reactions.stream().collect(toMap(Reaction::getName, Function.identity()));
 	}
 
 	private static Set<MessageReaction> getReactionSet(final MessageReaction command) {

@@ -11,6 +11,12 @@ import java.util.stream.Collectors;
 
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategoryType.*;
 
+/**
+ * A user's category consists of 1 of a ranked category types and a set of any number of non-ranked category types
+ * <p>
+ * Example: PUBLIC, CENSORED, YAWN
+ * Example: MOD
+ */
 public class UserCategory {
 
 	UserCategoryType baseUserCategoryType;

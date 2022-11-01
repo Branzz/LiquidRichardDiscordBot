@@ -21,7 +21,7 @@ public class UnitTest {
 			};
 
 	public static void test() {
-		final MessageReaction convertUnit = (MessageReaction) ReactionManager.commandsByName.get("Convert Units");
+		final MessageReaction convertUnit = (MessageReaction) ReactionManager.reactionsByName.get("Convert Units");
 		Arrays.stream(TEST_CASES).map(testCase -> new TesterMessage(testCase, false)).map(convertUnit::execute).forEachOrdered(ReactionResponse::logResponse);
 	}
 

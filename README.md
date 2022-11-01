@@ -15,7 +15,7 @@ When worked on: March 2021 - April 2021, various times after to update
   * They all work in Morse code too
   * Will randomly deny your command, and you have to try again
   * Natural randomized responses with Generex library
-  * Some commands it can already do:
+  * [Some commands it can already do (click to see full docs):](build/resources/main/docs.md)
     * Get the DM history it has with a user
     * Clever auto delete
       * Delete after a set time
@@ -81,7 +81,7 @@ new VariatedChat(() -> mainChannel.sendMessage("Good morning").queue(),
      3_600_000L), // variance (milliseconds in an hour)
 ```
 
-### [Custom Commands (WIP)](src/main/java/com/wordpress/brancodes/messaging/reactions/commands/custom/custom_command.md)
+### [Custom Commands (WIP)](src/main/java/com/wordpress/brancodes/messaging/reactions/message/commands/custom/custom_command.md)
 
 Comes with a custom script that users can use to create commands or execute once
 

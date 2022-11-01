@@ -98,6 +98,8 @@ public class LiquidRichardBot {
 
 	public static Map<Long, TextChannel> autodeleteLogMap; // <guildId, auto-delete channel>
 
+	public static TextChannel editChannel;
+
 	public Channel getMainChannel(final long guildID) {
 		return jda.getTextChannelById(guildMainChannels.get(guildID));
 	}
@@ -116,7 +118,8 @@ public class LiquidRichardBot {
 															 .collect(toMap(Map.Entry::getKey, e -> (TextChannel) Main.getBot()
 																													  .getJDA()
 																													  .getGuildChannelById(e.getValue())));
-		LOGGER.info("Commands: {}", jda.retrieveCommands().complete().stream().map(c -> c.getName() + " " + c.getId()).collect(joining(", ")));
+		// LOGGER.info("Commands: {}", jda.retrieveCommands().complete().stream().map(c -> c.getName() + " " + c.getId()).collect(joining(", ")));
+		editChannel = Main.getBot().getJDA().getTextChannelById(1034944543205883995L);
 		// jda.getPrivateChannels().forEach(System.out::println);
 
 //		TextChannel channel = jda.getTextChannelById(907045483476836412L);

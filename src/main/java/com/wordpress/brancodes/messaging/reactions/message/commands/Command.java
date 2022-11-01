@@ -3,7 +3,6 @@ package com.wordpress.brancodes.messaging.reactions.message.commands;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
-import com.wordpress.brancodes.bot.Config;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 
@@ -24,20 +23,6 @@ public class Command extends MessageReaction {
 	@OverridingMethodsMustInvokeSuper
 	protected boolean canExecute(final Message message) {
 		return super.canExecute(message) && !(deniable && deny(message));
-	}
-
-	private static final @RegEx String aliasesRegexPart = (String) Config.get("aliasesRegex");
-	private static final @RegEx String questionRegexPart = "(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)*";
-
-	public static @RegEx String getCommandRegex(@RegEx String regexQuestion) {
-		return getCommandRegex(regexQuestion, questionRegexPart);
-	}
-
-	public static @RegEx String getCommandRegex(@RegEx String regexQuestion, @RegEx String questionRegexPart) {
-		return "\\s*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s*(,|\\.+|!+|\\s)?\\s*)?(("
-			   + aliasesRegexPart + "\\s*(\\?+|\\.+|,|!+)?\\s+" + questionRegexPart + regexQuestion
-			   + ")|(" + questionRegexPart + regexQuestion + "\\s*,?\\s+" + aliasesRegexPart //"\\s*(,|\\.+|!+|\\s)?\\s*"
-			   + "))\\s*(\\?+|\\.+|,|!+)?\\s*(\\s+(Thanks|Thank\\s+You)\\s*(\\.+|!+)?)?\\s*";
 	}
 
 	public boolean visibleDescription() {

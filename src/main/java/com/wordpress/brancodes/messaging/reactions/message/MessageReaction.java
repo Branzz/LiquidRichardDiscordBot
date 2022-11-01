@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
+import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.SUCCESS;
 import static com.wordpress.brancodes.util.JavaUtil.truncateEnd;
 
 public class MessageReaction extends Reaction<Message> {
@@ -31,11 +32,15 @@ public class MessageReaction extends Reaction<Message> {
 	BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 	String generexString;
 	Generex generex; // lazily created
+	boolean fullMatch = false;
 
 	protected MessageReaction() { }
 
 	public final boolean matches(String match) {
-		return matcher.reset(match).results().findAny().isPresent();
+		if (fullMatch)
+			return matcher.reset(match).matches();
+		else
+			return matcher.reset(match).results().findAny().isPresent(); // you can also just do ^regex$ on this
 	}
 
 	@Override
@@ -94,7 +99,7 @@ public class MessageReaction extends Reaction<Message> {
 			try {
 				generex = new Generex(generexString == null ? getRegex() : generexString);
 			} catch (IllegalArgumentException e) {
-				generex = new Generex("The Author Of The Generex Library Abandoned Us!");
+				generex = new Generex("The Author Of The Generex Library Abandoned Us");
 			}
 		}
 		return generex;
@@ -102,7 +107,7 @@ public class MessageReaction extends Reaction<Message> {
 
 	public static abstract class Builder<T extends MessageReaction, B extends Builder<T, B>> extends Reaction.Builder<T, B> {
 
-		protected final @RegEx String regex;
+		protected @RegEx String regex;
 		protected boolean caseInsensitive = false;
 		protected boolean reactsPositive;
 
@@ -119,6 +124,11 @@ public class MessageReaction extends Reaction<Message> {
 			return thisObject;
 		}
 
+		public B matchFull() {
+			object.fullMatch = true;
+			return thisObject;
+		}
+
 		public B deactivated() {
 			object.deactivated = true;
 			return thisObject;
@@ -127,7 +137,7 @@ public class MessageReaction extends Reaction<Message> {
 		public B execute(Consumer<Message> executeResponse) {
 			preExecuteResponse = m -> {
 				executeResponse.accept(m);
-				return ReactionResponse.SUCCESS;
+				return SUCCESS;
 			};
 			return thisObject;
 		}
@@ -135,7 +145,7 @@ public class MessageReaction extends Reaction<Message> {
 		public B execute(BiConsumer<Message, Matcher> executeMatcherResponse) {
 			preExecuteMatcherResponse = (m, r) -> {
 				executeMatcherResponse.accept(m, r);
-				return ReactionResponse.SUCCESS;
+				return SUCCESS;
 			};
 			return thisObject;
 		}
@@ -145,7 +155,7 @@ public class MessageReaction extends Reaction<Message> {
 			preExecuteMatcherResponse = (m, r) -> {
 				if (passes.apply(m, r)) {
 					executeMatcherResponse.accept(m, r);
-					return ReactionResponse.SUCCESS;
+					return SUCCESS;
 				} else {
 					return FAILURE;
 				}

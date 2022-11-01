@@ -55,6 +55,14 @@ public class Listener extends ListenerAdapter {
 		}
 	}
 
+	// @Override
+	// public void onMessageUpdate(@NotNull MessageUpdateEvent event) {
+	// 	if (event.getGuild().getIdLong() == ReactionManager.GUILD_GS) {
+	// 		LiquidRichardBot.editChannel.sendMessageEmbeds(new EmbedBuilder().addField("Author", LiquidRichardBot.getUserName(event.getAuthor()), true)
+	// 											  .addField("After", event.getMessage().getContentRaw(), true).build()).queue();
+	// 	}
+	// }
+
 	@Override
 	public void onGuildVoiceMute(@NotNull GuildVoiceMuteEvent event) {
 		super.onGuildVoiceMute(event);
@@ -122,7 +130,7 @@ public class Listener extends ListenerAdapter {
 	private void slashCommand(SlashCommandInteractionEvent event, ChannelType channelType, UserCategory userCategory) {
 		String name = event.getName();
 
-		SlashCommand slashCommand = (SlashCommand) ReactionManager.commandsByName.get(name);
+		SlashCommand slashCommand = (SlashCommand) ReactionManager.reactionsByName.get(name);
 		boolean channelInRange = slashCommand.getChannelType().inRange(channelType);
 		boolean userInRange = userCategory.isPartOf(slashCommand.getUserCategory());
 

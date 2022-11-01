@@ -1,5 +1,9 @@
 package com.wordpress.brancodes.test;
 
+import bran.tree.generators.StatementGenerator;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
+import com.wordpress.brancodes.messaging.reactions.message.MessageReaction;
+
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -31,9 +35,13 @@ public class General {
 	}
 
 	public static void main(String[] args) {
+
+		System.out.println(StatementGenerator.generate(3L, 14) + "\n" + StatementGenerator.generate(3L, 14).simplified());
+
 		// char[] arr = {'a','c','e'};
 		// new String(arr).chars().mapToObj(i -> (Character) (char) i);
 
+		System.out.println(((MessageReaction) ReactionManager.reactionsByName.get("Auto Delete")).getRegex().length());
 		// return forAll(Variable.of("\u03B5")).in(SpecialSetType.R).itHolds(e ->
 				// 	e.greater(Constant.ZERO)
 				//  	 .and(thereExists(Variable.of("\u03B4")).in(SpecialSetType.R).suchThat(d->

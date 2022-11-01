@@ -2,7 +2,7 @@
 
 Create with the slash command
 
-###Language details
+### Language details
  * Dynamically weakly typed
  * "`call`/`get`" with period
  * Delimit statements with newline/tabs (Python), optional semicolon (Scala), OR curly brackets (C)

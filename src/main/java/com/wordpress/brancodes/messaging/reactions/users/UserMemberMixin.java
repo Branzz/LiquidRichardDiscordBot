@@ -348,6 +348,7 @@ public class UserMemberMixin implements User, Member {
 
 	/**
 	 * it should probably just compare the IDs, but User/Member don't
+	 * TODO This may cause problems with the bot recognizing itself in the future. Hello, if that's why you're here.
  	 */
 	@Override
 	public boolean equals(Object o) {
