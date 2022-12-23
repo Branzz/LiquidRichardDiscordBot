@@ -19,6 +19,13 @@ public class UnitMatch {
 	ScaledDecimal value;
 	Unit unit;
 
+	/**
+	 * TODO temporary
+	 */
+	public Unit unit() {
+		return unit;
+	}
+
 	public UnitMatch(MatchResult match) {
 		fullMatch = match.group(0);
 		negatives = match.group(1);

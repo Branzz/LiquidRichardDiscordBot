@@ -1,5 +1,8 @@
 package com.wordpress.brancodes.messaging.chats;
 
+import com.wordpress.brancodes.main.Main;
+import com.wordpress.brancodes.messaging.reactions.ReactionManager;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.slf4j.Logger;
@@ -8,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Chats {
 
@@ -34,6 +38,14 @@ public class Chats {
 
 	private void initChats() {
 		chats = List.of(
+				new PeriodicChat(ignored -> Main.getBot().getJDA().getGuildById(ReactionManager.GUILD_C)
+						.findMembersWithRoles(Main.getBot().getJDA().getRoleById(995451990777811024L))
+						.onSuccess(m -> {
+							if (!m.isEmpty())
+								Main.getBot().getJDA().getTextChannelById(907042441478164562L).sendMessage(m.stream().map(Member::getAsMention).collect(Collectors.joining(" "))
+										+ "hello? this is not a drill. you have to respond to this bot or you will be shot in the head and never allowed to return again.\n"
+										+ "what is your age and biological sex? and what are three of your interests? :heart_eyes_cat:\n").queue();
+						}), 1800000L)
 				// new PeriodicChat(() -> mainChannel.sendMessage(String.valueOf(System.currentTimeMillis())).queue(), 10_000L)
 				// new VariatedChat(() -> Images.send(mainChannel, "mgtow", "DAILY REMINDER MGTOW", "MGTOW"),			 5_000L, 100L),
 				// new VariatedChat(() -> Images.send(mainChannel, "stretch", "DAILY REMINDER STRETCHES", "STRETCHES"), 3_000L, 100L),

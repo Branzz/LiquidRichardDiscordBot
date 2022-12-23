@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 
+import static com.wordpress.brancodes.messaging.reactions.ReactionManager.GUILD_C;
+import static com.wordpress.brancodes.messaging.reactions.ReactionManager.GUILD_GS;
 import static java.util.stream.Collectors.joining;
 
 public class Listener extends ListenerAdapter {
@@ -103,8 +105,8 @@ public class Listener extends ListenerAdapter {
 	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
 		super.onGuildMemberJoin(event);
 		final User user = event.getMember().getUser();
-		if (!user.isBot() && event.getJDA().getGuildById(907042440924528662L).getMember(user) != null
-		 && event.getJDA().getGuildById(910004207120183326L).getMember(user) != null) {
+		if (!user.isBot() && event.getJDA().getGuildById(GUILD_C).getMember(user) != null
+		 && event.getJDA().getGuildById(GUILD_GS).getMember(user) != null) {
 //			event.getMember().ban(0).queue();
 			LOGGER.info("found crossover user:" + event.getMember().getUser().getName() + " " + event.getMember().getIdLong());
 		}
@@ -207,7 +209,7 @@ public class Listener extends ListenerAdapter {
 		String messageContent = MorseUtil.isMorse(contentDisplay)
 										? CaseUtil.properCaseExcludeNumbers(MorseUtil.fromMorse(contentDisplay))
 										: originalMessage.getContentRaw();
-		final Message message = customContentMessage(originalMessage, messageContent);
+		Message message = customContentMessage(originalMessage, messageContent);
 
 		// .forEach(r -> System.out.println(r.getKey().getName()));
 		// List<AbstractMap.SimpleEntry<Reaction, ReactionResponse>> reactions =

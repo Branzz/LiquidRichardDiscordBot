@@ -64,7 +64,7 @@ public class DataBase {
 		return new Data<>(
 			(guildID != null && userID != null)
 			&& (guildID == ReactionManager.GUILD_C
-				&& (userID == 1006323394997919774L || userID == 904203586551054376L || userID == 956135678893252628L
+				&& (userID == 1006323394997919774L || userID == 956135678893252628L
 					|| userID == 928336417514479646L || userID == 936433911486087208L)
 			|| guildID == 973797632436760606L && (userID == 1006323394997919774L || userID == 445655234308603914L)),
 			guildID);
@@ -84,7 +84,7 @@ public class DataBase {
 	}
 
 	public static Map<Long, Long> guildAutoDeleteChannelMap = Map.of(
-			907042440924528662L, 920653763130310706L
+			// 907042440924528662L, 920653763130310706L
 			// 973797632436760606L, 1001374877539893298L
 	);
 

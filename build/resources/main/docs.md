@@ -1,7 +1,9 @@
 ## Reactions and Commands Docs
-Reaction: something that can be checked and triggered if matched,it is not necessarily a message, so one could have commands that require voice activation theoretically.
+Reaction: something that can be checked and triggered if matched,it is not necessarily a message, so one could theoretically have commands that require voice activation (slash commands are of this other type)
 
-Message Reaction: a reaction explicitly for messages, but without command features like being on the help panel.
+Message Reaction: a reaction explicitly for messages, but without command features like being on the help panel
+
+Slash commands have an all lower case name
 
 The docs beyond this template were auto-generated and omits internal Owner commands
 
@@ -12,7 +14,7 @@ The user category that can use this command
 #### Location
 Where this command can be used
 #### RegEx
-When this regular expression matches a message, the command runs (with possible extra checks)
+When this regular expression matches a message, the command runs (with possible extra checks). Can be truncated to end with '...'.
 #### Cooldown
 The amount of time a certain thing is locked. 3 Seconds For Message Channels means this command can't be ran in each message channel until after 3 seconds, but two could have it ran at once
 #### Example
@@ -28,7 +30,7 @@ Guild And DM
 #### Docs
 Send compilation of any commands that have a help panel option by sections of "(Role) in (Channel)"
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Help(\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Help(\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Help(\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Help(\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+Out)?)?(\\s+Here)?(\\s+Right\\s+Now)?\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Say In
 #### User
 Moderator
@@ -99,7 +101,7 @@ Yo Pimp Show Us All The Commands
 #### Example
 Pimp Get Commands
 #### RegEx
-!m|(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?((Every|All)\\s+)?(The\\s+)?Commands)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?((Every|All)\\s+)?(The\\s+)?Commands\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+!m|(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Get|Tell|Show|Give)\\s+((Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)\\s+)?((Every|All)\\s+)?(The\\s+)?Commands)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Get|Tell|Show|Give)\\s+((Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)\\s+)?((Every|All)\\s+)?(The\\s+)?Commands\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Disable Command
 #### User
 Moderator
@@ -113,7 +115,7 @@ Public
 #### Location
 Guild
 #### RegEx
-(!r)|((?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*))
+(!r)|((\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((Get|Tell|Show|Give)\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)?|What(\\s+I|')s)\\s+(My\\s+)?(Role|Position)\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*))
 ### Nick All
 #### User
 Moderator
@@ -149,7 +151,7 @@ Ok Pimp, Tell Me About The Greeting Command. Thanks.
 #### Example
 Pimp Define Command Info
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell\\s+(Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Example
 Give Example On How To Activate A Command
 #### User
@@ -157,14 +159,13 @@ Public
 #### Location
 Guild And DM
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell|Show|Give)\\s+((Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell|Show|Give)\\s+((Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(!e)|((\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell|Show|Give)\\s+((Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*(Tell|Show|Give)\\s+((Me|Him|Her|It|Us|Every(one|body|\\s+(One|Body))|Them)\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*))
 ### Custom Command
 #### User
 Moderator
 #### Location
 Guild And DM
 #### Deactivated
-‎
 #### RegEx
 (Pimp\\s+)?(Create|Make|Add)\\s+(The\\s+)?(Custom\\s+)?Command\\s+When\\s+(.+)\\s+(Named|Called)\\s+(.+)
 ?+(```)?+(.+)(```)?+
@@ -173,10 +174,8 @@ Guild And DM
 Public
 #### Location
 Guild And DM
-#### Cooldown
-5 Seconds For Message Channels
 #### RegEx
-(null\\s\*(\\?+|\\.+|,|!+)?\\s+(Greetings|Sup|Hi|Hey|Hello|Yo))|((Greetings|Sup|Hi|Hey|Hello|Yo)\\s\*[,.]?\\s+null)\\s\*[.!\\s]\*
+(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(Greetings|Sup|Hi|Hey|Hello|Yo))|((Greetings|Sup|Hi|Hey|Hello|Yo)\\s\*[,.]?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))\\s\*[.!\\s]\*
 ### Auto Delete
 #### User
 Liquid Richard
@@ -198,7 +197,7 @@ Moderator
 #### Location
 Guild
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge(\\s+(Every)\\s+(Chat|Channel))?)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge(\\s+(Every)\\s+(Chat|Channel))?\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge(\\s+(Every)\\s+(Chat|Channel))?)|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge(\\s+(Every)\\s+(Chat|Channel))?\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Purge Current
 Purge Censor Current Channel
 #### User
@@ -206,7 +205,7 @@ Moderator
 #### Location
 Guild
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here)\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*Purge\\s+(The|This)?\\s+(Chat|Channel|(Right )?Here)\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Prune
 #### User
 Moderator
@@ -237,7 +236,6 @@ Censor List
 #### Location
 Guild And DM
 #### Deactivated
-‎
 #### RegEx
 .\*
 ### Birthday
@@ -255,9 +253,9 @@ Public
 #### Location
 Guild And DM
 #### Docs
-Resend any image, predicted in order by (if multiple: the first of):attachment, sticker, emote, (same search, but on a) message link, (same search, but on the) replied message, pfp of referenced member, most recent attachment in chat
+Resend any image, predicted in order by (if multiple: the first of): Sticker, Custom Emote, Attachment From Message Reference/Message URL/Message ID, Mentioned Member PFP, Mentioned Role Icon, If There's No ID: The Last Image Out Of The Most Recent 10 Messages, First Attachment. Default Emojis And Stickers Don't Embed (Because They Are SVG/JSON)
 #### RegEx
-^(pimp\\s\*image|pi$)
+^(pimp\\s\*image|pi($|\\s\*(\\d{18,20}|https)))
 ### Speech Bubble
 Add Speech Bubble To Image
 #### User
@@ -293,9 +291,8 @@ Moderator
 #### Location
 Guild
 #### Deactivated
-‎
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+(The|A|An)\\s+(Mod|Moderator)s?\\s\*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]\*\\s\*)|(((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+(The|A|An)\\s+(Mod|Moderator)s?\\s\*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]\*\\s\*\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+(The|A|An)\\s+(Mod|Moderator)s?\\s\*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]\*\\s\*)|(((What|Who)\\s+(Are|Is)|(Whose|Who'?s|Who're))\\s+(The|A|An)\\s+(Mod|Moderator)s?\\s\*(\\s((In\\s+(This|The)\\s+(Server|Guild|Place))|Here))?[?.]\*\\s\*\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Main Channel
 Set Main Channel
 #### User
@@ -303,9 +300,8 @@ Moderator
 #### Location
 Guild
 #### Deactivated
-‎
 #### RegEx
-(?:\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?((null\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((((Make|Set)\\s\*)#.{1,32}\\s\*((The|A)\\s+)?(Main\\s+Channel))|((Make|Set)\\s+((The|A)\\s+)?(Main\\s+Channel)\\s\*#.{1,32})))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((((Make|Set)\\s\*)#.{1,32}\\s\*((The|A)\\s+)?(Main\\s+Channel))|((Make|Set)\\s+((The|A)\\s+)?(Main\\s+Channel)\\s\*#.{1,32}))\\s\*,?\\s+null))(\\s+(Please)+)\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
+(\\s\*((Yo|Hey|Ok|Alright|All\\s+Right|Hi|Hello)\\s\*(,|\\.+|!+|\\s)?\\s\*)?(((Pimp|(Liquid )?Richard|Lil Richie)\\s\*(\\?+|\\.+|,|!+)?\\s+(((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((((Make|Set)\\s\*)#.{1,32}\\s\*((The|A)\\s+)?(Main\\s+Channel))|((Make|Set)\\s+((The|A)\\s+)?(Main\\s+Channel)\\s\*#.{1,32})))|((((Can\\s+|Could\\s+)You\\s+)|(You\\s+Should\\s+))?(Please\\s+)\*((((Make|Set)\\s\*)#.{1,32}\\s\*((The|A)\\s+)?(Main\\s+Channel))|((Make|Set)\\s+((The|A)\\s+)?(Main\\s+Channel)\\s\*#.{1,32}))\\s\*,?\\s+(Pimp|(Liquid )?Richard|Lil Richie)))(\\s+Please)\*\\s\*(\\?+|\\.+|,|!+)?\\s\*(\\s+(Thanks|Thank\\s+You)\\s\*(\\.+|!+)?)?\\s\*)
 ### Change Log
 #### User
 Bot Owner
@@ -321,7 +317,6 @@ Public
 #### Location
 Guild
 #### Deactivated
-‎
 #### RegEx
 (^|\\s)(chile|asf|purr+|bae|boo|sus|hella|deadass|headass|doe|cap|shook|lit|finna|aggy|fam|ion|ghetto|go off)($|\\s)
 ### Me&Whom
@@ -330,7 +325,6 @@ Public
 #### Location
 Guild
 #### Deactivated
-‎
 #### RegEx
 (me\\s\*and\\s\*who)[^Mm][.,;:!?\\s]
 ### Yawn
@@ -357,7 +351,14 @@ Guild
 #### Docs
 Add emoji to referenced message
 #### RegEx
-Pimp\\s+(.+)
+^pimp\\s+(.+)
+### Verify
+#### User
+Public
+#### Location
+Guild And DM
+#### RegEx
+^\\?v(e(r(i(f)?)?)?)?
 ### Questions
 #### User
 Public
@@ -368,7 +369,6 @@ Guild And DM
 #### Docs
 Detect when user asks a question
 #### Deactivated
-‎
 #### RegEx
 ^((((wh(ich|o+|a+t|ere|en+|y+))|ho+w)('?s|is|are)?([\\s+].\*|[,;:<>&^%$#@!{}\\[\\]=/\\-.\*+()_\\s])?)|(real+y+[.?;:\\s]\*))
 ### Evaluate
@@ -411,7 +411,6 @@ Guild And DM
 #### Docs
 Find the truthness of a statement (can use Evaluate)
 #### Deactivated
-‎
 #### RegEx
 Statement\\s+Truth(.+)
 ### Truth Table
@@ -474,4 +473,10 @@ Public
 #### Location
 Guild
 #### Deactivated
-‎
+### Tkin
+#### User
+Public
+#### Location
+Guild
+#### RegEx
+.\*

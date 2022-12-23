@@ -1,0 +1,27 @@
+body {
+    text-align: center;
+    vertical-align: middle;
+    font-family: Verdana, sans-serif;
+    background-color: black;
+    color: white;
+}
+
+h2, h3 {
+    color: brown;
+}
+
+h3 {
+    font-size: 20pt;
+}
+
+h4 {
+    font-size: 14pt;
+}
+
+p {
+    width: auto;
+}
+
+#regex + p {
+    font-family: "Consolos", "Courier New", monospace, arial;
+}

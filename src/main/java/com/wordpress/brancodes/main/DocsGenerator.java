@@ -20,13 +20,14 @@ public class DocsGenerator {
 			fileWriter.flush();
 			fileWriter.append("## Reactions and Commands Docs\n"
 							  + "Reaction: something that can be checked and triggered if matched,"
-							  + "it is not necessarily a message, so one could have commands that require voice activation theoretically.\n\n"
-							  + "Message Reaction: a reaction explicitly for messages, but without command features like being on the help panel.\n\n"
+							  + "it is not necessarily a message, so one could theoretically have commands that require voice activation (slash commands are of this other type)\n\n"
+							  + "Message Reaction: a reaction explicitly for messages, but without command features like being on the help panel\n\n"
+							  + "Slash commands have an all lower case name\n\n"
 							  + "The docs beyond this template were auto-generated and omits internal Owner commands\n\n"
 							  + "### Template Command\nHelp Panel Description (if there's none, I won't be on the help panel)\n"
 							  + "#### User\nThe user category that can use this command\n"
 							  + "#### Location\nWhere this command can be used\n"
-							  + "#### RegEx\nWhen this regular expression matches a message, the command runs (with possible extra checks)\n"
+							  + "#### RegEx\nWhen this regular expression matches a message, the command runs (with possible extra checks). Can be truncated to end with '...'.\n"
 							  + "#### Cooldown\nThe amount of time a certain thing is locked. "
 							  + "3 Seconds For Message Channels means this command can't be ran in each message channel until after 3 seconds, but two could have it ran at once\n"
 							  + "#### Example\nThis is an example message that would call the command\n");
@@ -40,7 +41,12 @@ public class DocsGenerator {
 					if (e.getDescription() != null)
 						fileWriter.append(e.getDescription()).write('\n');
 					e.getFields().forEach(f -> {
-					try { fileWriter.append("#### ").append(f.getName()).append('\n').append(f.getValue()).append('\n');
+					try {
+						if (f.getName() != null && !f.getName().equals("\u200e"))
+							fileWriter.append("#### ").append(f.getName());
+						if (f.getValue() != null && !f.getValue().equals("\u200e"))
+							fileWriter.append('\n').append(f.getValue());
+						fileWriter.append('\n');
 						} catch (IOException ex) { throw new RuntimeException(ex); }
 					});
 				} catch (IOException ex) { throw new RuntimeException(ex); }

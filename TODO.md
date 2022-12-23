@@ -21,3 +21,5 @@
 * display all custom commands
 
 * store them... (recompile)
+
+sql

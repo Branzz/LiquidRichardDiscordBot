@@ -7,10 +7,13 @@ import com.wordpress.brancodes.messaging.reactions.Reaction;
 import com.wordpress.brancodes.messaging.reactions.ReactionChannelType;
 import com.wordpress.brancodes.messaging.reactions.ReactionResponse;
 import com.wordpress.brancodes.messaging.reactions.users.UserCategoryType;
+import com.wordpress.brancodes.util.JDAUtil;
 import com.wordpress.brancodes.util.RegexUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.RegEx;
@@ -27,12 +30,15 @@ import static com.wordpress.brancodes.util.JavaUtil.truncateEnd;
 
 public class MessageReaction extends Reaction<Message> {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(JDAUtil.class);
+
 	Matcher matcher;
 	Function<Message, ReactionResponse> executeResponse;
 	BiFunction<Message, Matcher, ReactionResponse> executeMatcherResponse;
 	String generexString;
 	Generex generex; // lazily created
 	boolean fullMatch = false;
+	boolean debugReactionResponse = false;
 
 	protected MessageReaction() { }
 
@@ -55,6 +61,8 @@ public class MessageReaction extends Reaction<Message> {
 	public ReactionResponse execute(Message message) {
 		if (canExecute(message)) {
 			ReactionResponse reactionResponse = accept(message);
+			if (debugReactionResponse && reactionResponse.hasLogResponse())
+				LOGGER.info(reactionResponse.getLogResponse());
 			if (reactionResponse.status())
 				addCooldowns(message);
 			return reactionResponse;
@@ -228,6 +236,11 @@ public class MessageReaction extends Reaction<Message> {
 
 		public B andReactPositive() {
 			reactsPositive = true;
+			return thisObject;
+		}
+
+		public B debugReactionResponse() {
+			object.debugReactionResponse = true;
 			return thisObject;
 		}
 

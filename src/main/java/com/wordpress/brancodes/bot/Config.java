@@ -17,7 +17,8 @@ public final class Config {
 			"prefix", "Pimp",
 			"suffix", "",
 			"aliases", new String[] { "Pimp", "Richard", "Liquid Richard" },
-			"ownerID", 996757252176363551L, // Don't make this a bot's ID //
+			"aliasesRegex", "(Pimp|(Liquid )?Richard|Lil Richie)",
+			"ownerID", 1049356976561332336L, // Don't make this a bot's ID //
 			"creatorID", 849711011456221285L,
 			"embedColor", new Color(47, 49, 54)
 	};
@@ -55,7 +56,7 @@ public final class Config {
 		jda.retrieveUserById((Long) Config.get("ownerID")).queue(u -> CONFIG.put("ownerUser", u));
 		jda.retrieveUserById((Long) Config.get("creatorID")).queue(u -> CONFIG.put("creatorUser", u));
 //		CONFIG.put("aliasesRegex", "@?(<@!" + jda.getSelfUser().getId() + ">|Pimp|(Liquid )?Richard|Lil Richie)");
-		CONFIG.put("aliasesRegex", "(Pimp|(Liquid )?Richard|Lil Richie)");
+// 		CONFIG.put("aliasesRegex", "(Pimp|(Liquid )?Richard|Lil Richie)");
 	}
 
 }

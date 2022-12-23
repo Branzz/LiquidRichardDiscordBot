@@ -11,6 +11,7 @@ public class ReactionResponse {
 	public static final ReactionResponse SUCCESS = new ReactionResponse(true);
 	public static final ReactionResponse FAILURE = new ReactionResponse(false);
 
+	// status doesn't necessarily mean the command succeeded, just that it did anything
 	private final boolean status;
 	private final String logResponse;
 	private RestAction response;
@@ -43,6 +44,15 @@ public class ReactionResponse {
 	public ReactionResponse(boolean status) {
 		this.status = status;
 		this.logResponse = null;
+	}
+
+	/**
+	 * to show meaning of boolean: "new ReactionResponse(FAILURE, "etc");
+	 * @param from what determines the status
+	 */
+	public ReactionResponse(ReactionResponse from, String logResponse) {
+		this.status = from.status;
+		this.logResponse = logResponse;
 	}
 
 	public boolean status() {

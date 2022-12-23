@@ -17,6 +17,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -73,17 +74,33 @@ public class Censoring {
 	}
 
 	public static void flushAutoDeleteQueue() {
-		// try catch ?
 		int shutdown = 0;
+		final int autoDeleteQueueSize = autoDeleteQueue.size();
 		for (AuditableRestAction<Void> voidAuditableRestAction : autoDeleteQueue) {
 			try {
 				voidAuditableRestAction.complete();
 				shutdown++;
 			} catch (ErrorResponseException | RejectedExecutionException ignored) { }
 		}
-		System.out.printf("auto deleted %s/%s queued messages\n", shutdown, autoDeleteQueue.size());
+		AtomicInteger amountShutdown = new AtomicInteger(0);
+		flushAutoDeleteAndWait(amountShutdown);
+		System.out.printf("auto deleted %s/%s queued messages\n", shutdown, autoDeleteQueueSize);
 	}
 
+	private static void flushAutoDeleteAndWait(AtomicInteger amountShutdown) {
+		if (autoDeleteQueue.isEmpty())
+			return;
+		AuditableRestAction<Void> voidAuditableRestAction = autoDeleteQueue.pop();
+		try {
+			voidAuditableRestAction.queue(s -> {
+				amountShutdown.incrementAndGet();
+				flushAutoDeleteAndWait(amountShutdown);
+			});
+		} catch (ErrorResponseException | RejectedExecutionException e) {
+			System.out.println(e.getMessage());
+			voidAuditableRestAction.queue(s -> flushAutoDeleteAndWait(amountShutdown));
+		}
+	}
 	/**
 	 * @return word(s) being censored
 	 */

@@ -25,7 +25,7 @@ public class Main {
 //		if (args.length > 1)
 //			upsertCommands(new HashSet<>(List.of(args)));
 
-		Runtime.getRuntime().addShutdownHook(new Thread(Censoring::flushAutoDeleteQueue));
+		// Runtime.getRuntime().addShutdownHook(new Thread(Censoring::flushAutoDeleteQueue));
 
 		DocsGenerator.generateMdDocs();
 
@@ -38,6 +38,8 @@ public class Main {
 			 * upsert help commandthatdoesntexist falsity
 			 */
 			String[] input = bReader.readLine().split("\\s+");
+			Censoring.flushAutoDeleteQueue();
+			reset();
 //			while (!input[0].equals("end")) {
 //				...
 //				input = bReader.readLine().split("\\s+");

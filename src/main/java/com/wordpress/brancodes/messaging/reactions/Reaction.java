@@ -27,8 +27,6 @@ public abstract class Reaction<T> { // abstract away Message to generic in super
 	protected boolean guildFiltering;
 	protected Set<Long> guildList;
 	protected boolean whitelist;
-
-
 	protected String docs;
 	protected String[] examples;
 

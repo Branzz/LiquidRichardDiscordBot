@@ -30,7 +30,7 @@ public enum Unit {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Unit.class);
 
 	final BaseUnitType baseUnitType;
-	final UnitSystem unitSystem;
+	public final UnitSystem unitSystem;
 	final Function<ScaledDecimal, String> converter;
 	final Function<ScaledDecimal, ScaledDecimal> normalizer; // to baseUnitType.normal
 	final Function<ScaledDecimal, ScaledDecimal> fromNormal; // from baseUnitType.normal

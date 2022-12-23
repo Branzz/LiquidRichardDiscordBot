@@ -15,7 +15,7 @@ public class JDAUtil {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JDAUtil.class);
 
-	public static final Matcher IDMatcher = Pattern.compile("[\\d]{18,21}").matcher("");
+	public static final Matcher IDMatcher = Pattern.compile("\\d{18,21}").matcher("");
 
 	public static void reply(Message message, String reply) {
 		if (message.getChannelType() == ChannelType.TEXT)
@@ -53,7 +53,7 @@ public class JDAUtil {
 		return hasPermission(channel, Permission.MESSAGE_SEND);
 	}
 
-	public static boolean hasPermission(final TextChannel channel, Permission permission) {
+	public static boolean hasPermission(final TextChannel channel, Permission permission) { // for the bot
 		return PermissionUtil.checkPermission(channel, Objects.requireNonNull(channel.getGuild().getMember(channel.getJDA().getSelfUser())),
 											  permission);
 	}
@@ -68,6 +68,13 @@ public class JDAUtil {
 
 	public static IPermissionContainer toPermissionContainer(MessageChannelUnion channel) {
 		return (IPermissionContainer) (channel instanceof ThreadChannel ? channel.asThreadChannel().getParentChannel() : channel);
+	}
+
+	public static String nonEmpty(String string) {
+		if (string.isEmpty())
+			return "None Found.";
+		else
+			return string;
 	}
 
 }

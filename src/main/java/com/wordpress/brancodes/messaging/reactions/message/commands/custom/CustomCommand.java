@@ -66,7 +66,7 @@ public class CustomCommand extends Reaction<Event> {
 	}
 
 	public void register() {
-		CustomCommandListener.put(name, guild.getIdLong(), name, this);
+		GenericListener.put(name, guild.getIdLong(), name, this);
 	}
 
 	@Override
@@ -235,7 +235,7 @@ public class CustomCommand extends Reaction<Event> {
 					new ClassType<GuildUnbanEvent>("guildUnban").extend("genericGuild")
 	));
 
-	public static abstract class Builder<T extends CustomCommand, B extends Builder<T, B>> extends Reaction.Builder<T, B> { // could scale up to extending Reaction
+	public static abstract class Builder<T extends CustomCommand, B extends Builder<T, B>> extends Reaction.Builder<T, B> {
 
 		public Builder(String name, String event, User creator, Guild guild, String text) {
 			super(name, UserCategoryType.DEFAULT, ReactionChannelType.GUILD);

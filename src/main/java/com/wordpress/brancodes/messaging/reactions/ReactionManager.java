@@ -35,6 +35,7 @@ import net.dv8tion.jda.api.entities.Message.MentionType;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
+import net.dv8tion.jda.api.entities.sticker.StickerItem;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -44,16 +45,18 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 import net.dv8tion.jda.internal.entities.emoji.CustomEmojiImpl;
-import net.dv8tion.jda.internal.entities.emoji.UnicodeEmojiImpl;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -64,10 +67,10 @@ import static com.wordpress.brancodes.bot.LiquidRichardBot.getUserName;
 import static com.wordpress.brancodes.messaging.reactions.ReactionChannelType.*;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.FAILURE;
 import static com.wordpress.brancodes.messaging.reactions.ReactionResponse.SUCCESS;
-import static com.wordpress.brancodes.util.RegexUtil.getCommandRegex;
-import static com.wordpress.brancodes.util.RegexUtil.objectPronunsPart;
 import static com.wordpress.brancodes.messaging.reactions.users.UserCategoryType.*;
 import static com.wordpress.brancodes.util.ImageUtil.sendSpeechBubbleImage;
+import static com.wordpress.brancodes.util.RegexUtil.getCommandRegex;
+import static com.wordpress.brancodes.util.RegexUtil.objectPronunsPart;
 import static java.util.stream.Collectors.*;
 
 public class ReactionManager {
@@ -95,8 +98,10 @@ public class ReactionManager {
 			.collect(RegexUtil.orChainRegex()) + "($|\\s)";
 
 	public static final long GUILD_GS = 910004207120183326L;
-	public static final long GUILD_C = 907042440924528662L;
+	public static final long GUILD_C = 1036455284308185139L;
 	public static final long GUILD_DW = 959299477729079328L;
+
+	final static Consumer<Throwable> LOG_EXCEPTION = f -> LOGGER.info(f.getMessage());
 
 	static {
 		reactions = List.of(
@@ -194,7 +199,7 @@ public class ReactionManager {
 							.collect(joining(", ")))
 		).build(),
 
-		new CommandBuilder("Get Commands", "!m|" + getCommandRegex("(Get|Tell|Show|Give)\\s+" + objectPronunsPart + "?((Every|All)\\s+)?(The\\s+)?Commands"),
+		new CommandBuilder("Get Commands", "!m|" + getCommandRegex("(Get|Tell|Show|Give)\\s+(" + objectPronunsPart + "\\s+)?((Every|All)\\s+)?(The\\s+)?Commands"),
 						   MOD, GUILD_AND_PRIVATE).caseInsensitive().matchFull().execute(message -> {
 			Map<Boolean, String> deactivatedGroupReactions = reactions.stream()//.filter(r -> r instanceof Command)
 					.collect(groupingBy(Reaction::isDeactivated, mapping(Reaction::getName, joining(", ", "", "."))));
@@ -221,7 +226,7 @@ public class ReactionManager {
 				message.reply(JavaUtil.truncate("You Are " + UserCategory.of(message.getMember()) + ".")).queue()
 		).build(),
 
-		new CommandBuilder("DM History", "!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, GUILD_AND_PRIVATE).matchFull().caseInsensitive().execute(message -> {
+		new CommandBuilder("DM History", "!h\\s+\\d{1,20}\\s+\\d+\\s*", OWNER, GUILD_AND_PRIVATE).caseInsensitive().matchFull().execute(message -> {
 			String[] messageParts = message.getContentRaw().split("\\s+");
 			message.getJDA().retrieveUserById(messageParts[1]).queue(user -> {
 				if (user.equals(message.getJDA().getSelfUser())) // TODO FAILURE
@@ -266,16 +271,16 @@ public class ReactionManager {
 
 		new CommandBuilder("Info", getCommandRegex("(Tell\\s+" + objectPronunsPart + "(\\s+What|\\s+About)?|Define|What\\s+Is)\\s+(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)(\\s+Is)?"),
 								   MOD, GUILD).matchFull()
-				.executeResponse((message, matcher) -> parseCommand(message, command -> JDAUtil.reply(message, command.toFullString()), matcher.group(18), matcher.group(19)))
+				.executeResponse((message, matcher) -> parseCommand(message, command -> JDAUtil.reply(message, command.toFullString()), matcher.group(22), matcher.group(23), matcher.group(38), matcher.group(39)))
 				.andChainable()
 				.helpPanel("Guide On Activating A Command")
 				.docs("Send info about a command, i.e. its required role, location, RegEx (the message that activates it), any cooldowns, and info from the help panel, docs, or examples")
 				.examples("Ok Pimp, Tell Me About The Greeting Command. Thanks.", "Pimp Define Command Info")
 				.build(),
 
-		new CommandBuilder("Example", getCommandRegex("(Tell|Show|Give)\\s+(" + objectPronunsPart + "\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)"),
+		new CommandBuilder("Example", "(!e)|(" + getCommandRegex("(Tell|Show|Give)\\s+(" + objectPronunsPart + "\\s+)?(An?\\s+)?Example\\s+((For|Of)\\s+)?(The\\s+)?(Command\\s+(.{1,16})|(.{1,16})\\s+Command)") + ")",
 								   DEFAULT, GUILD_AND_PRIVATE).matchFull()
-				.executeResponse((message, matcher) -> parseCommand(message, command -> message.reply(JavaUtil.truncate(command.getGenerex().random())).queue(), matcher.group(22), matcher.group(23)))
+				.executeResponse((message, matcher) -> parseCommand(message, command -> message.reply(JavaUtil.truncate(command.getGenerex().random())).queue(), matcher.group(27), matcher.group(28), matcher.group(45), matcher.group(46)))
 				.andChainable()
 				.helpPanel("Give Example On How To Activate A Command").build(),
 
@@ -299,22 +304,24 @@ public class ReactionManager {
 			return true;
 		})).deactivated().build(),
 
-		new MessageReactionBuilder("Greeting", "(" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
-												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + ")\\s*[.!\\s]*",
+		new MessageReactionBuilder("Greeting", "((" + (Config.get("aliasesRegex") + "\\s*(\\?+|\\.+|,|!+)?\\s+" + "(Greetings|Sup|Hi|Hey|Hello|Yo)"
+												+ ")|(" + "(Greetings|Sup|Hi|Hey|Hello|Yo)" + "\\s*[,.]?\\s+" + (Config.get("aliasesRegex"))) + "))\\s*[.!\\s]*",
 							DEFAULT, GUILD_AND_PRIVATE).matchFull().execute(message ->
 				JDAUtil.reply(message.getChannel().asTextChannel(), Math.random() < .5 ? "Not Here To Greet." : "Yo.")
-		).addMessageChannelCooldown(5_000L).build(),
+		)
+													   // .addMessageChannelCooldown(5_000L)
+													   .build(),
 
 		new MessageReactionBuilder("Auto Delete", "^?" + Censoring.censoredWordsRegex + "$?", SELF, GUILD) // TODO ^ $ ??
 				.disableLogging()
-				.whitelistGuilds(973797632436760606L, GUILD_C)
+				.whitelistGuilds()
 				.executeResponse((message, matcher) -> {
 			if (!message.isPinned()) { // TODO guild subscribed to this command
 				final String censoredWords = Censoring.logWordCensor(message, matcher);
 				if (censoredWords == null)
 					return FAILURE;
 				// LOGGER.info("Censoring: " + message.getContentDisplay());
-				return new ReactionResponse(censoredWords);
+				return new ReactionResponse(SUCCESS, censoredWords);
 			} else
 				return FAILURE;
 		}).build(),
@@ -369,6 +376,11 @@ public class ReactionManager {
 					// System.out.println(membersWithRole.stream()
 					// 								  .map(Member::getEffectiveName)
 					// 								  .collect(joining()));
+					Set<Member> needsProcessingMembers = membersWithRole.stream()
+																		.filter(member -> member.getRoles()
+																								.stream()
+																								.anyMatch(r -> r .equals(roles.get(995451990777811024L))))
+																		.collect(toSet());
 					Set<Member> membersWithOnlyRole = membersWithRole.stream()
 																	  .filter(member -> member.getRoles().stream().anyMatch(needsAnyOfRole::contains))
 																	  .filter(member -> member.getRoles().stream().noneMatch(butNotRole::contains))
@@ -389,23 +401,38 @@ public class ReactionManager {
 								 .filter(member -> !recentMembers.contains(member))
 								 .forEach(nonRecentMembers::add);
 					// nonRecentMembers.forEach(member -> member.kick("PRUNE (HASN'T TALKED IN 2 WEEKS)").queue());
+					// LOGGER.info("PRUNED " + nonRecentMembers.size() + " MEMBERS.");
 					System.out.printf("ALL USERS (%d):\n%s\nRECENT USERS(%d):\n%s\nNON RECENT USERS(%d)\n%s\n",
 									  guildMembers.size(),
 									  guildMembers.stream().map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")),
 									  recentMembers.size(),
 									  recentMembers.stream().filter(Objects::nonNull).map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")),
-									  nonRecentMembers.size(),
-									  nonRecentMembers.stream().map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")));
-					LOGGER.info("PRUNED " + nonRecentMembers.size() + " MEMBERS.");
+									  nonRecentMembers.size(), nonRecentMembers.stream().map(Member::getUser).map(LiquidRichardBot::getUserName).collect(joining(", ")));
+					// commandMessage.getChannel().sendMessage(JDAUtil.nonEmpty(
+					LOGGER.info(
+							needsProcessingMembers.stream()
+												  .sorted(Comparator.<Member, OffsetDateTime>comparing(m -> m.getUser().getTimeCreated()).reversed())
+												  .map(member -> LiquidRichardBot.getUserName(member.getUser()) + ": " + member.getUser().getTimeCreated())
+												  .collect(joining(", "))
+					);
+															// )).queue();
+					/////// put pruneable users into needs processing:
+					// Role replacement = commandMessage.getGuild().getRoleById(995451990777811024L);
+					// Role remove = commandMessage.getGuild().getRoleById(907451275807981638L);
+					// nonRecentMembers.forEach(m -> {
+					// 	commandMessage.getGuild().removeRoleFromMember(m, remove).queue();
+					// 	commandMessage.getGuild().addRoleToMember(m, replacement).queue();
+					// });
 				});
 			});
 			return SUCCESS;
 		}).build(),
 			  //|(\d+(\.(\d*))?("|''|[ ]?[Ii][Nn]([.CcSs\s]|$)?)?)
-		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})"
+		new MessageReactionBuilder("Convert Units", ("(?<!^[?.!]mute\\s{1,5}\\S{1,30}\\s{1,5}\\d{0,10})(?<!https://\\S{0,1990})" // TODO delimit like 1x1 1-1
 					+ "(?<negs>-*)(?<!\\$)(?:(?<feetInch>(?<base>(?<feet>\\d+)(?:[" + RegexUtil.apostrophes + "]|\\s*(?:foot|feet|ft\\.?)\\s*))"
 					+ "(?:(?<inch>(?<whole>\\d+)(?:\\.(?<inchDec1>\\d*))?|\\.(?<inchDec2>\\d+))|[^" + RegexUtil.apostrophes + "s]))"
-					+ "|(?<value>(?<valWhole>\\d+)(?:\\.(?<valDec1>\\d*))?|\\.(?<valDec2>\\d+))\\s*(?:(?:something|ish|~)\\s*)?" // 12 12. 12.34 .34 .00 .0200
+					+ "|" // (?<fromValue>(\\d)\\s*(by|x|-|to)\\s*)?
+					+ "(?<value>(?<valWhole>\\d+)(?:\\.(?<valDec1>\\d*))?|\\.(?<valDec2>\\d+))\\s*(?:(?:something|ish|~)\\s*)?" // 12 12. 12.34 .34 .00 .0200
 					+ "(?<unit>(kg|lb|meter|cm)s?([\\W]+|$)|kilo([sg\\s]|$)\\w*|([" + RegexUtil.apostrophes + "]{2}|[" + RegexUtil.doubleQuotes + "]|in(\\.|ch)|pound)\\w*)?)"),
 			// 		    + "kgs?([^\\w]+|$)"
 			// + "|kilo([sg\\s]|$)\\w*"
@@ -435,6 +462,7 @@ public class ReactionManager {
 				StringJoiner converted = new StringJoiner(", ");
 				StringJoiner conversionArrow = new StringJoiner(", ");
 				for (UnitMatch match : matches) {
+				// if (match.unit() != null && match.unit().unitSystem == UnitSystem.METRIC) // only convert some types
 					converted.add(match.convertUnit());
 					conversionArrow.add(match.fullMatch() + " -> " + match.convertUnit());
 				}
@@ -442,8 +470,10 @@ public class ReactionManager {
 					converted.add(bmi.getConvertedString());
 					conversionArrow.add(bmi.getLogString());
 				}
-				message.reply(JavaUtil.truncate(converted.toString())).queue();
-				return new ReactionResponse(conversionArrow.toString());
+				final String reply = converted.toString();
+				if (!reply.trim().isEmpty())
+					message.reply(JavaUtil.truncate(reply)).queue();
+				return new ReactionResponse(SUCCESS, conversionArrow.toString());
 			}
 		}).examples("120 lbs", "5.2\'0.3\"", "2ish foot 3.56", "10 kilograms").build(),
 
@@ -496,13 +526,15 @@ public class ReactionManager {
 			// audioManager.closeAudioConnection();
 		}).helpPanel("Celebrate The Princess's Birthday").deniable().build(),
 
-		new CommandBuilder("As Image", "^(pimp\\s*image|pi$)", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
+		new CommandBuilder("As Image", "^(pimp\\s*image|pi($|\\s*(\\d{18,20}|https)))", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
 				JavaUtil.presentOrElseReturnStatus(
 					ImageUtil.findImage(message),
 				image -> message.getChannel().sendMessage(image.getProxyUrl()).queue()))
 			.helpPanel("Add Speech Bubble To Image")
-			.docs("Resend any image, predicted in order by (if multiple: the first of):"
-				  + "attachment, sticker, emote, (same search, but on a) message link, (same search, but on the) replied message, pfp of referenced member, most recent attachment in chat")
+			.docs("Resend any image, predicted in order by (if multiple: the first of): "
+				  + "Sticker, Custom Emote, Attachment From Message Reference/Message URL/Message ID, Mentioned Member PFP, "
+				  + "Mentioned Role Icon, If There's No ID: The Last Image Out Of The Most Recent 10 Messages, First Attachment. "
+				  + "Default Emojis And Stickers Don't Embed (Because They Are SVG/JSON)")
 			.build(),
 
 		new CommandBuilder("Speech Bubble", "^(speech\\s*bubble|sb$)", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeStatus((Message message) ->
@@ -629,23 +661,71 @@ public class ReactionManager {
 				.caseInsensitive()
 				.disableLogging()
 				.execute(message ->
-					 message.addReaction(Emoji.fromCustom("redditor", 953332619687395338L, false)).queue()
+					 message.addReaction(Emoji.fromCustom("redditor", 953332619687395338L, false)).queue(s -> {}, LOG_EXCEPTION)
 		).build(),
 
-		new MessageReactionBuilder("Emoji Reaction", "Pimp\\s+(.+)", MOD, GUILD).matchFull().executeResponse((message, matcher) -> {
+		new MessageReactionBuilder("Emoji Reaction", "^pimp\\s+(.+)", MOD, GUILD).caseInsensitive().matchFull().executeResponse((message, matcher) -> {
 			Message referencedMessage = message.getReferencedMessage();
 			if (referencedMessage == null) {
-				return new ReactionResponse(false, "need to reply to a message");
+				return new ReactionResponse(FAILURE, "need to reply to a message");
 			}
 			final String code = matcher.group(1);
-			final EmojiUnion emoji = Emoji.fromFormatted(code);
-			if (emoji instanceof UnicodeEmojiImpl && !(code.startsWith("U+") || code.startsWith("u+"))) {
-				return new ReactionResponse(false, "bad emoji");
+			final EmojiUnion emoji;
+			try {
+				emoji = Emoji.fromFormatted(code);
+			} catch (IllegalArgumentException e) {
+				return new ReactionResponse(FAILURE, e.getMessage());
 			}
+			// if (emoji instanceof UnicodeEmojiImpl && !(emoji.getAsReactionCode().startsWith("U+") || emoji.getAsReactionCode().startsWith("u+"))) {
+			// 	return new ReactionResponse(FAILURE, "bad emoji");
+			// }
 			message.delete().queue();
-			referencedMessage.addReaction(emoji).queue();
+			referencedMessage.addReaction(emoji).queue(s -> {}, LOG_EXCEPTION);
 			return SUCCESS;
 		}).docs("Add emoji to referenced message").build(),
+
+		new CommandBuilder("Verify", "^\\?v(e(r(i(f)?)?)?)?", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> { // insert space after
+			if (message.getMember().hasPermission(Permission.MANAGE_ROLES)) {
+				BiConsumer<AtomicBoolean, CustomEmoji> callback = (anyCalled, emoji) -> { // meh. this is a job for Scala.
+					if (!anyCalled.get()) {
+						anyCalled.set(true);
+						message.addReaction(emoji).queue(s -> {}, LOG_EXCEPTION);
+					}
+				};
+				AtomicBoolean anySucceeded = new AtomicBoolean(false);
+				AtomicBoolean anyFailed = new AtomicBoolean(false);
+				Runnable succeed = () -> callback.accept(anySucceeded, Emoji.fromCustom("nigup", 910308835808395384L, false));
+				Runnable fail = () -> callback.accept(anyFailed, Emoji.fromCustom("nigdown", 910308878766473256L, false));
+				List<Member> members = message.getMentions().getMembers();
+				if (members.isEmpty()) {
+					fail.run();
+					return SUCCESS;
+				}
+				Guild guild = message.getGuild();
+				Role remove = guild.getRoleById(995451990777811024L);
+				Role replacement = guild.getRoleById(907451275807981638L);
+				if (remove == null || replacement == null) {
+					return new ReactionResponse(FAILURE, "relevant verification role was deleted");
+				}
+				Set<Role> defaultMemberRoles = Set.of(replacement, guild.getRoleById(907468017280090122L)); // p alr
+				TextChannel verificationChannel = guild.getChannelById(TextChannel.class, 907042441478164562L);
+				if (verificationChannel == null)
+					return new ReactionResponse(FAILURE, "verification channel was deleted");
+				members.forEach(member -> {
+					List<Role> currentRoles = member.getRoles();
+					if (!Collections.disjoint(currentRoles, defaultMemberRoles)
+						|| !currentRoles.contains(remove)
+								|| !PermissionUtil.checkPermission(verificationChannel, member, Permission.VIEW_CHANNEL))
+						fail.run();
+					else
+						guild.modifyMemberRoles(member, Collections.singleton(replacement), Collections.singleton(remove))
+							 .queue(s -> succeed.run(), f -> fail.run());
+				});
+				return SUCCESS;
+			} else {
+				return new ReactionResponse(FAILURE, "member is not allowed to verify"); // TODO command collision problems?
+			}
+		}).debugReactionResponse().build(),
 
 		new MessageReactionBuilder("Questions",
 							// "^(" +
@@ -819,19 +899,19 @@ public class ReactionManager {
 		new CommandBuilder("Upsert Slash", "^!us\\s+(.+)$", OWNER, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> {
 			List<String> inputStrings = Arrays.asList(matcher.group(1).split("\\s+"));
 			if (inputStrings.size() <= 1)
-				return new ReactionResponse(false, "you must provide a command name and \"true\" at the end for it to be upserted globally");
+				return new ReactionResponse(FAILURE, "you must provide a command name and \"true\" at the end for it to be upserted globally");
 			Set<String> upsertCommands = new HashSet<>(inputStrings.subList(0, inputStrings.size() - 1));
 			return getSlashCommands(upsertCommands).stream()
 											.map(s -> s.upsert(inputStrings.size() > 2 && inputStrings.get(inputStrings.size() - 1).equalsIgnoreCase("true")))
 											.reduce(ReactionResponse::combine)
-											.orElse(new ReactionResponse(false, "couldn't find any of those commands"));
+											.orElse(new ReactionResponse(FAILURE, "couldn't find any of those commands"));
 		}).build(),
 		new CommandBuilder("Delete Slash", "^!ds\\s+(.+)$", OWNER, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> {
 			Set<String> upsertCommands = new HashSet<>(Arrays.asList(matcher.group(1).split("\\s+")));
 			return upsertCommands.stream()
 						  .map(SlashCommand::delete)
 						  .reduce(ReactionResponse::combine)
-						  .orElse(new ReactionResponse(false, "couldn't find any of those commands"));
+						  .orElse(new ReactionResponse(FAILURE, "couldn't find any of those commands"));
 		}).build(),
 		new SlashCommandBuilder("kill", "End Your Life.", DEFAULT, GUILD_AND_PRIVATE)
 //				.addSubcommands(new SubcommandData("info", "Show Details.").addOption())
@@ -931,7 +1011,26 @@ public class ReactionManager {
 				return event -> {
 
 				};
-			}).deactivated().build()
+			}).deactivated().build(),
+
+		new MessageReactionBuilder("Tkin", ".*", DEFAULT, GUILD).executeStatus(message -> {
+			 if (message.getAuthor().getIdLong() == 991751124308730036L
+				 	&& (Set.of(968670122082455623L, 1035267648130396232L, 910004207610904666L).contains(message.getChannel().getIdLong()))) {
+				 ThreadChannel channel = message.getJDA().getChannelById(ThreadChannel.class, 1046297727555874846L);
+				 boolean sentAny = false;
+				 for (Message.Attachment attachment: message.getAttachments()) {
+					 channel.sendMessage(attachment.getProxyUrl()).queue();
+					 sentAny = true;
+				 }
+				 for (StickerItem sticker: message.getStickers()) {
+					 channel.sendMessage(sticker.getIconUrl()).queue();
+					 sentAny = true;
+				 }
+				 return sentAny;
+			}
+			return false;
+		}).build()
+
 		);
 
 	  messageReactions =
@@ -954,6 +1053,7 @@ public class ReactionManager {
 	private static ReactionResponse parseCommand(Message message, Consumer<MessageReaction> successMessage, String... potentialMatches) {
 		String commandName = null;
 		for (String potentialMatch : potentialMatches) {
+			System.out.println(potentialMatch);
 			if (potentialMatch != null) {
 				commandName = potentialMatch;
 			}
@@ -976,6 +1076,12 @@ public class ReactionManager {
 		}
 	}
 
+	/*
+	another layout idea:
+	master method which will take some condition for a command to be run
+	Context context(context -> condition, context -> Context);
+	then, we flatten all of these with DiscreteMath Statement#simplify
+	 */
 
 	public static <R extends Reaction> Map<ReactionChannelType, Map<UserCategoryType, Set<R>>> reactionsByCategoryChannel(Class<R> c) {
 			return Stream.of(ReactionChannelType.values()).collect(toMap(Function.identity(), channelType ->
