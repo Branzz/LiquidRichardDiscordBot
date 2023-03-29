@@ -56,7 +56,11 @@ public class UnitMatch {
 				valueWhole = "";
 				decimalAmount = match.group(12).length();
 			}
-			value = new ScaledDecimal(new BigDecimal(match.group(9)), decimalAmount);
+			boolean isNegative = negatives.length() % 2 == 1;
+			BigDecimal valBigDecimal = new BigDecimal(match.group(9));
+			if (isNegative)
+				valBigDecimal = valBigDecimal.negate();
+			value = new ScaledDecimal(valBigDecimal, decimalAmount);
 			String potentialUnit = match.group(13);
 			unit = potentialUnit == null ? Unit.LAZY : Unit.of(potentialUnit);
 		}
@@ -73,16 +77,15 @@ public class UnitMatch {
 	public String convertUnit() {
 		String converted;
 		if (isFeetInch) {
-			if (feetInchBase.equals("5'11"))
+			if (feet.equals("5") && inches.equals("11"))
 				return "Short.";
 			else
 				converted = toFeetInchString();
 		} else
 			converted = unit.convert(value);
-		if (negatives.length() % 2 == 1)
-			return '-' + converted;
-		else
-			return converted;
+		/*
+		*/
+		return converted;
 		// for (int i = 0; i < match.groupCount(); i++) {
 		// 	System.out.println(i + ":" + match.group(i));
 		// }

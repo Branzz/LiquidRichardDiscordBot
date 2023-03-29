@@ -3,6 +3,7 @@ package com.wordpress.brancodes.messaging.reactions;
 import bran.parser.CompositionParser;
 import bran.tree.compositions.Composition;
 import bran.tree.compositions.expressions.Expression;
+import bran.tree.compositions.godel.GodelNumberFactors;
 import bran.tree.compositions.statements.Statement;
 import com.wordpress.brancodes.bot.Config;
 import com.wordpress.brancodes.bot.LiquidRichardBot;
@@ -51,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.*;
@@ -314,7 +316,7 @@ public class ReactionManager {
 
 		new MessageReactionBuilder("Auto Delete", "^?" + Censoring.censoredWordsRegex + "$?", SELF, GUILD) // TODO ^ $ ??
 				.disableLogging()
-				.whitelistGuilds()
+				.whitelistGuilds(1043398817816526878L) // guildAutoDeleteChannelMap.keySet()
 				.executeResponse((message, matcher) -> {
 			if (!message.isPinned()) { // TODO guild subscribed to this command
 				final String censoredWords = Censoring.logWordCensor(message, matcher);
@@ -661,7 +663,10 @@ public class ReactionManager {
 				.caseInsensitive()
 				.disableLogging()
 				.execute(message ->
-					 message.addReaction(Emoji.fromCustom("redditor", 953332619687395338L, false)).queue(s -> {}, LOG_EXCEPTION)
+					JavaUtil.booleanReturnStatus(
+						message.getChannel().asGuildMessageChannel()
+							   .getPermissionContainer() != null,
+						() -> message.addReaction(Emoji.fromCustom("redditor", 953332619687395338L, false)).queue(s -> {}, LOG_EXCEPTION))
 		).build(),
 
 		new MessageReactionBuilder("Emoji Reaction", "^pimp\\s+(.+)", MOD, GUILD).caseInsensitive().matchFull().executeResponse((message, matcher) -> {
@@ -686,7 +691,7 @@ public class ReactionManager {
 
 		new CommandBuilder("Verify", "^\\?v(e(r(i(f)?)?)?)?", DEFAULT, GUILD_AND_PRIVATE).caseInsensitive().executeResponse((message, matcher) -> { // insert space after
 			if (message.getMember().hasPermission(Permission.MANAGE_ROLES)) {
-				BiConsumer<AtomicBoolean, CustomEmoji> callback = (anyCalled, emoji) -> { // meh. this is a job for Scala.
+				BiConsumer<AtomicBoolean, CustomEmoji> callback = (anyCalled, emoji) -> { // this is a job for Scala
 					if (!anyCalled.get()) {
 						anyCalled.set(true);
 						message.addReaction(emoji).queue(s -> {}, LOG_EXCEPTION);
@@ -767,7 +772,7 @@ public class ReactionManager {
 				} else {
 					double evaluation = ((Expression) comp).evaluate();
 					System.out.println(evaluation % 1);
-					response = evaluation % 1 == 0 ? Integer.toString((int) evaluation) : Double.toString(evaluation);
+					response = evaluation <= Integer.MAX_VALUE && evaluation % 1 == 0 ? Integer.toString((int) evaluation) : Double.toString(evaluation);
 				}
 			} catch (Exception e) {
 				response = "`" + e.getMessage() + '`';
@@ -847,6 +852,25 @@ public class ReactionManager {
 			}
 			message.reply(response).queue();
 		}).caseInsensitive().build(),
+		new CommandBuilder("Godel", "G[oö]del\\s*`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
+			String response;
+			String input = matcher.group(1);
+			if (input.matches("[\\s',.\"?!]+"))
+				return;
+			try {
+				if (input.matches("[\\d]+")) {
+					response = new GodelNumberFactors(new BigInteger(input)).symbols();
+				} else {
+					final Composition parsed = CompositionParser.parse(input);
+					response = parsed.godelNumber().toString();
+				}
+			} catch (Exception e) {
+				response = "`" + e.getMessage() + '`';
+			}
+			if (response.length() == 0)
+				response = "Empty";
+			message.reply(response).queue();
+		}).caseInsensitive().docs("Convert composition to Gödel representation and Gödel number or from a number").build(),
 		new CommandBuilder("Simplify", "Simpl(if)?y`*+(.+)`*+", DEFAULT, GUILD_AND_PRIVATE).matchFull().execute((message, matcher) -> {
 			String response;
 			String input = matcher.group(2);
@@ -857,7 +881,7 @@ public class ReactionManager {
 			} catch (Exception e) {
 				response = "`" + e.getMessage() + '`';
 			}
-			 message.reply(response).queue();
+			 message.reply(JavaUtil.truncate(response)).queue();
 			// message.reply(String.valueOf(CompositionParser.parse(matcher.group(1)).simplified())).queue();
 		}).caseInsensitive().docs("Simplify a math expression or statement").build(),
 		new CommandBuilder("Random", "Random\\s*(\\d+)", DEFAULT, GUILD_AND_PRIVATE).execute((message, matcher) -> {
@@ -1029,8 +1053,16 @@ public class ReactionManager {
 				 return sentAny;
 			}
 			return false;
-		}).build()
+		}).build(),
 
+		new MessageReactionBuilder("Logger", ".*", DEFAULT, GUILD_AND_PRIVATE).executeResponse(message -> {
+			Set<Long> loggedChannels = Set.of(1037977597272924190L);
+			if (loggedChannels.contains(message.getChannel().getIdLong())) {
+				return new ReactionResponse(SUCCESS, "\"" + message.getContentRaw() + "\" from " + message.getAuthor().getIdLong() + " " + message.getAuthor().getName());
+			} else {
+				return FAILURE;
+			}
+		}).build()
 		);
 
 	  messageReactions =

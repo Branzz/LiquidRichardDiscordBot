@@ -420,6 +420,15 @@ Public
 Guild And DM
 #### RegEx
 Truth\\s+Table`\*+(.+)`\*+
+### Godel
+#### User
+Public
+#### Location
+Guild And DM
+#### Docs
+Convert composition to GÃ¶del representation and GÃ¶del number or from a number
+#### RegEx
+G[oÃ¶]del\\s\*`\*+(.+)`\*+
 ### Simplify
 #### User
 Public
@@ -478,5 +487,12 @@ Guild
 Public
 #### Location
 Guild
+#### RegEx
+.\*
+### Logger
+#### User
+Public
+#### Location
+Guild And DM
 #### RegEx
 .\*

@@ -161,7 +161,7 @@ public class BMI { // unstable non-synchronously
 	}
 
 	private boolean inRange(double from, double to) {
-		return potentialConverted.getFull().compareTo(BigDecimal.valueOf(from)) > 0 && potentialConverted.getFull().compareTo(BigDecimal.valueOf(to)) < 0;
+		return potentialConverted.getFull().abs().compareTo(BigDecimal.valueOf(from)) > 0 && potentialConverted.getFull().abs().compareTo(BigDecimal.valueOf(to)) < 0;
 	}
 
 	/**

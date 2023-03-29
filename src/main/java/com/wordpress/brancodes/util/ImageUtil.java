@@ -42,6 +42,8 @@ public class ImageUtil {
 	public static void sendSpeechBubbleImage(Message message, Attachment image) {
 		try (InputStream inputStream = image.retrieveInputStream().get()) {
 			BufferedImage bufImage = ImageIO.read(inputStream); // TODO is this vulnerable
+			if (bufImage == null)
+				return;
 			Graphics2D graphics = bufImage.createGraphics();
 			graphics.setColor(new Color(54, 57, 63, 0));
 			graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC, 0F));

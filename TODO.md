@@ -22,4 +22,6 @@
 
 * store them... (recompile)
 
-sql
+* cooldown handler
+
+* sql
